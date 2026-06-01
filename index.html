@@ -61,6 +61,20 @@
   #actionBtn .ico{ font-size:24px; line-height:1; }
   #actionBtn .lbl{ font-size:15px; }
 
+  /* seed hotbar */
+  #seedbar{ display:flex; gap:8px; overflow-x:auto; padding:8px 10px; background:#7a5733;
+    box-shadow:inset 0 3px 6px rgba(0,0,0,.22); -webkit-overflow-scrolling:touch; min-height:20px; }
+  #seedbar::-webkit-scrollbar{ height:0; }
+  .seedchip{ flex:none; display:flex; flex-direction:column; align-items:center; gap:1px; padding:4px 7px;
+    border-radius:12px; border:2px solid var(--line); background:var(--panel); cursor:pointer;
+    box-shadow:0 3px 0 #b78c4f; }
+  .seedchip:active{ transform:translateY(2px); box-shadow:0 1px 0 #b78c4f; }
+  .seedchip.active{ border-color:#ffd84d; box-shadow:0 0 0 2px #ffd84d, 0 3px 0 #b78c4f; background:#fffbe9; }
+  .seedchip canvas{ width:34px; height:34px; image-rendering:pixelated; }
+  .seedchip .nm{ font-size:9px; font-weight:800; color:#7a5326; line-height:1; }
+  .seedchip .cnt{ font-size:11px; font-weight:900; color:#3a8fce; line-height:1; }
+  .seedbar-empty{ color:#ffe9c0; font-size:12px; font-weight:700; padding:6px 4px; white-space:nowrap; }
+
   /* sheet */
   #overlay{ position:fixed; inset:0; background:rgba(40,25,10,.5); display:none; align-items:flex-end; justify-content:center; z-index:20; }
   #overlay.show{ display:flex; }
@@ -125,6 +139,8 @@
     <div id="speech"></div>
     <button id="muteBtn" aria-label="音">🔊</button>
   </div>
+
+  <div id="seedbar"></div>
 
   <div id="controls">
     <div id="dpad">
@@ -199,6 +215,7 @@ function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
 function freshGame(){ return { day:1,money:500,stamina:10,maxStamina:10,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[] }; }
 let game=loadGame()||freshGame();
+let activeSeed=null; // いま手に持っている種
 
 function saveGame(){ try{localStorage.setItem(SAVE_KEY,JSON.stringify(game));}catch(e){} }
 function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)return null; const g=JSON.parse(raw);
@@ -207,7 +224,7 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   if(!Array.isArray(g.shipping))g.shipping=[]; return g; }catch(e){ return null; } }
 function resetGame(){ if(!confirm("本当に最初からはじめる？\nいまの畑・おかね・進行はすべて消えます。"))return;
   localStorage.removeItem(SAVE_KEY); game=freshGame(); closeSheet(); player.x=8.5; player.y=10.5; player.dir="down";
-  setSpeech("よ〜し、心機一転！またイチからがんばろ🎀"); }
+  activeSeed=null; renderSeedBar(); setSpeech("よ〜し、心機一転！またイチからがんばろ🎀"); }
 
 /* ===================== マップ ===================== */
 const MAP_W=18, MAP_H=13;
@@ -263,7 +280,9 @@ function getContext(){
   const f=frontTile(); const idx=plotIndex(f.x,f.y);
   if(idx>=0){ const t=game.tiles[idx];
     if(t.state==="empty") return {type:"farm",idx,ico:"⛏",label:"たがやす"};
-    if(t.state==="tilled") return {type:"farm",idx,ico:"🌱",label:"植える"};
+    if(t.state==="tilled"){ ensureActiveSeed();
+      if(!activeSeed) return {type:"farm",idx,ico:"🌱",label:"種がない",none:true};
+      return {type:"farm",idx,ico:"🌱",label:CROPS[activeSeed].name+"を植える"}; }
     if(t.state==="planted"){ if(t.growth>=CROPS[t.crop].days) return {type:"farm",idx,ico:"✂️",label:"収穫"};
       if(!t.watered) return {type:"farm",idx,ico:"💧",label:"水やり"}; return {type:"farm",idx,ico:"🌿",label:"育ち中",none:true}; } }
   return null;
@@ -279,8 +298,9 @@ function doAction(){
     const idx=c.idx, t=game.tiles[idx], w=plotWorld(idx), cc=tileClient(w.tx,w.ty);
     if(t.state==="empty"){ if(!spend(COST.TILL)){SFX.error();return;} t.state="tilled"; SFX.till();
       burst(cc.x,cc.y,["#9a6336","#7d4d29","#c79a5b"],7); setSpeech("土をたがやした！種をまこう🌱",1500); saveGame(); }
-    else if(t.state==="tilled"){ const owned=CROP_IDS.filter(c2=>game.seeds[c2]>0);
-      if(owned.length===0){ toast("種がないよ！ショップで買おう🛒"); SFX.error(); return; } openPlant(idx); }
+    else if(t.state==="tilled"){ ensureActiveSeed();
+      if(!activeSeed){ toast("ショップ(🛒)で種を買ってね"); SFX.error(); return; }
+      plant(idx,activeSeed); }
     else if(t.state==="planted"){
       if(t.growth>=CROPS[t.crop].days){ if(!spend(COST.HARVEST)){SFX.error();return;} game.shipping.push(t.crop);
         const cf=CROPS[t.crop]; Object.assign(t,newTile()); t.state="tilled"; SFX.harvest();
@@ -296,11 +316,20 @@ function plant(idx,crop){ const t=game.tiles[idx];
   if(game.stamina<COST.PLANT){ toast("体力が足りない…ねよう😴"); SFX.error(); return; }
   game.stamina-=COST.PLANT; game.seeds[crop]--; Object.assign(t,newTile()); t.state="planted"; t.crop=crop;
   closeSheet(); SFX.plant(); const w=plotWorld(idx),cc=tileClient(w.tx,w.ty);
-  burst(cc.x,cc.y,["#67b23f","#8cc95e","#4d8a2c"],7); setSpeech(`${CROPS[crop].name}を植えた！水をあげよう💧`,1800); saveGame(); }
+  burst(cc.x,cc.y,["#67b23f","#8cc95e","#4d8a2c"],7); setSpeech(`${CROPS[crop].name}を植えた！水をあげよう💧`,1800);
+  ensureActiveSeed(); renderSeedBar(); saveGame(); }
+function ensureActiveSeed(){ if(activeSeed&&game.seeds[activeSeed]>0)return; activeSeed=CROP_IDS.find(c=>game.seeds[c]>0)||null; }
+function renderSeedBar(){ const bar=document.getElementById("seedbar"); const owned=CROP_IDS.filter(c=>game.seeds[c]>0);
+  if(owned.length===0){ bar.innerHTML=`<div class="seedbar-empty">🌱 種を持ってないよ。ショップ(🛒)で買おう！</div>`; return; }
+  ensureActiveSeed();
+  bar.innerHTML=owned.map(c=>`<button class="seedchip${c===activeSeed?' active':''}" data-seed="${c}">
+    <canvas width="48" height="48" data-icon="${c}"></canvas><div class="nm">${CROPS[c].name}</div><div class="cnt">×${game.seeds[c]}</div></button>`).join("");
+  bar.querySelectorAll("canvas[data-icon]").forEach(cv=>drawIcon(cv,cv.dataset.icon));
+  bar.querySelectorAll("[data-seed]").forEach(b=>b.onclick=()=>{ activeSeed=b.dataset.seed; SFX.unlock(); SFX.plant(); renderSeedBar(); }); }
 function spend(cost){ if(game.stamina<cost){ toast("体力が足りない…ねよう😴"); return false; } game.stamina-=cost; return true; }
 function buy(crop){ const cf=CROPS[crop];
   if(game.money<cf.seed){ toast("おかねが足りないよ💸"); SFX.error(); setSpeech(pick(LINES_BROKE),2200); return; }
-  game.money-=cf.seed; game.seeds[crop]++; SFX.buy(); openShop(); toast(`${cf.name}の種を買った！`); saveGame(); }
+  game.money-=cf.seed; game.seeds[crop]++; activeSeed=crop; SFX.buy(); openShop(); renderSeedBar(); toast(`${cf.name}の種を買った！`); saveGame(); }
 function buyExpansion(i){ const ex=EXPANSIONS[i];
   if(game.money<ex.cost){ toast("おかねが足りないよ💸"); SFX.error(); return; }
   game.money-=ex.cost; game.cols=ex.cols; game.rows=ex.rows;
@@ -540,6 +569,7 @@ resize();
 let last=performance.now();
 function loop(now){ const dt=Math.min(0.05,(now-last)/1000); last=now; update(dt); render(); updateHUD(); requestAnimationFrame(loop); }
 requestAnimationFrame(loop);
+renderSeedBar();
 setSpeech("わたしの牧場へようこそ🎀 十字キーで歩いて、畑に行ってみて！",4000);
 </script>
 </body>
