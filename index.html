@@ -201,7 +201,7 @@ const LINES_HARVEST=["売れたら推しにシャンパン入れちゃう？🍾
 const LINES_BROKE=["おかねが無い…これじゃ会いに行けないよ〜😭","種代も無いなんて…まずは収穫しなきゃ💦"];
 
 function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
-function freshGame(){ return { day:1,money:500,stamina:10,maxStamina:10,level:1,exp:0,cols:4,rows:4,
+function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,exp:0,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[] }; }
 let game=loadGame()||freshGame();
 let activeSeed=null;
@@ -209,7 +209,7 @@ let activeSeed=null;
 function saveGame(){ try{localStorage.setItem(SAVE_KEY,JSON.stringify(game));}catch(e){} }
 function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)return null; const g=JSON.parse(raw);
   CROP_IDS.forEach(c=>{ if(g.seeds[c]==null)g.seeds[c]=0; }); if(!g.cols)g.cols=4; if(!g.rows)g.rows=4;
-  if(g.level==null)g.level=1; if(g.exp==null)g.exp=0; g.maxStamina=9+g.level; if(g.stamina>g.maxStamina)g.stamina=g.maxStamina;
+  if(g.level==null)g.level=1; if(g.exp==null)g.exp=0; g.maxStamina=14+g.level; if(g.stamina>g.maxStamina)g.stamina=g.maxStamina;
   if(!Array.isArray(g.tiles))g.tiles=Array.from({length:16},newTile); while(g.tiles.length<g.cols*g.rows)g.tiles.push(newTile());
   if(!Array.isArray(g.shipping))g.shipping=[]; return g; }catch(e){ return null; } }
 function resetGame(){ if(!confirm("本当に最初からはじめる？\nいまの畑・おかね・進行はすべて消えます。"))return;
@@ -413,7 +413,7 @@ function plant(idx,crop){ const t=game.tiles[idx];
 function spend(cost){ if(game.stamina<cost){ toast("体力が足りない…ねよう😴"); return false; } game.stamina-=cost; return true; }
 function expNeed(L){ return 25+(L-1)*20; }
 function gainExp(n){ game.exp+=n; let need=expNeed(game.level);
-  while(game.exp>=need){ game.exp-=need; game.level++; game.maxStamina=9+game.level; game.stamina=game.maxStamina; levelUpFx(); need=expNeed(game.level); } }
+  while(game.exp>=need){ game.exp-=need; game.level++; game.maxStamina=14+game.level; game.stamina=game.maxStamina; levelUpFx(); need=expNeed(game.level); } }
 function levelUpFx(){ SFX.expand(); const p=playerTile(); if(GS){ GS.fxBurst(p.x,p.y,["#ffe14d","#9be84d","#ff8fc0","#ffffff"]);
   GS.fxFloat(p.x,p.y,"⭐Lv"+game.level+" 体力+1","#2f7d2f"); } setSpeech(`レベル${game.level}！最大体力アップ⚡✨`,2600); }
 function ensureActiveSeed(){ if(activeSeed&&game.seeds[activeSeed]>0)return; activeSeed=CROP_IDS.find(c=>game.seeds[c]>0)||null; }
