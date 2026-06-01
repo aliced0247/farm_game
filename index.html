@@ -5,70 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#8ec96a" />
-<title>ぼくじょう物語 🌱 歩けるよ版</title>
+<title>ぼくじょう物語 🌱 Phaser版</title>
 <style>
   :root{ --bar:#6b4a2b; --bar2:#8a623c; --panel:#fff7e6; --line:#c79a5b; --text:#4a3526; }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ margin:0; padding:0; height:100%; overflow:hidden; }
-  body{
-    font-family:-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
-    background:#5a8a3c; color:var(--text); user-select:none; -webkit-user-select:none;
-    overscroll-behavior:none; touch-action:none;
-    display:flex; flex-direction:column; align-items:center; height:100%;
-  }
+  body{ font-family:-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif; background:#5a8a3c;
+    color:var(--text); user-select:none; -webkit-user-select:none; overscroll-behavior:none; touch-action:none;
+    display:flex; flex-direction:column; align-items:center; height:100%; }
   #app{ width:100%; max-width:520px; height:100%; display:flex; flex-direction:column;
     padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
 
-  /* topbar */
-  #topbar{ display:flex; gap:8px; padding:8px 10px; background:linear-gradient(180deg,var(--bar2),var(--bar));
+  #topbar{ display:flex; gap:6px; padding:8px 8px; background:linear-gradient(180deg,var(--bar2),var(--bar));
     box-shadow:0 3px 0 #50341d, 0 4px 8px rgba(0,0,0,.25); z-index:5; }
-  .stat{ flex:1; background:var(--panel); border:2px solid var(--line); border-radius:11px; padding:5px;
+  .stat{ flex:1; background:var(--panel); border:2px solid var(--line); border-radius:11px; padding:4px;
     text-align:center; display:flex; flex-direction:column; gap:2px; box-shadow:inset 0 -3px 0 #e7cf9a; }
   .stat .lbl{ font-size:9px; color:#9a7b4a; font-weight:700; }
-  .stat .val{ font-size:17px; font-weight:800; line-height:1; }
+  .stat .val{ font-size:16px; font-weight:800; line-height:1; }
   #staminaBarWrap,#expBarWrap{ height:5px; background:#e7cf9a; border-radius:4px; overflow:hidden; margin-top:3px; }
   #staminaBar{ height:100%; width:100%; background:linear-gradient(90deg,#ffd14d,#ff8a3d); transition:width .3s; }
   #expBar{ height:100%; width:0%; background:linear-gradient(90deg,#9be84d,#3fae54); transition:width .3s; }
 
-  /* stage */
   #stage{ flex:1; position:relative; overflow:hidden; background:#6ea83f; }
-  #game{ position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; display:block; }
-  #speech{ position:absolute; top:8px; left:50%; transform:translateX(-50%); max-width:88%;
-    background:#fff; border:2px solid var(--line); border-radius:14px; padding:7px 13px; font-size:12.5px;
-    font-weight:700; color:#7a5326; box-shadow:0 3px 0 #c79a5b; opacity:0; transition:opacity .3s;
-    pointer-events:none; text-align:center; z-index:4; }
+  #stage canvas{ display:block; }
+  #loadMsg{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff;
+    font-weight:700; font-size:14px; text-align:center; padding:20px; z-index:1; }
+  #speech{ position:absolute; top:8px; left:50%; transform:translateX(-50%); max-width:88%; background:#fff;
+    border:2px solid var(--line); border-radius:14px; padding:7px 13px; font-size:12.5px; font-weight:700;
+    color:#7a5326; box-shadow:0 3px 0 #c79a5b; opacity:0; transition:opacity .3s; pointer-events:none; text-align:center; z-index:4; }
   #speech.show{ opacity:1; }
   #muteBtn{ position:absolute; top:8px; right:8px; z-index:6; width:36px; height:36px; border-radius:50%;
     border:2px solid var(--line); background:var(--panel); font-size:17px; cursor:pointer; box-shadow:0 3px 0 #c79a5b; }
   #muteBtn:active{ transform:translateY(2px); box-shadow:0 1px 0 #c79a5b; }
 
-  /* controls */
-  #controls{ display:flex; align-items:flex-end; justify-content:space-between;
-    padding:10px 18px calc(14px + env(safe-area-inset-bottom)); gap:10px;
-    background:linear-gradient(180deg,#7a5733,var(--bar)); box-shadow:0 -3px 0 #50341d; }
-  #dpad{ position:relative; width:150px; height:150px; flex:none; }
-  .dbtn{ position:absolute; width:50px; height:50px; border:none; background:linear-gradient(180deg,#fff7e6,#ecd6a6);
-    border:2px solid var(--line); color:#7a5326; font-size:22px; font-weight:900; border-radius:12px;
-    box-shadow:0 3px 0 #b78c4f; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-  .dbtn:active,.dbtn.on{ transform:translateY(2px); box-shadow:0 1px 0 #b78c4f; background:linear-gradient(180deg,#ffe9b8,#e0c184); }
-  #bUp{ left:50px; top:0; } #bDown{ left:50px; top:100px; } #bLeft{ left:0; top:50px; } #bRight{ left:100px; top:50px; }
-  #dpadMid{ position:absolute; left:50px; top:50px; width:50px; height:50px; background:#00000018; border-radius:10px; }
-  #actionBtn{ flex:1; max-width:160px; min-height:84px; border:none; border-radius:20px; font-family:inherit;
-    font-size:19px; font-weight:900; color:#fff; cursor:pointer;
-    background:linear-gradient(180deg,#6cc24a,#4d9a2c); box-shadow:0 5px 0 #3a7720;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
-  #actionBtn:active{ transform:translateY(3px); box-shadow:0 2px 0 #3a7720; }
-  #actionBtn.dim{ background:linear-gradient(180deg,#b9b0a0,#938b7c); box-shadow:0 5px 0 #6f6859; }
-  #actionBtn .ico{ font-size:24px; line-height:1; }
-  #actionBtn .lbl{ font-size:15px; }
-
-  /* seed hotbar */
   #seedbar{ display:flex; gap:8px; overflow-x:auto; padding:8px 10px; background:#7a5733;
     box-shadow:inset 0 3px 6px rgba(0,0,0,.22); -webkit-overflow-scrolling:touch; min-height:20px; }
   #seedbar::-webkit-scrollbar{ height:0; }
   .seedchip{ flex:none; display:flex; flex-direction:column; align-items:center; gap:1px; padding:4px 7px;
-    border-radius:12px; border:2px solid var(--line); background:var(--panel); cursor:pointer;
-    box-shadow:0 3px 0 #b78c4f; }
+    border-radius:12px; border:2px solid var(--line); background:var(--panel); cursor:pointer; box-shadow:0 3px 0 #b78c4f; }
   .seedchip:active{ transform:translateY(2px); box-shadow:0 1px 0 #b78c4f; }
   .seedchip.active{ border-color:#ffd84d; box-shadow:0 0 0 2px #ffd84d, 0 3px 0 #b78c4f; background:#fffbe9; }
   .seedchip canvas{ width:34px; height:34px; image-rendering:pixelated; }
@@ -76,7 +50,23 @@
   .seedchip .cnt{ font-size:11px; font-weight:900; color:#3a8fce; line-height:1; }
   .seedbar-empty{ color:#ffe9c0; font-size:12px; font-weight:700; padding:6px 4px; white-space:nowrap; }
 
-  /* sheet */
+  #controls{ display:flex; align-items:flex-end; justify-content:space-between;
+    padding:10px 18px calc(14px + env(safe-area-inset-bottom)); gap:10px;
+    background:linear-gradient(180deg,#7a5733,var(--bar)); box-shadow:0 -3px 0 #50341d; }
+  #dpad{ position:relative; width:150px; height:150px; flex:none; }
+  .dbtn{ position:absolute; width:50px; height:50px; border:2px solid var(--line); color:#7a5326; font-size:22px;
+    font-weight:900; border-radius:12px; box-shadow:0 3px 0 #b78c4f; cursor:pointer; display:flex; align-items:center;
+    justify-content:center; background:linear-gradient(180deg,#fff7e6,#ecd6a6); }
+  .dbtn:active,.dbtn.on{ transform:translateY(2px); box-shadow:0 1px 0 #b78c4f; background:linear-gradient(180deg,#ffe9b8,#e0c184); }
+  #bUp{ left:50px; top:0; } #bDown{ left:50px; top:100px; } #bLeft{ left:0; top:50px; } #bRight{ left:100px; top:50px; }
+  #dpadMid{ position:absolute; left:50px; top:50px; width:50px; height:50px; background:#00000018; border-radius:10px; }
+  #actionBtn{ flex:1; max-width:160px; min-height:84px; border:none; border-radius:20px; font-family:inherit;
+    font-size:19px; font-weight:900; color:#fff; cursor:pointer; background:linear-gradient(180deg,#6cc24a,#4d9a2c);
+    box-shadow:0 5px 0 #3a7720; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  #actionBtn:active{ transform:translateY(3px); box-shadow:0 2px 0 #3a7720; }
+  #actionBtn.dim{ background:linear-gradient(180deg,#b9b0a0,#938b7c); box-shadow:0 5px 0 #6f6859; }
+  #actionBtn .ico{ font-size:24px; line-height:1; } #actionBtn .lbl{ font-size:14px; }
+
   #overlay{ position:fixed; inset:0; background:rgba(40,25,10,.5); display:none; align-items:flex-end; justify-content:center; z-index:20; }
   #overlay.show{ display:flex; }
   .sheet{ width:100%; max-width:520px; background:var(--panel); border-radius:22px 22px 0 0;
@@ -102,7 +92,6 @@
     color:#b5483f; font-weight:700; font-size:13px; font-family:inherit; cursor:pointer; }
   .saveNote{ text-align:center; font-size:11px; color:#9a7b4a; margin-top:10px; }
 
-  /* morning */
   #morning{ position:fixed; inset:0; z-index:30; display:none; align-items:center; justify-content:center;
     background:radial-gradient(circle at 50% 38%, rgba(255,236,170,.96), rgba(255,210,120,.96)); }
   #morning.show{ display:flex; animation:fade .3s; } @keyframes fade{ from{opacity:0} to{opacity:1} }
@@ -113,7 +102,6 @@
     background:linear-gradient(180deg,#ffb13d,#f0931a); box-shadow:0 5px 0 #c4761a; font-family:inherit; cursor:pointer; }
   .mcard .go:active{ transform:translateY(3px); box-shadow:0 2px 0 #c4761a; }
 
-  /* toast */
   #toast{ position:fixed; left:50%; bottom:200px; transform:translateX(-50%) translateY(20px); background:#3a2a18ee;
     color:#fff; padding:10px 18px; border-radius:20px; font-size:14px; font-weight:700; opacity:0; pointer-events:none;
     transition:.25s; z-index:40; max-width:90%; text-align:center; }
@@ -138,7 +126,7 @@
   </div>
 
   <div id="stage">
-    <canvas id="game"></canvas>
+    <div id="loadMsg">🌱 牧場を読み込み中…</div>
     <div id="speech"></div>
     <button id="muteBtn" aria-label="音">🔊</button>
   </div>
@@ -162,6 +150,7 @@
   <div class="earn" id="mEarn"></div><button class="go" id="mGo">おはよう！</button></div></div>
 <div id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
 <script>
 "use strict";
 
@@ -189,10 +178,8 @@ const SFX=(function(){
     coin(){tone(988,0.08,"square",0.13,0);tone(1319,0.12,"square",0.13,0.07);},
     buy(){tone(740,0.08,"square",0.13,0);tone(988,0.1,"square",0.12,0.06);},
     expand(){arp([392,523,659,784,1047],0.07,"triangle",0.16);},
-    sleep(){tone(330,0.6,"sine",0.16,0,150);},
-    morning(){arp([659,784,988,1319],0.12,"triangle",0.16);},
-    step(){tone(180,0.05,"square",0.04);},
-    error(){tone(200,0.18,"square",0.11,0,140);} };
+    sleep(){tone(330,0.6,"sine",0.16,0,150);}, morning(){arp([659,784,988,1319],0.12,"triangle",0.16);},
+    step(){tone(180,0.05,"square",0.04);}, error(){tone(200,0.18,"square",0.11,0,140);} };
 })();
 window.addEventListener("pointerdown",()=>SFX.unlock(),{once:true});
 
@@ -209,7 +196,6 @@ const CROPS={
 };
 const CROP_IDS=["turnip","potato","tomato","strawberry","corn","watermelon"];
 const EXPANSIONS=[ {cols:6,rows:4,cost:1000}, {cols:6,rows:6,cost:3000} ];
-
 const LINES_MORNING=["おはよ〜！今日もキラキラいくよ🎀","ふぁ〜あ…よく寝た♪ さ、かせぐわよ💖","今日もせっせと働いて、夜は推しに会いに行くの✨"];
 const LINES_HARVEST=["売れたら推しにシャンパン入れちゃう？🍾 なんてね♡","この子たち立派に育って…えらいぞ〜♪","畑ひろげて伝説の太客になるんだから✨","もうひと稼ぎして、今日は同伴いけるかな…!?"];
 const LINES_BROKE=["おかねが無い…これじゃ会いに行けないよ〜😭","種代も無いなんて…まずは収穫しなきゃ💦"];
@@ -218,7 +204,7 @@ function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
 function freshGame(){ return { day:1,money:500,stamina:10,maxStamina:10,level:1,exp:0,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[] }; }
 let game=loadGame()||freshGame();
-let activeSeed=null; // いま手に持っている種
+let activeSeed=null;
 
 function saveGame(){ try{localStorage.setItem(SAVE_KEY,JSON.stringify(game));}catch(e){} }
 function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)return null; const g=JSON.parse(raw);
@@ -227,141 +213,233 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   if(!Array.isArray(g.tiles))g.tiles=Array.from({length:16},newTile); while(g.tiles.length<g.cols*g.rows)g.tiles.push(newTile());
   if(!Array.isArray(g.shipping))g.shipping=[]; return g; }catch(e){ return null; } }
 function resetGame(){ if(!confirm("本当に最初からはじめる？\nいまの畑・おかね・進行はすべて消えます。"))return;
-  localStorage.removeItem(SAVE_KEY); game=freshGame(); closeSheet(); player.x=8.5; player.y=10.5; player.dir="down";
-  activeSeed=null; renderSeedBar(); setSpeech("よ〜し、心機一転！またイチからがんばろ🎀"); }
+  localStorage.removeItem(SAVE_KEY); game=freshGame(); activeSeed=null; closeSheet(); renderSeedBar();
+  if(GS){ GS.player.setPosition(8*16+8,10*16+14); GS.facing="down"; GS.buildPlots(); }
+  setSpeech("よ〜し、心機一転！またイチからがんばろ🎀"); }
 
-/* ===================== マップ ===================== */
-const MAP_W=18, MAP_H=13;
-const FARM_X=6, FARM_Y=6;            // 畑エリアの左上（最大6x6）
-const HOUSE={x:2,y:2,w:3,h:2, trig:{x:3,y:4}};
-const SHOP ={x:13,y:2,w:3,h:2, trig:{x:14,y:4}};
-const POND=[ [2,9],[3,9],[2,10],[3,10] ];
-const TREES=[ [5,3],[11,3],[2,7],[15,7],[14,10],[3,8] ]; // 飾り兼障害物
-const PATH=new Set(); (function(){ for(let x=3;x<=14;x++)PATH.add(x+",5"); PATH.add("3,4");PATH.add("14,4"); })();
+/* ===================== マップ定義 ===================== */
+const TS=16, MAP_W=18, MAP_H=13, FARM_X=6, FARM_Y=6;
+const HOUSE={x:2,y:2,w:3,h:2,trig:{x:3,y:4}};
+const SHOP ={x:13,y:2,w:3,h:2,trig:{x:14,y:4}};
+const POND=[[2,9],[3,9],[2,10],[3,10]];
+const TREES=[[5,3],[11,3],[2,7],[15,7],[14,10],[3,8]];
+const PATH=new Set(); for(let x=3;x<=14;x++)PATH.add(x+",5"); PATH.add("3,4"); PATH.add("14,4");
+function isSolidTile(tx,ty){ if(tx<0||ty<0||tx>=MAP_W||ty>=MAP_H)return true;
+  if(tx===0||ty===0||tx===MAP_W-1||ty===MAP_H-1)return true;
+  if(tx>=HOUSE.x&&tx<HOUSE.x+HOUSE.w&&ty>=HOUSE.y&&ty<HOUSE.y+HOUSE.h)return true;
+  if(tx>=SHOP.x&&tx<SHOP.x+SHOP.w&&ty>=SHOP.y&&ty<SHOP.y+SHOP.h)return true;
+  if(POND.some(([x,y])=>x===tx&&y===ty))return true;
+  if(TREES.some(([x,y])=>x===tx&&y===ty))return true; return false; }
+function plotIndex(tx,ty){ if(tx>=FARM_X&&tx<FARM_X+game.cols&&ty>=FARM_Y&&ty<FARM_Y+game.rows)return (ty-FARM_Y)*game.cols+(tx-FARM_X); return -1; }
+function plotWorld(idx){ const c=idx%game.cols,r=Math.floor(idx/game.cols); return {tx:FARM_X+c,ty:FARM_Y+r}; }
 
-let solid=[]; // [y][x] boolean
-function buildSolid(){
-  solid=Array.from({length:MAP_H},()=>Array(MAP_W).fill(false));
-  for(let x=0;x<MAP_W;x++){ solid[0][x]=true; solid[MAP_H-1][x]=true; }
-  for(let y=0;y<MAP_H;y++){ solid[y][0]=true; solid[y][MAP_W-1]=true; }
-  for(let dy=0;dy<HOUSE.h;dy++)for(let dx=0;dx<HOUSE.w;dx++) solid[HOUSE.y+dy][HOUSE.x+dx]=true;
-  for(let dy=0;dy<SHOP.h;dy++)for(let dx=0;dx<SHOP.w;dx++) solid[SHOP.y+dy][SHOP.x+dx]=true;
-  POND.forEach(([x,y])=>solid[y][x]=true);
-  TREES.forEach(([x,y])=>solid[y][x]=true);
-}
-buildSolid();
-function solidAt(tx,ty){ if(tx<0||ty<0||tx>=MAP_W||ty>=MAP_H)return true; return solid[ty][tx]; }
-function plotIndex(tx,ty){ if(tx>=FARM_X&&tx<FARM_X+game.cols&&ty>=FARM_Y&&ty<FARM_Y+game.rows) return (ty-FARM_Y)*game.cols+(tx-FARM_X); return -1; }
-function plotWorld(idx){ const c=idx%game.cols, r=Math.floor(idx/game.cols); return {tx:FARM_X+c, ty:FARM_Y+r}; }
+/* ===================== ドット絵描画（テクスチャ生成用） ===================== */
+function rc(x,cx,cy,w,h,col){ x.fillStyle=col; x.fillRect(cx,cy,w,h); }
+function drawGroundC(x,variant){ rc(x,0,0,16,16, variant?"#7cba49":"#74b143"); rc(x,3,11,1,1,"#69a83c"); rc(x,11,4,1,1,"#86c95a"); }
+function drawPathC(x){ rc(x,0,0,16,16,"#cdab74"); rc(x,3,4,1,1,"#bd9a63"); rc(x,10,9,1,1,"#bd9a63"); }
+function drawEmptyC(x){ rc(x,0,0,16,16,"#86c25a"); rc(x,4,5,2,1,"#79b84e"); rc(x,10,10,2,1,"#79b84e"); }
+function drawSoilC(x,watered){ const base=watered?"#6e4326":"#9a6336", dk=watered?"#583320":"#7d4d29";
+  rc(x,0,0,16,16,base); for(let y=2;y<15;y+=3)rc(x,1,y,14,1,dk);
+  if(watered){ rc(x,4,4,1,1,"#9fd0ff"); rc(x,10,8,1,1,"#9fd0ff"); rc(x,7,12,1,1,"#9fd0ff"); } }
+function drawPlantC(x,crop,stage){ const cf=CROPS[crop], p=(a,b,w,h,c)=>rc(x,a,b,w,h,c);
+  if(stage===0){ p(7,9,2,4,cf.leaf); p(5,9,2,2,cf.leaf); p(9,9,2,2,cf.leaf); }
+  else if(stage===1){ p(7,6,2,7,"#4d8a2c"); p(4,7,3,2,cf.leaf); p(9,8,3,2,cf.leaf); p(5,5,2,2,cf.leaf); p(9,5,2,2,cf.leaf); }
+  else { if(crop==="corn"){ p(7,8,2,5,"#4d8a2c"); p(6,3,4,6,cf.fruit); for(let y=4;y<8;y+=2)p(6,y,4,1,cf.fruit2); p(6,2,2,2,cf.leaf); p(9,3,2,2,cf.leaf); }
+    else if(crop==="tomato"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(5,5,3,3,cf.fruit); p(9,4,3,3,cf.fruit); p(5,5,1,1,cf.fruit2); p(9,4,1,1,cf.fruit2); }
+    else if(crop==="turnip"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(6,7,5,5,cf.fruit); p(6,11,5,1,"#d8d4c8"); p(6,6,2,2,cf.fruit2); p(8,5,2,2,cf.fruit2); }
+    else if(crop==="potato"){ p(7,6,2,4,"#4d8a2c"); p(5,6,3,2,cf.leaf); p(9,7,3,2,cf.leaf); p(4,10,4,4,cf.fruit); p(8,10,4,4,cf.fruit); p(5,10,1,1,cf.fruit2); p(9,10,1,1,cf.fruit2); }
+    else if(crop==="strawberry"){ p(5,7,6,2,cf.leaf); p(4,8,2,2,cf.leaf); p(10,8,2,2,cf.leaf); p(5,10,3,4,cf.fruit); p(9,10,3,4,cf.fruit); p(6,11,1,1,cf.fruit2); p(10,12,1,1,cf.fruit2); }
+    else if(crop==="watermelon"){ p(4,7,2,2,cf.leaf); p(5,8,7,6,cf.fruit); p(6,8,1,6,cf.fruit2); p(8,8,1,6,cf.fruit2); p(10,8,1,6,cf.fruit2); p(6,8,2,1,"#7fd98e"); } } }
+function drawTreeC(x){ rc(x,4,9,8,7,"#3f8a3a"); rc(x,3,11,10,4,"#4f9e44"); rc(x,5,8,6,3,"#5cb350"); rc(x,6,7,3,2,"#6cc25c");
+  rc(x,7,16,2,8,"#7a5230"); rc(x,7,16,1,8,"#8a6038"); }
+function drawPondC(x){ rc(x,0,0,16,16,"#3f9ad6"); rc(x,1,1,14,3,"#56b0e6"); rc(x,3,5,2,1,"#bfe6ff"); rc(x,9,9,3,1,"#bfe6ff"); }
+function drawFenceC(x){ rc(x,0,0,16,16,"#5a8a3c"); rc(x,3,3,3,10,"#8a6038"); rc(x,10,3,3,10,"#8a6038");
+  rc(x,0,5,16,2,"#9a6f40"); rc(x,3,3,3,2,"#a87c4a"); rc(x,10,3,3,2,"#a87c4a"); }
+function drawHouseC(x){ rc(x,0,18,48,22,"#f2e3c0"); rc(x,0,18,48,4,"#e0cda0");
+  rc(x,-2,2,52,18,"#c84a3f"); rc(x,-2,2,52,3,"#e06b5f");
+  rc(x,19,28,10,12,"#7a5230"); rc(x,19,28,10,2,"#9a6f40"); rc(x,7,24,8,8,"#bfe6ff"); rc(x,33,24,8,8,"#bfe6ff"); }
+function drawShopC(x){ rc(x,0,18,48,22,"#fff2e0"); rc(x,-2,2,52,18,"#3a8fce"); rc(x,-2,2,52,3,"#5cb6e8");
+  rc(x,19,28,10,12,"#7a5230"); for(let i=0;i<6;i++)rc(x,i*8,16,8,5, i%2?"#ff6f8a":"#ffffff");
+  x.font="9px serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("🛒",24,9); }
+function drawPlayerC(x,dir,frame){ const mir=(dir==="right"); const D=(dir==="right")?"left":dir;
+  const p=(a,b,w,h,c)=>{ if(mir)a=16-a-w; rc(x,a,b,w,h,c); };
+  const HAIR="#ff8fc0",HAIR_D="#e96fa6",SKIN="#ffe1c6",EYE="#9a5fd6",WHT="#fff",MOUTH="#d4607f",BLUSH="#ff9ecb",DRESS="#2b2b35",FRILL="#ff8fc0";
+  x.save(); x.globalAlpha=.18; x.fillStyle="#000"; x.beginPath(); x.ellipse(8,17,6,2.2,0,0,7); x.fill(); x.restore();
+  const lA=frame?14:15, lB=frame?15:14; p(6,lA,2,3,SKIN); p(9,lB,2,3,SKIN);
+  if(D==="down"||D==="up"){
+    p(1,5,3,8,HAIR); p(1,5,1,8,HAIR_D); p(12,5,3,8,HAIR); p(14,5,1,8,HAIR_D);
+    p(4,10,8,5,DRESS); p(4,10,8,1,WHT); p(4,14,8,1,FRILL); p(3,11,1,3,SKIN); p(12,11,1,3,SKIN);
+    p(4,2,8,5,HAIR); p(4,2,8,1,"#ffc4dd");
+    if(D==="down"){ p(5,5,6,4,SKIN); p(4,4,8,2,HAIR); p(6,6,1,2,EYE); p(9,6,1,2,EYE); p(6,6,1,1,WHT); p(9,6,1,1,WHT);
+      p(5,8,1,1,BLUSH); p(10,8,1,1,BLUSH); p(7,8,2,1,MOUTH); }
+    else { p(5,5,6,4,HAIR); p(6,3,4,2,FRILL); }
+  } else {
+    p(10,5,3,7,HAIR); p(12,5,1,7,HAIR_D);
+    p(4,10,7,5,DRESS); p(4,10,7,1,WHT); p(4,14,7,1,FRILL); p(5,11,1,3,SKIN);
+    p(4,2,7,5,HAIR); p(4,2,7,1,"#ffc4dd"); p(5,5,4,4,SKIN); p(4,4,5,2,HAIR);
+    p(6,6,1,2,EYE); p(6,6,1,1,WHT); p(5,8,1,1,BLUSH); p(6,8,2,1,MOUTH);
+  } }
+function mkCanvas(w,h,fn){ const c=document.createElement("canvas"); c.width=w; c.height=h; fn(c.getContext("2d")); return c; }
 
-/* ===================== プレイヤー＆入力 ===================== */
-const player={ x:8.5, y:10.5, dir:"down", frame:0, walkT:0, moving:false };
+/* ===================== Phaser シーン ===================== */
+let GS=null;
 const held={up:false,down:false,left:false,right:false};
-const SPEED=4.3, HW=0.30, HH=0.20;
-function boxBlocked(cx,cy){ return solidAt(Math.floor(cx-HW),Math.floor(cy-HH))||solidAt(Math.floor(cx+HW),Math.floor(cy-HH))||
-  solidAt(Math.floor(cx-HW),Math.floor(cy+HH))||solidAt(Math.floor(cx+HW),Math.floor(cy+HH)); }
-
-let stepT=0;
-function update(dt){
-  let vx=(held.right?1:0)-(held.left?1:0), vy=(held.down?1:0)-(held.up?1:0);
-  player.moving=!!(vx||vy);
-  if(vx&&vy){ vx*=0.7071; vy*=0.7071; }
-  if(vy<0)player.dir="up"; else if(vy>0)player.dir="down"; else if(vx<0)player.dir="left"; else if(vx>0)player.dir="right";
-  let nx=player.x+vx*SPEED*dt; if(!boxBlocked(nx,player.y))player.x=nx;
-  let ny=player.y+vy*SPEED*dt; if(!boxBlocked(player.x,ny))player.y=ny;
-  if(player.moving){ player.walkT+=dt; player.frame=Math.floor(player.walkT/0.16)%2;
-    stepT+=dt; if(stepT>0.28){ stepT=0; SFX.step(); } } else { player.walkT=0; player.frame=0; }
+class Farm extends Phaser.Scene{
+  preload(){}
+  create(){
+    GS=this; this.facing="down"; this.walkT=0; this.frame=0;
+    this.genTextures();
+    document.getElementById("loadMsg").style.display="none";
+    // 地面
+    this.groundLayer=this.add.group();
+    for(let ty=0;ty<MAP_H;ty++)for(let tx=0;tx<MAP_W;tx++){
+      let key="grassA"; if((tx+ty)&1)key="grassB"; if(PATH.has(tx+","+ty))key="path";
+      this.add.image(tx*TS,ty*TS,key).setOrigin(0).setDepth(0);
+    }
+    // 畑プロット
+    this.plots=[]; this.plotLayer=this.add.container().setDepth(1); this.buildPlots();
+    // 池
+    POND.forEach(([x,y])=>this.add.image(x*TS,y*TS,"pond").setOrigin(0).setDepth(2));
+    // 柵（外周）
+    for(let tx=0;tx<MAP_W;tx++){ this.add.image(tx*TS,0,"fence").setOrigin(0).setDepth(tx*0+8);
+      this.add.image(tx*TS,(MAP_H-1)*TS,"fence").setOrigin(0).setDepth((MAP_H-1)*TS); }
+    for(let ty=1;ty<MAP_H-1;ty++){ this.add.image(0,ty*TS,"fence").setOrigin(0).setDepth(ty*TS);
+      this.add.image((MAP_W-1)*TS,ty*TS,"fence").setOrigin(0).setDepth(ty*TS); }
+    // 建物
+    this.add.image(HOUSE.x*TS,HOUSE.y*TS-2,"house").setOrigin(0,0).setDepth((HOUSE.y+HOUSE.h)*TS);
+    this.add.image(SHOP.x*TS,SHOP.y*TS-2,"shop").setOrigin(0,0).setDepth((SHOP.y+SHOP.h)*TS);
+    // 木
+    TREES.forEach(([x,y])=>this.add.image(x*TS,y*TS-TS,"tree").setOrigin(0,0).setDepth((y+1)*TS));
+    // 当たり判定（静的）
+    this.solids=this.physics.add.staticGroup();
+    for(let ty=0;ty<MAP_H;ty++)for(let tx=0;tx<MAP_W;tx++){ if(isSolidTile(tx,ty)){
+      const r=this.add.rectangle(tx*TS+TS/2,ty*TS+TS/2,TS,TS,0x000000,0); this.solids.add(r); } }
+    // プレイヤー
+    this.player=this.physics.add.sprite(8*TS+8,10*TS+14,"p_down_0").setOrigin(0.5,0.9);
+    this.player.body.setSize(8,5).setOffset(4,12);
+    this.physics.add.collider(this.player,this.solids);
+    // カメラ
+    this.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); this.cameras.main.startFollow(this.player,true,0.18,0.18);
+    this.cameras.main.setBackgroundColor("#6ea83f"); this.applyZoom();
+    this.scale.on("resize",this.applyZoom,this);
+    // ハイライト
+    this.hl=this.add.graphics().setDepth(99999);
+    // 演出用
+    this.add.particles(0,0,"spark",{emitting:false}); // 予熱
+  }
+  applyZoom(){ const h=this.scale.gameSize.height||this.cameras.main.height; const z=Math.max(1.7,h/(10.5*TS)); this.cameras.main.setZoom(z); }
+  genTextures(){ const add=(k,w,h,fn)=>{ if(this.textures.exists(k))this.textures.remove(k); this.textures.addCanvas(k,mkCanvas(w,h,fn)); };
+    add("grassA",16,16,x=>drawGroundC(x,0)); add("grassB",16,16,x=>drawGroundC(x,1)); add("path",16,16,drawPathC);
+    add("empty",16,16,drawEmptyC); add("soilDry",16,16,x=>drawSoilC(x,false)); add("soilWet",16,16,x=>drawSoilC(x,true));
+    CROP_IDS.forEach(c=>{ for(let s=0;s<3;s++) add("crop_"+c+"_"+s,16,16,x=>drawPlantC(x,c,s)); });
+    add("tree",16,32,drawTreeC); add("pond",16,16,drawPondC); add("fence",16,16,drawFenceC);
+    add("house",48,40,drawHouseC); add("shop",48,40,drawShopC);
+    ["down","up","left","right"].forEach(d=>{ for(let f=0;f<2;f++) add("p_"+d+"_"+f,16,18,x=>drawPlayerC(x,d,f)); });
+    add("spark",4,4,x=>{ x.fillStyle="#fff"; x.fillRect(0,0,4,4); });
+  }
+  buildPlots(){ this.plotLayer.removeAll(true); this.plots=[];
+    for(let i=0;i<game.tiles.length;i++){ const w=plotWorld(i);
+      const bg=this.add.image(w.tx*TS,w.ty*TS,"empty").setOrigin(0).setDepth(1);
+      const cr=this.add.image(w.tx*TS,w.ty*TS,"crop_turnip_0").setOrigin(0).setDepth((w.ty+1)*TS).setVisible(false);
+      this.plotLayer.add(bg); this.plotLayer.add(cr); this.plots.push({bg,cr}); this.updatePlot(i); } }
+  updatePlot(i){ const t=game.tiles[i], pl=this.plots[i]; if(!pl)return;
+    if(t.state==="empty"){ pl.bg.setTexture("empty"); pl.cr.setVisible(false); return; }
+    pl.bg.setTexture(t.watered?"soilWet":"soilDry");
+    if(t.state==="planted"){ const r=t.growth/CROPS[t.crop].days; const s=r<0.45?0:(r<1?1:2);
+      pl.cr.setTexture("crop_"+t.crop+"_"+s).setVisible(true); } else pl.cr.setVisible(false); }
+  refreshAllPlots(){ for(let i=0;i<this.plots.length;i++)this.updatePlot(i); }
+  fxBurst(tx,ty,colors){ const x=tx*TS+8,y=ty*TS+8;
+    const e=this.add.particles(x,y,"spark",{ speed:{min:25,max:95}, lifespan:560, scale:{start:1.3,end:0},
+      gravityY:60, quantity:10, tint:colors.map(c=>Phaser.Display.Color.HexStringToColor(c).color), emitting:false });
+    e.setDepth(99998); e.explode(11); this.time.delayedCall(700,()=>e.destroy()); }
+  fxFloat(tx,ty,text,color){ const x=tx*TS+8,y=ty*TS;
+    const t=this.add.text(x,y,text,{fontFamily:"sans-serif",fontSize:"9px",fontStyle:"bold",color:color||"#fff",stroke:"#ffffff",strokeThickness:2}).setOrigin(0.5,1).setDepth(99999);
+    this.tweens.add({targets:t,y:y-15,alpha:0,duration:1000,ease:"Cubic.out",onComplete:()=>t.destroy()}); }
+  update(time,delta){ if(!this.player)return; const dt=delta/1000;
+    let vx=(held.right?1:0)-(held.left?1:0), vy=(held.down?1:0)-(held.up?1:0);
+    const moving=!!(vx||vy); const speed=TS*4.3;
+    if(vx&&vy){ const n=Math.SQRT1_2; vx*=n; vy*=n; }
+    this.player.body.setVelocity(vx*speed,vy*speed);
+    if(vy<0)this.facing="up"; else if(vy>0)this.facing="down"; else if(vx<0)this.facing="left"; else if(vx>0)this.facing="right";
+    if(moving){ this.walkT+=dt; this.frame=Math.floor(this.walkT/0.16)%2; this.stepT=(this.stepT||0)+dt; if(this.stepT>0.28){this.stepT=0;SFX.step();} }
+    else { this.walkT=0; this.frame=0; }
+    this.player.setTexture("p_"+this.facing+"_"+this.frame); this.player.setDepth(this.player.y);
+    this.updateHighlight(); updateHUD();
+  }
+  updateHighlight(){ this.hl.clear(); const c=getContext(); if(!c)return;
+    if(c.type==="farm"){ const w=plotWorld(c.idx); this.hl.lineStyle(1.4,c.none?0xffffff:0xffe14d,c.none?0.5:1);
+      this.hl.strokeRect(w.tx*TS+1,w.ty*TS+1,TS-2,TS-2); }
+    else { const t=(c.type==="sleep")?HOUSE.trig:SHOP.trig; const bob=Math.sin(performance.now()/220)*2;
+      this.hl.fillStyle(0xffe14d,1); this.hl.fillTriangle(t.x*TS+8,t.y*TS-2+bob, t.x*TS+3,t.y*TS-9+bob, t.x*TS+13,t.y*TS-9+bob); } }
 }
-function playerTile(){ return {x:Math.floor(player.x), y:Math.floor(player.y)}; }
-function frontTile(){ const p=playerTile(); const o={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[player.dir];
-  return {x:p.x+o[0], y:p.y+o[1]}; }
 
-/* 何ができるか（アクション文脈） */
-function getContext(){
-  const p=playerTile();
-  if(p.x===HOUSE.trig.x&&p.y===HOUSE.trig.y) return {type:"sleep",ico:"🛌",label:"ねる"};
-  if(p.x===SHOP.trig.x&&p.y===SHOP.trig.y) return {type:"shop",ico:"🛒",label:"ショップ"};
-  const f=frontTile(); const idx=plotIndex(f.x,f.y);
+/* ===================== アクション文脈 ===================== */
+function playerTile(){ if(!GS||!GS.player)return {x:8,y:10}; return {x:Math.floor(GS.player.x/TS), y:Math.floor(GS.player.y/TS)}; }
+function frontTile(){ const p=playerTile(); const o={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[GS?GS.facing:"down"]; return {x:p.x+o[0],y:p.y+o[1]}; }
+function getContext(){ const p=playerTile();
+  if(p.x===HOUSE.trig.x&&p.y===HOUSE.trig.y)return {type:"sleep",ico:"🛌",label:"ねる"};
+  if(p.x===SHOP.trig.x&&p.y===SHOP.trig.y)return {type:"shop",ico:"🛒",label:"ショップ"};
+  const f=frontTile(), idx=plotIndex(f.x,f.y);
   if(idx>=0){ const t=game.tiles[idx];
-    if(t.state==="empty") return {type:"farm",idx,ico:"⛏",label:"たがやす"};
-    if(t.state==="tilled"){ ensureActiveSeed();
-      if(!activeSeed) return {type:"farm",idx,ico:"🌱",label:"種がない",none:true};
+    if(t.state==="empty")return {type:"farm",idx,ico:"⛏",label:"たがやす"};
+    if(t.state==="tilled"){ ensureActiveSeed(); if(!activeSeed)return {type:"farm",idx,ico:"🌱",label:"種がない",none:true};
       return {type:"farm",idx,ico:"🌱",label:CROPS[activeSeed].name+"を植える"}; }
-    if(t.state==="planted"){ if(t.growth>=CROPS[t.crop].days) return {type:"farm",idx,ico:"✂️",label:"収穫"};
-      if(!t.watered) return {type:"farm",idx,ico:"💧",label:"水やり"}; return {type:"farm",idx,ico:"🌿",label:"育ち中",none:true}; } }
-  return null;
-}
+    if(t.state==="planted"){ if(t.growth>=CROPS[t.crop].days)return {type:"farm",idx,ico:"✂️",label:"収穫"};
+      if(!t.watered)return {type:"farm",idx,ico:"💧",label:"水やり"}; return {type:"farm",idx,ico:"🌿",label:"育ち中",none:true}; } }
+  return null; }
 
-/* ===================== アクション ===================== */
-function doAction(){
-  const c=getContext();
-  if(!c){ toast("近づいてからボタンを押してね"); return; }
+/* ===================== アクション処理 ===================== */
+function doAction(){ const c=getContext(); if(!c){ toast("近づいてからボタンを押してね"); return; }
   if(c.type==="shop"){ SFX.buy(); openShop(); return; }
   if(c.type==="sleep"){ sleep(); return; }
-  if(c.type==="farm"){
-    const idx=c.idx, t=game.tiles[idx], w=plotWorld(idx), cc=tileClient(w.tx,w.ty);
-    if(t.state==="empty"){ if(!spend(COST.TILL)){SFX.error();return;} t.state="tilled"; SFX.till(); gainExp(2);
-      burst(cc.x,cc.y,["#9a6336","#7d4d29","#c79a5b"],7); setSpeech("土をたがやした！種をまこう🌱",1500); saveGame(); }
-    else if(t.state==="tilled"){ ensureActiveSeed();
-      if(!activeSeed){ toast("ショップ(🛒)で種を買ってね"); SFX.error(); return; }
-      plant(idx,activeSeed); }
-    else if(t.state==="planted"){
-      if(t.growth>=CROPS[t.crop].days){ if(!spend(COST.HARVEST)){SFX.error();return;} game.shipping.push(t.crop);
-        const cf=CROPS[t.crop]; Object.assign(t,newTile()); t.state="tilled"; SFX.harvest(); gainExp(4);
-        burst(cc.x,cc.y,["#ffe14d","#ff8fc0","#67b23f","#fff"],12); floatText(cc.x,cc.y-6,"+1 📦","#3a7720");
-        setSpeech(pick(LINES_HARVEST),2500); saveGame(); }
-      else if(!t.watered){ if(!spend(COST.WATER)){SFX.error();return;} t.watered=true; SFX.water(); gainExp(1);
-        burst(cc.x,cc.y,["#9fd0ff","#5cb6e8","#cdeaff"],7); saveGame(); }
-      else toast("もう水やり済み。ねむると育つよ😴"); }
-  }
-}
+  const idx=c.idx, t=game.tiles[idx], w=plotWorld(idx);
+  if(t.state==="empty"){ if(!spend(COST.TILL)){SFX.error();return;} t.state="tilled"; SFX.till(); gainExp(2);
+    GS.fxBurst(w.tx,w.ty,["#9a6336","#7d4d29","#c79a5b"]); GS.updatePlot(idx); setSpeech("土をたがやした！種をまこう🌱",1500); saveGame(); }
+  else if(t.state==="tilled"){ ensureActiveSeed(); if(!activeSeed){ toast("ショップ(🛒)で種を買ってね"); SFX.error(); return; } plant(idx,activeSeed); }
+  else if(t.state==="planted"){
+    if(t.growth>=CROPS[t.crop].days){ if(!spend(COST.HARVEST)){SFX.error();return;} game.shipping.push(t.crop);
+      Object.assign(t,newTile()); t.state="tilled"; SFX.harvest(); gainExp(4);
+      GS.fxBurst(w.tx,w.ty,["#ffe14d","#ff8fc0","#67b23f","#ffffff"]); GS.fxFloat(w.tx,w.ty,"+1 📦","#2f7d2f");
+      GS.updatePlot(idx); setSpeech(pick(LINES_HARVEST),2500); saveGame(); }
+    else if(!t.watered){ if(!spend(COST.WATER)){SFX.error();return;} t.watered=true; SFX.water(); gainExp(1);
+      GS.fxBurst(w.tx,w.ty,["#9fd0ff","#5cb6e8","#cdeaff"]); GS.updatePlot(idx); saveGame(); }
+    else toast("もう水やり済み。ねむると育つよ😴"); } }
 function plant(idx,crop){ const t=game.tiles[idx];
   if(game.seeds[crop]<=0){ toast("その種がないよ"); SFX.error(); return; }
   if(game.stamina<COST.PLANT){ toast("体力が足りない…ねよう😴"); SFX.error(); return; }
   game.stamina-=COST.PLANT; game.seeds[crop]--; gainExp(1); Object.assign(t,newTile()); t.state="planted"; t.crop=crop;
-  closeSheet(); SFX.plant(); const w=plotWorld(idx),cc=tileClient(w.tx,w.ty);
-  burst(cc.x,cc.y,["#67b23f","#8cc95e","#4d8a2c"],7); setSpeech(`${CROPS[crop].name}を植えた！水をあげよう💧`,1800);
-  ensureActiveSeed(); renderSeedBar(); saveGame(); }
-function ensureActiveSeed(){ if(activeSeed&&game.seeds[activeSeed]>0)return; activeSeed=CROP_IDS.find(c=>game.seeds[c]>0)||null; }
-function renderSeedBar(){ const bar=document.getElementById("seedbar"); const owned=CROP_IDS.filter(c=>game.seeds[c]>0);
-  if(owned.length===0){ bar.innerHTML=`<div class="seedbar-empty">🌱 種を持ってないよ。ショップ(🛒)で買おう！</div>`; return; }
-  ensureActiveSeed();
-  bar.innerHTML=owned.map(c=>`<button class="seedchip${c===activeSeed?' active':''}" data-seed="${c}">
-    <canvas width="48" height="48" data-icon="${c}"></canvas><div class="nm">${CROPS[c].name}</div><div class="cnt">×${game.seeds[c]}</div></button>`).join("");
-  bar.querySelectorAll("canvas[data-icon]").forEach(cv=>drawIcon(cv,cv.dataset.icon));
-  bar.querySelectorAll("[data-seed]").forEach(b=>b.onclick=()=>{ activeSeed=b.dataset.seed; SFX.unlock(); SFX.plant(); renderSeedBar(); }); }
+  SFX.plant(); const w=plotWorld(idx); GS.fxBurst(w.tx,w.ty,["#67b23f","#8cc95e","#4d8a2c"]); GS.updatePlot(idx);
+  setSpeech(`${CROPS[crop].name}を植えた！水をあげよう💧`,1800); ensureActiveSeed(); renderSeedBar(); saveGame(); }
 function spend(cost){ if(game.stamina<cost){ toast("体力が足りない…ねよう😴"); return false; } game.stamina-=cost; return true; }
 function expNeed(L){ return 25+(L-1)*20; }
 function gainExp(n){ game.exp+=n; let need=expNeed(game.level);
   while(game.exp>=need){ game.exp-=need; game.level++; game.maxStamina=9+game.level; game.stamina=game.maxStamina; levelUpFx(); need=expNeed(game.level); } }
-function levelUpFx(){ SFX.expand(); const c=entityClient(player.x,player.y-0.8);
-  burst(c.x,c.y,["#ffe14d","#9be84d","#ff8fc0","#fff"],16); floatText(c.x,c.y,"⭐Lv"+game.level+"！体力+1","#3fae54");
-  setSpeech(`レベル${game.level}になった！最大体力がアップ⚡✨`,2600); }
+function levelUpFx(){ SFX.expand(); const p=playerTile(); if(GS){ GS.fxBurst(p.x,p.y,["#ffe14d","#9be84d","#ff8fc0","#ffffff"]);
+  GS.fxFloat(p.x,p.y,"⭐Lv"+game.level+" 体力+1","#2f7d2f"); } setSpeech(`レベル${game.level}！最大体力アップ⚡✨`,2600); }
+function ensureActiveSeed(){ if(activeSeed&&game.seeds[activeSeed]>0)return; activeSeed=CROP_IDS.find(c=>game.seeds[c]>0)||null; }
 function buy(crop){ const cf=CROPS[crop];
   if(game.money<cf.seed){ toast("おかねが足りないよ💸"); SFX.error(); setSpeech(pick(LINES_BROKE),2200); return; }
   game.money-=cf.seed; game.seeds[crop]++; activeSeed=crop; SFX.buy(); openShop(); renderSeedBar(); toast(`${cf.name}の種を買った！`); saveGame(); }
 function buyExpansion(i){ const ex=EXPANSIONS[i];
   if(game.money<ex.cost){ toast("おかねが足りないよ💸"); SFX.error(); return; }
-  game.money-=ex.cost; game.cols=ex.cols; game.rows=ex.rows;
-  while(game.tiles.length<game.cols*game.rows)game.tiles.push(newTile());
-  SFX.expand(); openShop(); toast(`畑をひろげた！ ${ex.cols}×${ex.rows}🌾`); setSpeech("畑がひろくなった〜！✨",2000); saveGame(); }
-
+  game.money-=ex.cost; game.cols=ex.cols; game.rows=ex.rows; while(game.tiles.length<game.cols*game.rows)game.tiles.push(newTile());
+  SFX.expand(); if(GS)GS.buildPlots(); openShop(); toast(`畑をひろげた！ ${ex.cols}×${ex.rows}🌾`); setSpeech("畑がひろくなった〜！✨",2000); saveGame(); }
 function sleep(){ SFX.sleep(); let earn=0; const sold={};
   game.shipping.forEach(c=>{ earn+=CROPS[c].sell; sold[c]=(sold[c]||0)+1; }); game.shipping=[]; game.money+=earn;
   game.tiles.forEach(t=>{ if(t.state==="planted"&&t.watered)t.growth++; t.watered=false; });
-  game.day++; game.stamina=game.maxStamina; saveGame(); showMorning(earn,sold); }
+  game.day++; game.stamina=game.maxStamina; if(GS)GS.refreshAllPlots(); saveGame(); showMorning(earn,sold); }
 
-/* ===================== ショップ等のシート ===================== */
+/* ===================== シート（DOM UI） ===================== */
 const overlay=document.getElementById("overlay"), sheet=document.getElementById("sheet");
 function closeSheet(){ overlay.classList.remove("show"); }
+function drawIcon(cv,crop){ const x=cv.getContext("2d"); x.clearRect(0,0,cv.width,cv.height); x.imageSmoothingEnabled=false;
+  const a=mkCanvas(16,16,c=>{ drawSoilC(c,false); drawPlantC(c,crop,2); }); x.drawImage(a,0,0,cv.width,cv.height); }
 function openShop(){ let h=`<h2>🛒 ショップ</h2><div class="sectionTtl">🌱 たね</div>`;
   CROP_IDS.forEach(c=>{ const cf=CROPS[c],ok=game.money>=cf.seed;
-    h+=`<div class="item"><canvas width="64" height="64" data-icon="${c}"></canvas>
-      <div class="info"><div class="nm">${cf.name}</div><div class="sub">種 ${cf.seed}円 ・ ${cf.days}日 ・ 売値 ${cf.sell}円</div>
-      <div class="own">手持ち：${game.seeds[c]}こ</div></div>
+    h+=`<div class="item"><canvas width="64" height="64" data-icon="${c}"></canvas><div class="info"><div class="nm">${cf.name}</div>
+      <div class="sub">種 ${cf.seed}円 ・ ${cf.days}日 ・ 売値 ${cf.sell}円</div><div class="own">手持ち：${game.seeds[c]}こ</div></div>
       <button class="act" data-buy="${c}" ${ok?"":"disabled"}>買う</button></div>`; });
-  h+=`<div class="sectionTtl">🌾 畑をひろげる</div>`; const cur=game.cols*game.rows;
-  const next=EXPANSIONS.filter(e=>e.cols*e.rows>cur);
+  h+=`<div class="sectionTtl">🌾 畑をひろげる</div>`; const cur=game.cols*game.rows; const next=EXPANSIONS.filter(e=>e.cols*e.rows>cur);
   if(next.length===0) h+=`<div class="item"><div class="ico">🌾</div><div class="info"><div class="nm">最大サイズ！</div><div class="sub">これ以上は広げられないよ</div></div></div>`;
   else next.forEach(ex=>{ const idx=EXPANSIONS.indexOf(ex),ok=game.money>=ex.cost;
     h+=`<div class="item"><div class="ico">🌾</div><div class="info"><div class="nm">${ex.cols}×${ex.rows}（${ex.cols*ex.rows}マス）</div>
@@ -369,33 +447,37 @@ function openShop(){ let h=`<h2>🛒 ショップ</h2><div class="sectionTtl">�
   h+=`<button class="closeBtn" data-close>とじる</button><button class="resetBtn" data-reset>🗑 最初からはじめる</button>
     <div class="saveNote">💾 進行はこの端末に自動セーブされています</div>`;
   sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
-function openPlant(idx){ let h=`<h2>🌱 なにを植える？</h2>`;
-  CROP_IDS.forEach(c=>{ const cf=CROPS[c],has=game.seeds[c]>0;
-    h+=`<div class="item"><canvas width="64" height="64" data-icon="${c}"></canvas>
-      <div class="info"><div class="nm">${cf.name}</div><div class="sub">${cf.days}日で収穫 ・ 売値 ${cf.sell}円</div>
-      <div class="own">手持ち：${game.seeds[c]}こ</div></div>
-      <button class="act" data-plant="${c}" ${has?"":"disabled"}>植える</button></div>`; });
-  h+=`<button class="closeBtn" data-close>やめる</button>`; sheet.innerHTML=h; mountSheet(idx); overlay.classList.add("show"); }
-function mountSheet(plantIdx){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>drawIcon(cv,cv.dataset.icon));
+function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>drawIcon(cv,cv.dataset.icon));
   sheet.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>buy(b.dataset.buy));
   sheet.querySelectorAll("[data-expand]").forEach(b=>b.onclick=()=>buyExpansion(+b.dataset.expand));
-  sheet.querySelectorAll("[data-plant]").forEach(b=>b.onclick=()=>plant(plantIdx,b.dataset.plant));
   sheet.querySelectorAll("[data-reset]").forEach(b=>b.onclick=resetGame);
   sheet.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeSheet); }
 overlay.addEventListener("click",e=>{ if(e.target===overlay)closeSheet(); });
 
-function showMorning(earn,sold){ document.getElementById("mDay").textContent="Day "+game.day;
-  const e=document.getElementById("mEarn");
+function showMorning(earn,sold){ document.getElementById("mDay").textContent="Day "+game.day; const e=document.getElementById("mEarn");
   if(earn>0){ const parts=Object.keys(sold).map(c=>`${CROPS[c].name}×${sold[c]}`).join("・");
     e.innerHTML=`出荷できたよ！<br>${parts}<br>💰 +${earn.toLocaleString()}円`; SFX.coin();
-    setTimeout(()=>{ burst(innerWidth/2,innerHeight*0.42,["#ffd14d","#f4b740","#fff4c2"],14);
-      floatText(innerWidth/2,innerHeight*0.42,`+${earn.toLocaleString()}円`,"#d4861a"); },220);
-  } else e.textContent="今日はいい天気！";
-  document.getElementById("morning").classList.add("show"); }
-document.getElementById("mGo").onclick=()=>{ document.getElementById("morning").classList.remove("show");
-  SFX.morning(); setSpeech(pick(LINES_MORNING),2600); };
+    setTimeout(()=>{ burst(innerWidth/2,innerHeight*0.42,["#ffd14d","#f4b740","#fff4c2"],14); floatText(innerWidth/2,innerHeight*0.42,`+${earn.toLocaleString()}円`,"#d4861a"); },220);
+  } else e.textContent="今日はいい天気！"; document.getElementById("morning").classList.add("show"); }
+document.getElementById("mGo").onclick=()=>{ document.getElementById("morning").classList.remove("show"); SFX.morning(); setSpeech(pick(LINES_MORNING),2600); };
 
-/* ===================== 雑多 ===================== */
+/* ===================== HUD・種バー・トースト等 ===================== */
+function updateHUD(){ document.getElementById("dayVal").textContent=game.day;
+  document.getElementById("moneyVal").textContent=game.money.toLocaleString();
+  document.getElementById("staminaVal").textContent=game.stamina;
+  document.getElementById("staminaBar").style.width=(game.stamina/game.maxStamina*100)+"%";
+  document.getElementById("levelVal").textContent=game.level;
+  document.getElementById("expBar").style.width=Math.min(100,game.exp/expNeed(game.level)*100)+"%";
+  const c=getContext(); const btn=document.getElementById("actionBtn");
+  btn.querySelector(".ico").textContent=c?c.ico:"✋"; btn.querySelector(".lbl").textContent=c?c.label:"—";
+  btn.classList.toggle("dim",!c||!!(c&&c.none)); }
+function renderSeedBar(){ const bar=document.getElementById("seedbar"); const owned=CROP_IDS.filter(c=>game.seeds[c]>0);
+  if(owned.length===0){ bar.innerHTML=`<div class="seedbar-empty">🌱 種を持ってないよ。ショップ(🛒)で買おう！</div>`; return; }
+  ensureActiveSeed();
+  bar.innerHTML=owned.map(c=>`<button class="seedchip${c===activeSeed?' active':''}" data-seed="${c}">
+    <canvas width="48" height="48" data-icon="${c}"></canvas><div class="nm">${CROPS[c].name}</div><div class="cnt">×${game.seeds[c]}</div></button>`).join("");
+  bar.querySelectorAll("canvas[data-icon]").forEach(cv=>drawIcon(cv,cv.dataset.icon));
+  bar.querySelectorAll("[data-seed]").forEach(b=>b.onclick=()=>{ activeSeed=b.dataset.seed; SFX.unlock(); SFX.plant(); renderSeedBar(); }); }
 let toastTimer; function toast(msg){ const el=document.getElementById("toast"); el.textContent=msg; el.classList.add("show");
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),1700); }
 let speechTimer; function setSpeech(msg,ms){ const el=document.getElementById("speech"); el.textContent=msg; el.classList.add("show");
@@ -408,182 +490,30 @@ function burst(x,y,cols,n){ n=n||8; for(let k=0;k<n;k++){ const p=document.creat
   p.style.setProperty("--dy",(Math.sin(a)*d-10)+"px"); p.style.left=x+"px"; p.style.top=y+"px";
   p.style.background=cols[k%cols.length]; document.body.appendChild(p); setTimeout(()=>p.remove(),700); } }
 
-/* ===================== Canvas／描画 ===================== */
-const canvas=document.getElementById("game"), ctx=canvas.getContext("2d");
-let W=1,H=1,TILE=32,cam={x:0,y:0},dpr=Math.min(2,window.devicePixelRatio||1);
-function resize(){ const r=canvas.getBoundingClientRect(); W=Math.max(1,Math.round(r.width*dpr)); H=Math.max(1,Math.round(r.height*dpr));
-  canvas.width=W; canvas.height=H; ctx.imageSmoothingEnabled=false; }
-window.addEventListener("resize",resize);
-
-function R(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h)); }
-// 16分割ピクセル（ox,oyはタイル左上スクリーン座標, sz=タイルのスクリーンサイズ）
-function P(ox,oy,sz,x,y,w,h,c){ const u=sz/16; R(ox+x*u,oy+y*u,w*u,h*u,c); }
-
-function tileClient(tx,ty){ return entityClient(tx+0.5,ty+0.5); }
-function entityClient(wx,wy){ const r=canvas.getBoundingClientRect(); const sX=r.width/W, sY=r.height/H;
-  const sx=wx*TILE-cam.x, sy=wy*TILE-cam.y; return { x:r.left+sx*sX, y:r.top+sy*sY }; }
-
-function drawGround(ox,oy,sz,tx,ty){ const path=PATH.has(tx+","+ty);
-  if(path){ R(ox,oy,sz,sz,"#cdab74"); P(ox,oy,sz,3,4,1,1,"#bd9a63"); P(ox,oy,sz,10,9,1,1,"#bd9a63"); }
-  else { const a=((tx+ty)&1); R(ox,oy,sz,sz, a?"#7cba49":"#74b143"); P(ox,oy,sz,3,11,1,1,"#69a83c"); P(ox,oy,sz,11,4,1,1,"#86c95a"); } }
-
-function drawFarm(ox,oy,sz,t){
-  if(t.state==="empty"){ R(ox,oy,sz,sz,"#86c25a"); P(ox,oy,sz,4,5,2,1,"#79b84e"); P(ox,oy,sz,10,10,2,1,"#79b84e"); return; }
-  const base=t.watered?"#6e4326":"#9a6336", dk=t.watered?"#583320":"#7d4d29";
-  R(ox,oy,sz,sz,base); for(let y=2;y<15;y+=3)P(ox,oy,sz,1,y,14,1,dk);
-  if(t.watered){ P(ox,oy,sz,4,4,1,1,"#9fd0ff"); P(ox,oy,sz,10,8,1,1,"#9fd0ff"); P(ox,oy,sz,7,12,1,1,"#9fd0ff"); }
-  if(t.state==="planted") drawPlant(ox,oy,sz,t.crop,t.growth);
-}
-function drawPlant(ox,oy,sz,crop,growth){ const cf=CROPS[crop], r=growth/cf.days, p=(x,y,w,h,c)=>P(ox,oy,sz,x,y,w,h,c);
-  if(r<0.45){ p(7,9,2,4,cf.leaf); p(5,9,2,2,cf.leaf); p(9,9,2,2,cf.leaf); }
-  else if(r<1){ p(7,6,2,7,"#4d8a2c"); p(4,7,3,2,cf.leaf); p(9,8,3,2,cf.leaf); p(5,5,2,2,cf.leaf); p(9,5,2,2,cf.leaf); }
-  else { if(crop==="corn"){ p(7,8,2,5,"#4d8a2c"); p(6,3,4,6,cf.fruit); for(let y=4;y<8;y+=2)p(6,y,4,1,cf.fruit2); p(6,2,2,2,cf.leaf); p(9,3,2,2,cf.leaf); }
-    else if(crop==="tomato"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(5,5,3,3,cf.fruit); p(9,4,3,3,cf.fruit); p(5,5,1,1,cf.fruit2); p(9,4,1,1,cf.fruit2); }
-    else if(crop==="turnip"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(6,7,5,5,cf.fruit); p(6,11,5,1,"#d8d4c8"); p(6,6,2,2,cf.fruit2); p(8,5,2,2,cf.fruit2); }
-    else if(crop==="potato"){ p(7,6,2,4,"#4d8a2c"); p(5,6,3,2,cf.leaf); p(9,7,3,2,cf.leaf); p(4,10,4,4,cf.fruit); p(8,10,4,4,cf.fruit); p(5,10,1,1,cf.fruit2); p(9,10,1,1,cf.fruit2); }
-    else if(crop==="strawberry"){ p(5,7,6,2,cf.leaf); p(4,8,2,2,cf.leaf); p(10,8,2,2,cf.leaf); p(5,10,3,4,cf.fruit); p(9,10,3,4,cf.fruit); p(6,11,1,1,cf.fruit2); p(10,12,1,1,cf.fruit2); }
-    else if(crop==="watermelon"){ p(4,7,2,2,cf.leaf); p(5,8,7,6,cf.fruit); p(6,8,1,6,cf.fruit2); p(8,8,1,6,cf.fruit2); p(10,8,1,6,cf.fruit2); p(6,8,2,1,"#7fd98e"); } }
-}
-function drawIcon(cv,crop){ const c=cv.getContext("2d"); c.clearRect(0,0,cv.width,cv.height);
-  const sz=cv.width; const o=ctx; // 一時的に描画関数を共用するためラップ
-  // ローカル簡易描画
-  const PP=(x,y,w,h,col)=>{ c.fillStyle=col; c.fillRect(Math.round(x*sz/16),Math.round(y*sz/16),Math.ceil(w*sz/16),Math.ceil(h*sz/16)); };
-  PP(0,0,16,16,"#9a6336"); for(let y=2;y<15;y+=3)PP(1,y,14,1,"#7d4d29");
-  const cf=CROPS[crop]; const days=cf.days; // mature見た目
-  const p=PP; p(7,8,2,5,"#4d8a2c");
-  if(crop==="corn"){ p(6,3,4,6,cf.fruit); for(let y=4;y<8;y+=2)p(6,y,4,1,cf.fruit2); }
-  else if(crop==="tomato"){ p(5,5,3,3,cf.fruit); p(9,4,3,3,cf.fruit); }
-  else if(crop==="turnip"){ p(6,7,5,5,cf.fruit); p(6,6,2,2,cf.fruit2); }
-  else if(crop==="potato"){ p(4,10,4,4,cf.fruit); p(8,10,4,4,cf.fruit); }
-  else if(crop==="strawberry"){ p(5,10,3,4,cf.fruit); p(9,10,3,4,cf.fruit); }
-  else if(crop==="watermelon"){ p(5,8,7,6,cf.fruit); p(6,8,1,6,cf.fruit2); p(8,8,1,6,cf.fruit2); }
-}
-
-function drawTree(ox,oy,sz){ const p=(x,y,w,h,c)=>P(ox,oy,sz-0+0, x,y,w,h,c);
-  // 幹は足元、葉は上にはみ出す（1タイル上から描く）
-  P(ox,oy-sz,sz, 4,9,8,7,"#3f8a3a"); P(ox,oy-sz,sz, 3,11,10,4,"#4f9e44"); P(ox,oy-sz,sz, 5,8,6,3,"#5cb350");
-  P(ox,oy-sz,sz, 6,7,3,2,"#6cc25c");
-  P(ox,oy,sz, 7,0,2,6,"#7a5230"); P(ox,oy,sz, 7,0,1,6,"#8a6038"); }
-function drawPond(ox,oy,sz){ R(ox,oy,sz,sz,"#3f9ad6"); P(ox,oy,sz,1,1,14,3,"#56b0e6"); P(ox,oy,sz,3,5,2,1,"#bfe6ff"); P(ox,oy,sz,9,9,3,1,"#bfe6ff"); }
-function drawFence(ox,oy,sz){ R(ox,oy,sz,sz,"#5a8a3c"); P(ox,oy,sz,3,3,3,10,"#8a6038"); P(ox,oy,sz,10,3,3,10,"#8a6038");
-  P(ox,oy,sz,0,5,16,2,"#9a6f40"); P(ox,oy,sz,3,3,3,2,"#a87c4a"); P(ox,oy,sz,10,3,3,2,"#a87c4a"); }
-function drawHouse(ox,oy,w,h){ const sz=TILE; const pw=w*sz, ph=h*sz;
-  R(ox,oy+ph*0.45,pw,ph*0.55,"#f2e3c0"); R(ox,oy+ph*0.45,pw,ph*0.1,"#e0cda0");
-  // 屋根
-  R(ox-6,oy-ph*0.18,pw+12,ph*0.42,"#c84a3f"); R(ox-6,oy-ph*0.18,pw+12,6,"#e06b5f");
-  // ドア
-  R(ox+pw*0.40,oy+ph*0.62,pw*0.2,ph*0.38,"#7a5230"); R(ox+pw*0.40,oy+ph*0.62,pw*0.2,4,"#9a6f40");
-  // 窓
-  R(ox+pw*0.13,oy+ph*0.58,pw*0.16,ph*0.2,"#bfe6ff"); R(ox+pw*0.71,oy+ph*0.58,pw*0.16,ph*0.2,"#bfe6ff"); }
-function drawShop(ox,oy,w,h){ const sz=TILE; const pw=w*sz, ph=h*sz;
-  R(ox,oy+ph*0.45,pw,ph*0.55,"#fff2e0"); R(ox-6,oy-ph*0.18,pw+12,ph*0.42,"#3a8fce"); R(ox-6,oy-ph*0.18,pw+12,6,"#5cb6e8");
-  R(ox+pw*0.40,oy+ph*0.62,pw*0.2,ph*0.38,"#7a5230");
-  // ストライプ日よけ
-  for(let i=0;i<w*2;i++){ R(ox+i*(pw/(w*2)),oy+ph*0.40,pw/(w*2),ph*0.12, i%2?"#ff6f8a":"#ffffff"); }
-  // 看板マーク
-  ctx.font=Math.round(ph*0.22)+"px serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText("🛒",ox+pw*0.5,oy+ph*0.20); }
-
-/* プレイヤー（ツインテール牧場主・4方向＋歩行） */
-function drawPlayer(cx,cy){ const sz=TILE, u=sz/16; const dir=player.dir; const fr=player.frame;
-  const bob=(player.moving&&fr===1)?-1*u:0;
-  const left=cx-8*u, top=cy-15*u+bob;
-  const mirror=(dir==="right");
-  const p=(x,y,w,h,c)=>{ if(mirror)x=16-x-w; R(left+x*u,top+y*u,w*u,h*u,c); };
-  const HAIR="#ff8fc0",HAIR_D="#e96fa6",SKIN="#ffe1c6",EYE="#9a5fd6",WHT="#fff",MOUTH="#d4607f",BLUSH="#ff9ecb",DRESS="#2b2b35",FRILL="#ff8fc0";
-  // 影
-  ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(cx,cy+1*u,6*u,2.4*u,0,0,7); ctx.fill();
-  // 足（歩行で前後）
-  const lA=(player.moving)?(fr?15:16):15, lB=(player.moving)?(fr?16:15):15;
-  p(6,lA,2,3,SKIN); p(9,lB,2,3,SKIN);
-  if(dir==="down"||dir==="up"){
-    // ツインテール
-    p(1,4,3,8,HAIR); p(1,4,1,8,HAIR_D); p(12,4,3,8,HAIR); p(14,4,1,8,HAIR_D);
-    // 体
-    p(4,10,8,5,DRESS); p(4,10,8,1,WHT); p(4,14,8,1,FRILL); p(3,11,1,3,SKIN); p(12,11,1,3,SKIN);
-    // 頭
-    p(4,2,8,5,HAIR); p(4,2,8,1,"#ffc4dd");
-    if(dir==="down"){ p(5,5,6,4,SKIN); p(4,4,8,2,HAIR); p(6,6,1,2,EYE); p(9,6,1,2,EYE); p(6,6,1,1,WHT); p(9,6,1,1,WHT);
-      p(5,8,1,1,BLUSH); p(10,8,1,1,BLUSH); p(7,8,2,1,MOUTH); }
-    else { p(5,5,6,4,HAIR); p(6,3,4,2,FRILL); } // 後ろ姿（リボン）
-  } else { // 横向き（leftベース、rightはmirror）
-    p(10,4,3,7,HAIR); p(12,4,1,7,HAIR_D);          // 後ろ髪
-    p(4,10,7,5,DRESS); p(4,10,7,1,WHT); p(4,14,7,1,FRILL); p(5,11,1,3,SKIN);
-    p(4,2,7,5,HAIR); p(4,2,7,1,"#ffc4dd");
-    p(5,5,4,4,SKIN); p(4,4,5,2,HAIR);
-    p(6,6,1,2,EYE); p(6,6,1,1,WHT); p(5,8,1,1,BLUSH); p(6,8,2,1,MOUTH);
-  }
-}
-
-/* ハイライト（操作対象タイル） */
-function drawHighlight(){ const c=getContext(); if(!c)return;
-  if(c.type==="farm"){ const w=plotWorld(c.idx); const ox=w.tx*TILE-cam.x, oy=w.ty*TILE-cam.y;
-    ctx.strokeStyle=c.none?"rgba(255,255,255,.5)":"#ffe14d"; ctx.lineWidth=Math.max(2,TILE*0.06);
-    ctx.strokeRect(ox+ctx.lineWidth/2,oy+ctx.lineWidth/2,TILE-ctx.lineWidth,TILE-ctx.lineWidth); }
-  else { const trig=(c.type==="sleep")?HOUSE.trig:SHOP.trig; const ox=trig.x*TILE-cam.x, oy=trig.y*TILE-cam.y;
-    ctx.font=Math.round(TILE*0.7)+"px serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
-    const bobY=Math.sin(performance.now()/220)*TILE*0.08; ctx.fillText("⬆️",ox+TILE/2,oy+TILE*0.1+bobY); } }
-
-function render(){
-  ctx.clearRect(0,0,W,H); R(0,0,W,H,"#6ea83f");
-  TILE=Math.max(28*dpr, Math.floor(H/9));
-  cam.x=player.x*TILE-W/2; cam.y=player.y*TILE-H/2;
-  cam.x=Math.max(0,Math.min(cam.x,MAP_W*TILE-W)); cam.y=Math.max(0,Math.min(cam.y,MAP_H*TILE-H));
-  if(MAP_W*TILE<W)cam.x=(MAP_W*TILE-W)/2; if(MAP_H*TILE<H)cam.y=(MAP_H*TILE-H)/2;
-  const x0=Math.max(0,Math.floor(cam.x/TILE)), x1=Math.min(MAP_W-1,Math.floor((cam.x+W)/TILE));
-  const y0=Math.max(0,Math.floor(cam.y/TILE)), y1=Math.min(MAP_H-1,Math.floor((cam.y+H)/TILE));
-  // 地面
-  for(let ty=y0;ty<=y1;ty++)for(let tx=x0;tx<=x1;tx++){ const ox=tx*TILE-cam.x, oy=ty*TILE-cam.y;
-    const idx=plotIndex(tx,ty); if(idx>=0) drawFarm(ox,oy,TILE,game.tiles[idx]); else drawGround(ox,oy,TILE,tx,ty); }
-  // ハイライト（地面の上）
-  drawHighlight();
-  // 建物・水・柵・木（オブジェクト）
-  drawHouse(HOUSE.x*TILE-cam.x, HOUSE.y*TILE-cam.y, HOUSE.w, HOUSE.h);
-  drawShop(SHOP.x*TILE-cam.x, SHOP.y*TILE-cam.y, SHOP.w, SHOP.h);
-  POND.forEach(([x,y])=>drawPond(x*TILE-cam.x,y*TILE-cam.y,TILE));
-  // 柵（外周）
-  for(let tx=x0;tx<=x1;tx++){ drawFence(tx*TILE-cam.x,0*TILE-cam.y,TILE); drawFence(tx*TILE-cam.x,(MAP_H-1)*TILE-cam.y,TILE); }
-  for(let ty=y0;ty<=y1;ty++){ drawFence(0*TILE-cam.x,ty*TILE-cam.y,TILE); drawFence((MAP_W-1)*TILE-cam.x,ty*TILE-cam.y,TILE); }
-  // 木（プレイヤーより南なら後で描く簡易対応）
-  const feet=player.y;
-  TREES.filter(([x,y])=>y<=feet).forEach(([x,y])=>drawTree(x*TILE-cam.x,y*TILE-cam.y,TILE));
-  drawPlayer(player.x*TILE-cam.x, player.y*TILE-cam.y);
-  TREES.filter(([x,y])=>y>feet).forEach(([x,y])=>drawTree(x*TILE-cam.x,y*TILE-cam.y,TILE));
-}
-
-/* ===================== HUD ===================== */
-function updateHUD(){ document.getElementById("dayVal").textContent=game.day;
-  document.getElementById("moneyVal").textContent=game.money.toLocaleString();
-  document.getElementById("staminaVal").textContent=game.stamina;
-  document.getElementById("staminaBar").style.width=(game.stamina/game.maxStamina*100)+"%";
-  document.getElementById("levelVal").textContent=game.level;
-  document.getElementById("expBar").style.width=Math.min(100,game.exp/expNeed(game.level)*100)+"%";
-  const c=getContext(); const btn=document.getElementById("actionBtn");
-  btn.querySelector(".ico").textContent=c?c.ico:"✋"; btn.querySelector(".lbl").textContent=c?c.label:"—";
-  btn.classList.toggle("dim",!c||!!(c&&c.none)); }
-
 /* ===================== 入力 ===================== */
 function bindDir(id,dir){ const b=document.getElementById(id);
   const on=e=>{ e.preventDefault(); held[dir]=true; b.classList.add("on"); SFX.unlock(); };
   const off=e=>{ if(e)e.preventDefault(); held[dir]=false; b.classList.remove("on"); };
-  b.addEventListener("pointerdown",on); b.addEventListener("pointerup",off);
-  b.addEventListener("pointerleave",off); b.addEventListener("pointercancel",off); }
+  b.addEventListener("pointerdown",on); b.addEventListener("pointerup",off); b.addEventListener("pointerleave",off); b.addEventListener("pointercancel",off); }
 bindDir("bUp","up"); bindDir("bDown","down"); bindDir("bLeft","left"); bindDir("bRight","right");
 document.getElementById("actionBtn").addEventListener("click",e=>{ e.preventDefault(); doAction(); });
 document.getElementById("muteBtn").onclick=()=>{ SFX.unlock(); SFX.setMuted(!SFX.isMuted());
   document.getElementById("muteBtn").textContent=SFX.isMuted()?"🔇":"🔊"; if(!SFX.isMuted())SFX.coin(); };
 document.getElementById("muteBtn").textContent=SFX.isMuted()?"🔇":"🔊";
-// キーボード（PC確認用）
 const KM={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",w:"up",s:"down",a:"left",d:"right"};
-addEventListener("keydown",e=>{ if(KM[e.key]){held[KM[e.key]]=true;} if(e.key===" "||e.key==="Enter")doAction(); });
+addEventListener("keydown",e=>{ if(KM[e.key])held[KM[e.key]]=true; if(e.key===" "||e.key==="Enter")doAction(); });
 addEventListener("keyup",e=>{ if(KM[e.key])held[KM[e.key]]=false; });
 
-/* ===================== ループ ===================== */
-resize();
-let last=performance.now();
-function loop(now){ const dt=Math.min(0.05,(now-last)/1000); last=now; update(dt); render(); updateHUD(); requestAnimationFrame(loop); }
-requestAnimationFrame(loop);
-renderSeedBar();
-setSpeech("わたしの牧場へようこそ🎀 十字キーで歩いて、畑に行ってみて！",4000);
+/* ===================== 起動 ===================== */
+function boot(){
+  if(!window.Phaser){ document.getElementById("loadMsg").textContent="ゲームエンジン(Phaser)の読み込みに失敗しました。ネット接続を確認して再読み込みしてね🙏"; return; }
+  new Phaser.Game({ type:Phaser.AUTO, parent:"stage", pixelArt:true, roundPixels:true, backgroundColor:"#6ea83f",
+    physics:{ default:"arcade", arcade:{ debug:false } },
+    scale:{ mode:Phaser.Scale.RESIZE, parent:"stage" }, scene:[Farm] });
+  renderSeedBar(); updateHUD();
+  setSpeech("わたしの牧場へようこそ🎀 十字キーで歩いて、畑に行ってみて！",4200);
+}
+window.addEventListener("load",boot);
 </script>
 </body>
 </html>
