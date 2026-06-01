@@ -229,6 +229,18 @@ const HOSTS=[
 const HOSTById=Object.fromEntries(HOSTS.map(h=>[h.id,h]));
 const DOUHAN_FEE=3000;
 const DOUHAN_LOCS=[{e:"☕",n:"レトロ喫茶"},{e:"🐠",n:"水族館"},{e:"🌃",n:"夜景ドライブ"},{e:"🍜",n:"〆のラーメン"},{e:"🎡",n:"観覧車"}];
+const CONFESS_LOVE=100;                          // 恋ごころがこの値で告白できる
+const LOVE_GIFT={drink:1,champ:4,tower:10};      // 貢ぎで上がる恋ごころ
+const LOVE_DATE=18;                              // 同伴で上がる恋ごころ
+const HOST_CONFESS={
+  leo:{intro:"…今日はお店じゃなくて、一人の自分として君に会いたかったんだ。ずっと、君は特別だった。",
+    yes:"これからは“お客様”じゃなくて、俺の恋人になって。…離さないよ。一生、大事にする♡"},
+  shun:{intro:"…っ、こういうの柄じゃねぇけど、ちゃんと言う。聞けよ。",
+    yes:"好きだ、お前のことが。恋人になれ。返事は聞かない、もう決まりな。…照れさせんなよ"},
+  kai:{intro:"なぁ姫、いつものノリじゃなくてさ…ちょっとマジな話、していい？",
+    yes:"君のこと、本気で好きになっちゃった。恋人になってよ！一生楽しませるって約束する🎉❤️"},
+};
+const LOVER_LINES=["おはよ、俺の彼女♡","今日も君が世界一かわいい","早く仕事おわらせて会いに来てよ？","ずっと一緒だよ、姫❤️","君といる毎日が幸せだ"];
 // 動物のおとしもの＆加工品（倉庫アイテム）
 const PRODUCTS={
   egg:{name:"たまご",emoji:"🥚",sell:EGG_SELL},
@@ -257,7 +269,7 @@ function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
 function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,exp:0,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], drops:[],
   storage:{}, feed:0, cooking:[], fairy:{appeared:false,greeted:false,affection:0},
-  hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0}])) }; }
+  hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false}])) }; }
 let game=loadGame()||freshGame();
 let activeSeed=null;
 let curHost=null;
@@ -273,9 +285,10 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   if(!g.storage||typeof g.storage!=="object")g.storage={}; if(g.feed==null)g.feed=0; if(!Array.isArray(g.cooking))g.cooking=[];
   if(!g.fairy)g.fairy={appeared:false,greeted:false,affection:0};
   if(!g.hosts)g.hosts={};
-  HOSTS.forEach(h=>{ if(!g.hosts[h.id])g.hosts[h.id]={spent:0,lineDay:0,line:"",dates:0,dateDay:0};
-    else { const s=g.hosts[h.id]; if(s.dates==null)s.dates=0; if(s.dateDay==null)s.dateDay=0; } });
+  HOSTS.forEach(h=>{ if(!g.hosts[h.id])g.hosts[h.id]={spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false};
+    else { const s=g.hosts[h.id]; if(s.dates==null)s.dates=0; if(s.dateDay==null)s.dateDay=0; if(s.love==null)s.love=0; if(s.lover==null)s.lover=false; } });
   if(g.host){ const l=g.hosts.leo; l.spent=g.host.spent||0; l.line=g.host.line||""; l.lineDay=g.host.lineDay||0; delete g.host; }
+  const lc=HOSTS.filter(h=>g.hosts[h.id].lover).length; g.maxStamina=14+g.level+lc*2; if(g.stamina>g.maxStamina)g.stamina=g.maxStamina;
   return g; }catch(e){ return null; } }
 function resetGame(){ if(!confirm("本当に最初からはじめる？\nいまの畑・おかね・進行はすべて消えます。"))return;
   localStorage.removeItem(SAVE_KEY); game=freshGame(); activeSeed=null; closeSheet(); renderSeedBar();
@@ -614,8 +627,10 @@ function plant(idx,crop){ const t=game.tiles[idx];
   setSpeech(`${CROPS[crop].name}を植えた！水をあげよう💧`,1800); ensureActiveSeed(); renderSeedBar(); saveGame(); }
 function spend(cost){ if(game.stamina<cost){ toast("体力が足りない…ねよう😴"); return false; } game.stamina-=cost; return true; }
 function expNeed(L){ return 25+(L-1)*20; }
+function loverCount(){ let n=0; for(const h of HOSTS)if(game.hosts[h.id]&&game.hosts[h.id].lover)n++; return n; }
+function staminaCap(){ return 14+game.level+loverCount()*2; }   // 恋人ひとりにつき最大たいりょく+2
 function gainExp(n){ game.exp+=n; let need=expNeed(game.level);
-  while(game.exp>=need){ game.exp-=need; game.level++; game.maxStamina=14+game.level; game.stamina=game.maxStamina; levelUpFx(); need=expNeed(game.level); } }
+  while(game.exp>=need){ game.exp-=need; game.level++; game.maxStamina=staminaCap(); game.stamina=game.maxStamina; levelUpFx(); need=expNeed(game.level); } }
 function levelUpFx(){ SFX.expand(); const p=playerTile(); if(GS){ GS.fxBurst(p.x,p.y,["#ffe14d","#9be84d","#ff8fc0","#ffffff"]);
   GS.fxFloat(p.x,p.y,"⭐Lv"+game.level+" 体力+1","#2f7d2f"); } setSpeech(`レベル${game.level}！最大体力アップ⚡✨`,2600); }
 function ensureActiveSeed(){ if(activeSeed&&game.seeds[activeSeed]>0)return; activeSeed=CROP_IDS.find(c=>game.seeds[c]>0)||null; }
@@ -721,23 +736,28 @@ function openHostClub(){ curHost=null;
     h+=`<div class="item" data-hostpick="${ho.id}" style="cursor:pointer">
       <canvas width="56" height="56" data-host="${ho.id}" style="image-rendering:pixelated;border-radius:10px;background:#2a1d38;flex:none"></canvas>
       <div class="info"><div class="nm">${ho.name} <span style="color:#9a8aa6;font-size:12px">${ho.title}</span></div>
-      <div class="sub">${rank.emoji}${rank.name}・貢ぎ ${st.spent.toLocaleString()}円${st.dates?`・同伴${st.dates}回`:""}</div></div>
+      <div class="sub">${st.lover?'<span style="color:#e0559a">❤️恋人</span>':`${rank.emoji}${rank.name}`}・貢ぎ ${st.spent.toLocaleString()}円${st.dates?`・同伴${st.dates}回`:""}</div></div>
       <button class="act" data-hostpick="${ho.id}">会う</button></div>`; });
   h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
 function openHostDetail(id){ curHost=id; const ho=HOSTById[id], st=game.hosts[id];
-  if(st.lineDay!==game.day){ st.line=pick(ho.lines); st.lineDay=game.day; saveGame(); }
+  const pool = st.lover?LOVER_LINES:ho.lines;
+  if(st.lineDay!==game.day){ st.line=pick(pool); st.lineDay=game.day; saveGame(); }
   const rank=hostRank(st.spent), idx=HOST_RANKS.indexOf(rank), next=HOST_RANKS[idx+1];
   const prog = next ? `次の「${next.name}」まで あと ${(next.min-st.spent).toLocaleString()}円💸` : "最高ランク「姫」達成！👑✨";
-  const canDate = idx>=1, doneDate = st.dateDay===game.day;
+  const canDate = idx>=1, doneDate = st.dateDay===game.day, hearts=Math.round(st.love/20);
   let h=`<h2>🍾 ${ho.name}</h2>`;
   h+=`<div class="item"><canvas width="72" height="72" data-host="${id}" style="image-rendering:pixelated;border-radius:12px;background:#2a1d38;flex:none"></canvas>
-    <div class="info"><div class="nm">${ho.name} <span style="color:#ff5fa2">${rank.emoji}${rank.name}</span></div>
-    <div class="sub">「${st.line||ho.lines[0]}」</div><div class="own">貢ぎ ${st.spent.toLocaleString()}円 ・ 同伴 ${st.dates}回</div></div></div>`;
+    <div class="info"><div class="nm">${ho.name} ${st.lover?'<span style="color:#e0559a">❤️恋人</span>':`<span style="color:#ff5fa2">${rank.emoji}${rank.name}</span>`}</div>
+    <div class="sub">「${st.line||pool[0]}」</div>
+    <div class="own">${"❤️".repeat(hearts)}${"🤍".repeat(5-hearts)} 恋ごころ ${st.love}/100 ・ 同伴 ${st.dates}回</div></div></div>`;
+  if(st.lover) h+=`<div class="saveNote" style="background:#ffd9ec;color:#b03a72">❤️ ${ho.name}と恋人です。ずっと一緒だよ♡</div>`;
+  else if(st.love>=CONFESS_LOVE) h+=`<button class="act" data-confess style="width:calc(100% - 8px);margin:8px 4px;background:linear-gradient(180deg,#ff8fc0,#e0559a);color:#fff;box-shadow:0 3px 0 #b03a72;border:none">💗 告白する</button>`;
+  else h+=`<div class="saveNote">恋ごころを100にすると告白できる💗（同伴や貢ぎで上がるよ）</div>`;
   h+=`<div class="saveNote">${prog}</div>`;
-  h+=`<div class="sectionTtl">💞 同伴デート</div>`;
+  h+=`<div class="sectionTtl">💞 ${st.lover?"デート":"同伴デート"}</div>`;
   if(!canDate) h+=`<div class="saveNote">「担当」になると同伴に誘えるよ（貢ぎ ¥3,000で担当💕）</div>`;
-  else h+=`<div class="item"><div class="ico">💞</div><div class="info"><div class="nm">同伴デート</div>
-    <div class="sub">${DOUHAN_FEE.toLocaleString()}円・1日1回・たいりょく全回復⚡</div></div>
+  else h+=`<div class="item"><div class="ico">💞</div><div class="info"><div class="nm">${st.lover?"デート":"同伴デート"}</div>
+    <div class="sub">${DOUHAN_FEE.toLocaleString()}円・1日1回・たいりょく全回復⚡・恋ごころ+${LOVE_DATE}</div></div>
     <button class="act" data-douhan ${(doneDate||game.money<DOUHAN_FEE)?"disabled":""}>${doneDate?"また明日♡":"さそう"}</button></div>`;
   h+=`<div class="sectionTtl">🥂 貢ぐ</div>`;
   HOST_GIFTS.forEach(g=>{ const ok=game.money>=g.cost;
@@ -748,10 +768,12 @@ function openHostDetail(id){ curHost=id; const ho=HOSTById[id], st=game.hosts[id
 function hostGift(key){ const g=HOST_GIFTS.find(x=>x.key===key), id=curHost, ho=HOSTById[id]; if(!g||!ho)return; const st=game.hosts[id];
   if(game.money<g.cost){ toast("おかねが足りないよ💸"); SFX.error(); setSpeech("お金ためてからまた来てね？♡",2200); return; }
   const before=hostRank(st.spent); game.money-=g.cost; st.spent+=g.cost; SFX.coin();
+  const wasLove=st.love; st.love=Math.min(100, st.love+(LOVE_GIFT[key]||0));
   const after=hostRank(st.spent), p=playerTile();
   if(GS){ GS.fxBurst(p.x,p.y,["#ff5fa2","#ffd84d","#5fd8ff","#ffffff"]); GS.fxFloat(p.x,p.y,"-"+g.cost.toLocaleString()+"円","#ff5fa2"); }
   if(after!==before){ SFX.expand(); if(GS)GS.fxBurst(p.x,p.y,["#ffd84d","#ff5fa2","#ffffff","#5fd8ff"]);
     setSpeech(`${after.emoji} ${ho.name}のランクアップ！「${after.name}」🎉`,3200); }
+  else if(wasLove<CONFESS_LOVE && st.love>=CONFESS_LOVE && !st.lover) setSpeech(`💗 恋ごころが満タン！${ho.name}に告白できるよ！`,3200);
   else setSpeech(pick(ho.react[key]),2400);
   openHostDetail(id); saveGame(); }
 function douhanScene(title,body,buttons){
@@ -772,12 +794,27 @@ function douhanChoice(loc){ const ho=HOSTById[curHost];
 function douhanEnd(loc,choice){ const id=curHost, ho=HOSTById[id], st=game.hosts[id];
   const before=hostRank(st.spent); game.money-=DOUHAN_FEE; st.spent+=DOUHAN_FEE; st.dates++; st.dateDay=game.day;
   game.stamina=game.maxStamina; SFX.coin();
+  const wasLove=st.love; st.love=Math.min(100, st.love+LOVE_DATE);
   const after=hostRank(st.spent), line=choice==="A"?pick(ho.dateA):pick(ho.dateB);
-  let body=`${ho.name}「${line}」<br><br>💞 同伴したよ（${st.dates}回目）<br>⚡ 元気いっぱい！たいりょく全回復`;
+  let body=`${ho.name}「${line}」<br><br>💞 同伴したよ（${st.dates}回目）<br>❤️ 恋ごころ +${LOVE_DATE}（${st.love}/100）<br>⚡ 元気いっぱい！たいりょく全回復`;
   if(after!==before)body+=`<br>🎉 ランクアップ！「${after.name}」${after.emoji}`;
+  if(wasLove<CONFESS_LOVE && st.love>=CONFESS_LOVE && !st.lover)body+=`<br><br>💗 恋ごころが満タン！<b>告白できるよ！</b>`;
   if(GS){ const p=playerTile(); GS.fxBurst(p.x,p.y,["#ff5fa2","#ffd84d","#5fd8ff","#ffffff"]); }
   setSpeech(pick(["最高の同伴だった…♡","また頑張って稼ご！💪✨"]),2600); saveGame();
   douhanScene("💞 おもいで", body, [{label:"クラブにもどる🍾",on:()=>openHostDetail(id)}]); }
+function startConfess(){ const id=curHost, ho=HOSTById[id], st=game.hosts[id]; if(!ho)return;
+  if(st.lover){ toast("もう恋人だよ♡"); return; }
+  if(st.love<CONFESS_LOVE){ toast("まだ気持ちが届いてないみたい…"); return; }
+  const c=HOST_CONFESS[id]; SFX.buy();
+  douhanScene("💗 告白", `しずかな夜。お店じゃなくて、二人きり…<br><br>${ho.name}「${c.intro}」`,
+    [{label:"わたしも…ずっと好きでした💗",on:()=>confessYes(id,ho,c)}]); }
+function confessYes(id,ho,c){ const st=game.hosts[id]; st.lover=true; st.love=100;
+  game.maxStamina=staminaCap(); game.stamina=game.maxStamina; SFX.expand();
+  if(GS){ const p=playerTile(); GS.fxBurst(p.x,p.y,["#ff5fa2","#ffd84d","#ffffff","#ff8fd0"]); GS.fxFloat(p.x,p.y,"❤️ 恋人になった！","#e0559a"); }
+  burst(innerWidth/2,innerHeight*0.4,["#ff5fa2","#ffd84d","#ffffff","#5fd8ff"],26);
+  setSpeech("やった……ちゃんと恋人になれた…！🥹❤️",3800); saveGame();
+  douhanScene("🎉 ゴール達成！💗", `${ho.name}「${c.yes}」<br><br>❤️❤️❤️<br><b>${ho.name}と恋人になった！</b><br>（両想いパワーで最大たいりょく+2⚡）`,
+    [{label:"しあわせ…♡",on:()=>openHostDetail(id)}]); }
 function openFairy(){ const a=game.fairy.affection, hearts=Math.round(a/20), r=a/100;
   let status; if(r<0.25)status="気まぐれ。たま〜にお水あげる程度…💤"; else if(r<0.6)status="ちょっと手伝ってくれる🌱";
   else if(r<1)status="けっこう頼れる！💧"; else status="毎朝ぜんぶ水やり！最高のパートナー✨";
@@ -808,6 +845,7 @@ function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>d
   sheet.querySelectorAll("[data-hostpick]").forEach(b=>b.onclick=()=>openHostDetail(b.dataset.hostpick));
   sheet.querySelectorAll("[data-back]").forEach(b=>b.onclick=openHostClub);
   sheet.querySelectorAll("[data-douhan]").forEach(b=>b.onclick=startDouhan);
+  sheet.querySelectorAll("[data-confess]").forEach(b=>b.onclick=startConfess);
   sheet.querySelectorAll("[data-hostgift]").forEach(b=>b.onclick=()=>hostGift(b.dataset.hostgift));
   sheet.querySelectorAll("[data-gift]").forEach(b=>b.onclick=()=>giveGift(b.dataset.gift));
   sheet.querySelectorAll("[data-expand]").forEach(b=>b.onclick=()=>buyExpansion(+b.dataset.expand));
