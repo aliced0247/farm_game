@@ -215,7 +215,7 @@ const HOSTS=[
     react:{drink:["かんぱ〜い🥃 ありがと姫♡","その一杯、効くわ〜✨"],champ:["シャンパンいただきます🍾✨","君がナンバーワンだよ"],tower:["タワーきたーー🗼✨ 君は伝説だ！","一生ついていくよ、姫♡"]},
     date:["やっと二人きりだね","今日は時間を気にしないで楽しもう？"],
     dateA:["…そんなにくっついて、離さないよ？","あったかいね。ずっとこうしてたいな"],dateB:["いい笑顔。保存版にするね📸","君との写真、待受にしていい？"]},
-  {id:"shun",name:"シュン",title:"ツンデレ系",col:{hair:"#1f2d3a",hairH:"#33485c",suit:"#0e1620",tie:"#5fd8ff"},
+  {id:"shun",name:"アオイ",title:"ツンデレ系",col:{hair:"#1f2d3a",hairH:"#33485c",suit:"#0e1620",tie:"#5fd8ff"},
     lines:["…来たんだ。べつに待ってないけど","ふん、今日も顔見れて…まあいいや","稼いでるらしいな。…えらいじゃん","早く座れよ。…となり、空けといた"],
     react:{drink:["…悪くないチョイスだ","ありがと、とか言わないからな"],champ:["っ…シャンパンって柄かよ、お前","…ちょっとは見直した"],tower:["タワー!? …バカ、無理すんな。…うれしいけど","お前みたいなの、初めてだよ…"]},
     date:["…二人で出かけるとか柄じゃねぇけど","今日だけ特別な。勘違いすんなよ"],
@@ -259,6 +259,13 @@ const RECIPES=[
   {key:"pudding",out:"pudding",emoji:"🍮", name:"プリン", need:{egg:1,milk:1}},
   {key:"cake",   out:"cake",   emoji:"🎂", name:"ケーキ", need:{egg:2,milk:1}},
 ];
+// おうち料理（倉庫の材料→食べてたいりょく回復）
+const MEALS=[
+  {key:"sand",name:"たまごサンド",emoji:"🥪",need:{egg:1},sta:6},
+  {key:"pancake",name:"パンケーキ",emoji:"🥞",need:{egg:1,milk:1},sta:12},
+  {key:"omelet2",name:"チーズオムレツ",emoji:"🍳",need:{egg:2,cheese:1},sta:18},
+  {key:"cakeplate",name:"ごほうびケーキ",emoji:"🍰",need:{cake:1},sta:25},
+];
 function prodInfo(id){ if(CROPS[id])return {name:CROPS[id].name,sell:CROPS[id].sell};
   if(PRODUCTS[id])return {name:PRODUCTS[id].name,sell:PRODUCTS[id].sell}; return {name:id,sell:0}; }
 const LINES_MORNING=["おはよ〜！今日もキラキラいくよ🎀","ふぁ〜あ…よく寝た♪ さ、かせぐわよ💖","今日もせっせと働いて、夜は推しに会いに行くの✨"];
@@ -292,7 +299,8 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   return g; }catch(e){ return null; } }
 function resetGame(){ if(!confirm("本当に最初からはじめる？\nいまの畑・おかね・進行はすべて消えます。"))return;
   localStorage.removeItem(SAVE_KEY); game=freshGame(); activeSeed=null; closeSheet(); renderSeedBar();
-  if(GS){ GS.player.setPosition(8*16+8,10*16+14); GS.facing="down"; GS.buildPlots(); GS.buildAnimals(); GS.buildFairy(); }
+  if(GS){ GS.indoor=false; GS.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); GS.cameras.main.setBackgroundColor("#6ea83f");
+    GS.player.setPosition(8*16+8,10*16+14); GS.facing="down"; GS.buildPlots(); GS.buildAnimals(); GS.buildFairy(); }
   setSpeech("よ〜し、心機一転！またイチからがんばろ🎀"); }
 
 /* ===================== マップ定義 ===================== */
@@ -302,6 +310,11 @@ const SHOP ={x:13,y:2,w:3,h:2,trig:{x:14,y:4}};
 const ANIMAL_SHOP={x:13,y:10,w:3,h:2,trig:{x:14,y:9}};
 const KITCHEN={x:7,y:2,w:3,h:2,trig:{x:8,y:4}};      // 加工小屋
 const HOST_CLUB={x:10,y:2,w:3,h:2,trig:{x:11,y:4}};  // ホストクラブ（夜の街への入口）
+// 自宅の中（マップ外の領域に部屋を作って、入ったらカメラをそこへ移す）
+const ROOM={x0:20,y0:2,w:9,h:8};
+const HOME_DOOR={x:ROOM.x0+4,y:ROOM.y0+ROOM.h-1};
+const HOME_BED=[[ROOM.x0+1,ROOM.y0+1],[ROOM.x0+2,ROOM.y0+1]];
+const HOME_STOVE=[[ROOM.x0+ROOM.w-3,ROOM.y0+1],[ROOM.x0+ROOM.w-2,ROOM.y0+1]];
 const PASTURE={x0:12,y0:6,x1:16,y1:8};               // ニワトリの放牧エリア（タイル範囲）
 function inPasture(tx,ty){ return tx>=PASTURE.x0&&tx<=PASTURE.x1&&ty>=PASTURE.y0&&ty<=PASTURE.y1; }
 const POND=[[2,9],[3,9],[2,10],[3,10]];
@@ -416,6 +429,15 @@ function drawHostC(x,col){ col=col||{hair:"#3a2a40",hairH:"#5a4660",suit:"#15111
   rc(x,3,12,10,4,SUIT);                                                  // スーツ
   rc(x,7,12,2,4,SHIRT); rc(x,7,12,2,2,TIE);                              // シャツ＆ネクタイ
   rc(x,11,4,1,1,"#fff"); rc(x,13,7,1,1,"#ffd84d"); }                     // キラ
+function drawHomeFloorC(x){ rc(x,0,0,16,16,"#c79a63"); for(let y=0;y<16;y+=4)rc(x,0,y,16,1,"#b5884f"); rc(x,3,2,1,1,"#d8b27e"); rc(x,11,9,1,1,"#d8b27e"); }
+function drawHomeWallC(x){ rc(x,0,0,16,16,"#efdcbb"); rc(x,0,11,16,5,"#caa46a"); rc(x,0,10,16,1,"#b78c4f"); rc(x,4,4,2,2,"#e3cfa6"); }
+function drawHomeDoorC(x){ rc(x,0,0,16,16,"#caa46a"); rc(x,3,0,10,16,"#8a6038"); rc(x,3,0,10,2,"#a87c4a"); rc(x,4,1,8,3,"#6e4c28"); rc(x,11,8,2,2,"#ffd84d"); }
+function drawBedC(x){ rc(x,1,7,30,13,"#9a6f40"); rc(x,1,7,30,2,"#b5895a");
+  rc(x,2,4,12,11,"#ffffff"); rc(x,2,4,12,3,"#ffe0ec");
+  rc(x,13,9,18,9,"#ff8fc0"); rc(x,13,9,18,2,"#ffa8d2"); rc(x,13,15,18,3,"#e96fa6"); rc(x,16,11,3,3,"#fff3f8"); }
+function drawStoveC(x){ rc(x,2,1,28,3,"#9aa3b0"); rc(x,1,4,30,14,"#6b7280"); rc(x,1,4,30,3,"#8a93a0");
+  rc(x,3,8,11,8,"#2b2f38"); rc(x,18,8,11,8,"#2b2f38");
+  rc(x,6,10,5,4,"#ff7a3a"); rc(x,7,9,3,2,"#ffd24d"); rc(x,21,10,5,4,"#ff9a3a"); rc(x,22,9,3,2,"#ffe07a"); }
 function drawFairyC(x,frame){ const SKIN="#ffe1c6",HAIR="#b58cff",DRESS="#ff9ed6",WING="#bfeaff",WINGd="#8fd0ff",GLOW="#fff6b0";
   x.save(); x.globalAlpha=.45; x.fillStyle=GLOW; x.beginPath(); x.arc(8,8,7,0,7); x.fill(); x.restore();
   const wy=frame?5:6; rc(x,1,wy,4,5,WING); rc(x,11,wy,4,5,WING); rc(x,1,wy,1,5,WINGd); rc(x,14,wy,1,5,WINGd);
@@ -461,6 +483,8 @@ class Farm extends Phaser.Scene{
     this.solids=this.physics.add.staticGroup();
     for(let ty=0;ty<MAP_H;ty++)for(let tx=0;tx<MAP_W;tx++){ if(isSolidTile(tx,ty)){
       const r=this.add.rectangle(tx*TS+TS/2,ty*TS+TS/2,TS,TS,0x000000,0); this.solids.add(r); } }
+    // 家の中（マップ外に部屋を作る）
+    this.indoor=false; this.buildHome();
     // プレイヤー
     this.player=this.physics.add.sprite(8*TS+8,10*TS+14,"p_down_0").setOrigin(0.5,0.9);
     this.player.body.setSize(8,5).setOffset(4,12);
@@ -486,6 +510,8 @@ class Farm extends Phaser.Scene{
     add("house",48,40,drawHouseC); add("shop",48,40,drawShopC); add("animalshop",48,40,drawAnimalShopC);
     add("coop",16,16,drawCoopGroundC); add("egg",16,16,drawEggC); add("milk",16,16,drawMilkC);
     add("kitchen",48,40,drawKitchenC); add("hostclub",48,40,drawHostClubC);
+    add("homefloor",16,16,drawHomeFloorC); add("homewall",16,16,drawHomeWallC); add("homedoor",16,16,drawHomeDoorC);
+    add("bed",32,20,drawBedC); add("stove",32,18,drawStoveC);
     add("chicken_0",16,16,x=>drawChickenC(x,0)); add("chicken_1",16,16,x=>drawChickenC(x,1));
     add("cow_0",22,16,x=>drawCowC(x,0)); add("cow_1",22,16,x=>drawCowC(x,1));
     add("fairy_0",16,16,x=>drawFairyC(x,0)); add("fairy_1",16,16,x=>drawFairyC(x,1));
@@ -509,6 +535,24 @@ class Farm extends Phaser.Scene{
     this.animalSprs.push({obj,spr,vx:0,vy:0,t:Math.random()*2}); }
   refreshDrops(){ (this.eggSprites||[]).forEach(s=>s.destroy()); this.eggSprites=[];
     game.drops.forEach(d=>{ const s=this.add.image(d.tx*TS,d.ty*TS,(d.kind==="milk"?"milk":"egg")).setOrigin(0).setDepth(d.ty*TS+TS); this.eggSprites.push(s); }); }
+  buildHome(){ const sx=ROOM.x0,sy=ROOM.y0,ex=ROOM.x0+ROOM.w-1,ey=ROOM.y0+ROOM.h-1;
+    for(let ty=sy;ty<=ey;ty++)for(let tx=sx;tx<=ex;tx++){
+      const wall=(tx===sx||tx===ex||ty===sy||ty===ey), door=(tx===HOME_DOOR.x&&ty===HOME_DOOR.y);
+      if(door){ this.add.image(tx*TS,ty*TS,"homedoor").setOrigin(0).setDepth(1); }
+      else if(wall){ this.add.image(tx*TS,ty*TS,"homewall").setOrigin(0).setDepth(ty*TS+8);
+        this.solids.add(this.add.rectangle(tx*TS+8,ty*TS+8,TS,TS,0,0)); }
+      else this.add.image(tx*TS,ty*TS,"homefloor").setOrigin(0).setDepth(0); }
+    this.add.image(HOME_BED[0][0]*TS,HOME_BED[0][1]*TS-4,"bed").setOrigin(0).setDepth((HOME_BED[0][1]+1)*TS);
+    HOME_BED.forEach(([x,y])=>this.solids.add(this.add.rectangle(x*TS+8,y*TS+8,TS,TS,0,0)));
+    this.add.image(HOME_STOVE[0][0]*TS,HOME_STOVE[0][1]*TS-2,"stove").setOrigin(0).setDepth((HOME_STOVE[0][1]+1)*TS);
+    HOME_STOVE.forEach(([x,y])=>this.solids.add(this.add.rectangle(x*TS+8,y*TS+8,TS,TS,0,0))); }
+  enterHouse(){ this.indoor=true; SFX.buy();
+    this.player.setPosition((ROOM.x0+4)*TS+8,(ROOM.y0+ROOM.h-2)*TS+14); this.facing="up";
+    this.cameras.main.setBounds(ROOM.x0*TS,ROOM.y0*TS,ROOM.w*TS,ROOM.h*TS); this.cameras.main.setBackgroundColor("#2a2030");
+    setSpeech("ただいま〜🏠 ベッドでねる・コンロで料理ができるよ",2800); }
+  exitHouse(){ this.indoor=false; SFX.morning();
+    this.player.setPosition(HOUSE.trig.x*TS+8,HOUSE.trig.y*TS+14); this.facing="down";
+    this.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); this.cameras.main.setBackgroundColor("#6ea83f"); }
   buildFairy(){ if(this.fairySpr){ this.fairySpr.destroy(); this.fairySpr=null; this.fairyX=this.fairyY=null; }
     this.fairyBusy=false;
     if(game.fairy&&game.fairy.appeared){ this.fairySpr=this.add.image(FAIRY_HOME.x,FAIRY_HOME.y,"fairy_0").setOrigin(0.5,0.7).setDepth(99990); } }
@@ -558,6 +602,7 @@ class Farm extends Phaser.Scene{
       if(!this.fairyBusy){ const s=time/1000; const fx=FAIRY_HOME.x+Math.sin(s*1.1)*11, fy=FAIRY_HOME.y+Math.cos(s*0.8)*7;
         this.fairyX=fx; this.fairyY=fy; this.fairySpr.setPosition(fx,fy); }
       else { this.fairyX=this.fairySpr.x; this.fairyY=this.fairySpr.y; } }
+    if(this.indoor){ const pt=playerTile(); if(pt.x===HOME_DOOR.x&&pt.y===HOME_DOOR.y)this.exitHouse(); }
     this.updateHighlight(); updateHUD();
   }
   updateHighlight(){ this.hl.clear(); const c=getContext(); if(!c)return;
@@ -571,7 +616,12 @@ class Farm extends Phaser.Scene{
 function playerTile(){ if(!GS||!GS.player)return {x:8,y:10}; return {x:Math.floor(GS.player.x/TS), y:Math.floor(GS.player.y/TS)}; }
 function frontTile(){ const p=playerTile(); const o={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[GS?GS.facing:"down"]; return {x:p.x+o[0],y:p.y+o[1]}; }
 function getContext(){ const p=playerTile();
-  if(p.x===HOUSE.trig.x&&p.y===HOUSE.trig.y)return {type:"sleep",ico:"🛌",label:"ねる",trig:HOUSE.trig};
+  if(GS&&GS.indoor){ const f=frontTile();
+    if(p.x===HOME_DOOR.x&&p.y===HOME_DOOR.y)return {type:"exit",ico:"🚪",label:"そとへ出る"};
+    if(HOME_BED.some(([x,y])=>x===f.x&&y===f.y))return {type:"sleepbed",ico:"🛏",label:"ねる",mark:{x:HOME_BED[0][0],y:HOME_BED[0][1]}};
+    if(HOME_STOVE.some(([x,y])=>x===f.x&&y===f.y))return {type:"cook",ico:"🍳",label:"料理する",mark:{x:HOME_STOVE[0][0],y:HOME_STOVE[0][1]}};
+    return null; }
+  if(p.x===HOUSE.trig.x&&p.y===HOUSE.trig.y)return {type:"enter",ico:"🚪",label:"いえに入る",trig:HOUSE.trig};
   if(p.x===SHOP.trig.x&&p.y===SHOP.trig.y)return {type:"shop",ico:"🛒",label:"ショップ",trig:SHOP.trig};
   if(p.x===ANIMAL_SHOP.trig.x&&p.y===ANIMAL_SHOP.trig.y)return {type:"animalshop",ico:"🐔",label:"どうぶつ屋",trig:ANIMAL_SHOP.trig};
   if(p.x===KITCHEN.trig.x&&p.y===KITCHEN.trig.y)return {type:"kitchen",ico:"🍳",label:"加工小屋",trig:KITCHEN.trig};
@@ -602,7 +652,10 @@ function doAction(){ const c=getContext(); if(!c){ toast("近づいてからボ�
   if(c.type==="host"){ SFX.buy(); openHostClub(); return; }
   if(c.type==="feed"){ feedAnimals(); return; }
   if(c.type==="fairy"){ SFX.plant(); openFairy(); return; }
-  if(c.type==="sleep"){ sleep(); return; }
+  if(c.type==="enter"){ GS.enterHouse(); return; }
+  if(c.type==="exit"){ GS.exitHouse(); return; }
+  if(c.type==="cook"){ SFX.buy(); openCook(); return; }
+  if(c.type==="sleepbed"){ sleep(); return; }
   if(c.type==="drop"){ const i=game.drops.indexOf(c.drop); if(i>=0)game.drops.splice(i,1);
     const k=c.drop.kind; game.storage[k]=(game.storage[k]||0)+1; const pr=PRODUCTS[k]||PRODUCTS.egg;
     SFX.coin(); gainExp(2); GS.fxBurst(c.drop.tx,c.drop.ty,["#fff7e0","#ffe14d","#ffffff"]); GS.fxFloat(c.drop.tx,c.drop.ty,"+1 "+pr.emoji,"#d4861a");
@@ -730,6 +783,23 @@ function sellStorage(k){ if(!(game.storage[k]>0))return; const s=prodInfo(k).sel
   SFX.coin(); toast(`${prodInfo(k).name}を売った +${s}円`); openKitchen(); saveGame(); }
 function sellAllStorage(){ let total=0; Object.keys(game.storage).forEach(k=>{ total+=prodInfo(k).sell*game.storage[k]; });
   if(total<=0)return; game.money+=total; game.storage={}; SFX.coin(); setSpeech(`まとめて出荷〜！💰 +${total.toLocaleString()}円`,2200); openKitchen(); saveGame(); }
+function openCook(){ let h=`<h2>🍳 おうちで料理</h2>`;
+  h+=`<div class="saveNote">材料は倉庫（動物のおとしもの・加工品）から。食べると⚡たいりょく回復！</div>`;
+  h+=`<div class="saveNote">いまの たいりょく：⚡${game.stamina} / ${game.maxStamina}</div>`;
+  MEALS.forEach(m=>{ const can=Object.entries(m.need).every(([k,v])=>(game.storage[k]||0)>=v);
+    const needTxt=Object.entries(m.need).map(([k,v])=>`${(PRODUCTS[k]||{emoji:"📦"}).emoji}${v}`).join("＋");
+    h+=`<div class="item"><div class="ico">${m.emoji}</div><div class="info"><div class="nm">${m.name}</div>
+      <div class="sub">${needTxt} → ⚡たいりょく+${m.sta}</div></div>
+      <button class="act" data-cookmeal="${m.key}" ${can?"":"disabled"}>作って食べる</button></div>`; });
+  h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
+function cookMeal(key){ const m=MEALS.find(x=>x.key===key); if(!m)return;
+  if(game.stamina>=game.maxStamina){ toast("おなかいっぱい😋 たいりょくは満タンだよ"); return; }
+  if(!Object.entries(m.need).every(([k,v])=>(game.storage[k]||0)>=v)){ toast("材料が足りないよ"); SFX.error(); return; }
+  Object.entries(m.need).forEach(([k,v])=>{ game.storage[k]-=v; if(game.storage[k]<=0)delete game.storage[k]; });
+  game.stamina=Math.min(game.maxStamina, game.stamina+m.sta); SFX.harvest(); gainExp(1);
+  setSpeech(`${m.name}いただきます！${m.emoji} 元気でた⚡`,2400);
+  if(GS){ const p=playerTile(); GS.fxBurst(p.x,p.y,["#ffd84d","#ff8fc0","#9be84d","#ffffff"]); GS.fxFloat(p.x,p.y,"⚡+"+m.sta,"#2f7d2f"); }
+  openCook(); saveGame(); }
 function openHostClub(){ curHost=null;
   let h=`<h2>🍾 ホストクラブ</h2><div class="saveNote">推しに会いに行こ💖 「会う」で席につくよ</div>`;
   HOSTS.forEach(ho=>{ const st=game.hosts[ho.id], rank=hostRank(st.spent);
@@ -840,6 +910,7 @@ function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>d
   sheet.querySelectorAll("[data-cook]").forEach(b=>b.onclick=()=>cookRecipe(b.dataset.cook));
   sheet.querySelectorAll("[data-sell]").forEach(b=>b.onclick=()=>sellStorage(b.dataset.sell));
   sheet.querySelectorAll("[data-sellall]").forEach(b=>b.onclick=sellAllStorage);
+  sheet.querySelectorAll("[data-cookmeal]").forEach(b=>b.onclick=()=>cookMeal(b.dataset.cookmeal));
   sheet.querySelectorAll("canvas[data-host]").forEach(cv=>{ const c=cv.getContext("2d"); c.imageSmoothingEnabled=false;
     const ho=HOSTById[cv.dataset.host]; const a=mkCanvas(16,16,x=>drawHostC(x,ho&&ho.col)); c.drawImage(a,0,0,cv.width,cv.height); });
   sheet.querySelectorAll("[data-hostpick]").forEach(b=>b.onclick=()=>openHostDetail(b.dataset.hostpick));
