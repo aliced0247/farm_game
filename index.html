@@ -26,8 +26,9 @@
     text-align:center; display:flex; flex-direction:column; gap:2px; box-shadow:inset 0 -3px 0 #e7cf9a; }
   .stat .lbl{ font-size:9px; color:#9a7b4a; font-weight:700; }
   .stat .val{ font-size:17px; font-weight:800; line-height:1; }
-  #staminaBarWrap{ height:5px; background:#e7cf9a; border-radius:4px; overflow:hidden; margin-top:3px; }
+  #staminaBarWrap,#expBarWrap{ height:5px; background:#e7cf9a; border-radius:4px; overflow:hidden; margin-top:3px; }
   #staminaBar{ height:100%; width:100%; background:linear-gradient(90deg,#ffd14d,#ff8a3d); transition:width .3s; }
+  #expBar{ height:100%; width:0%; background:linear-gradient(90deg,#9be84d,#3fae54); transition:width .3s; }
 
   /* stage */
   #stage{ flex:1; position:relative; overflow:hidden; background:#6ea83f; }
@@ -132,6 +133,8 @@
     <div class="stat"><span class="lbl">💰 おかね</span><span class="val" id="moneyVal">500</span></div>
     <div class="stat"><span class="lbl">⚡ たいりょく</span><span class="val" id="staminaVal">10</span>
       <div id="staminaBarWrap"><div id="staminaBar"></div></div></div>
+    <div class="stat"><span class="lbl">⭐ Lv</span><span class="val" id="levelVal">1</span>
+      <div id="expBarWrap"><div id="expBar"></div></div></div>
   </div>
 
   <div id="stage">
@@ -212,7 +215,7 @@ const LINES_HARVEST=["売れたら推しにシャンパン入れちゃう？🍾
 const LINES_BROKE=["おかねが無い…これじゃ会いに行けないよ〜😭","種代も無いなんて…まずは収穫しなきゃ💦"];
 
 function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
-function freshGame(){ return { day:1,money:500,stamina:10,maxStamina:10,cols:4,rows:4,
+function freshGame(){ return { day:1,money:500,stamina:10,maxStamina:10,level:1,exp:0,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[] }; }
 let game=loadGame()||freshGame();
 let activeSeed=null; // いま手に持っている種
@@ -220,6 +223,7 @@ let activeSeed=null; // いま手に持っている種
 function saveGame(){ try{localStorage.setItem(SAVE_KEY,JSON.stringify(game));}catch(e){} }
 function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)return null; const g=JSON.parse(raw);
   CROP_IDS.forEach(c=>{ if(g.seeds[c]==null)g.seeds[c]=0; }); if(!g.cols)g.cols=4; if(!g.rows)g.rows=4;
+  if(g.level==null)g.level=1; if(g.exp==null)g.exp=0; g.maxStamina=9+g.level; if(g.stamina>g.maxStamina)g.stamina=g.maxStamina;
   if(!Array.isArray(g.tiles))g.tiles=Array.from({length:16},newTile); while(g.tiles.length<g.cols*g.rows)g.tiles.push(newTile());
   if(!Array.isArray(g.shipping))g.shipping=[]; return g; }catch(e){ return null; } }
 function resetGame(){ if(!confirm("本当に最初からはじめる？\nいまの畑・おかね・進行はすべて消えます。"))return;
@@ -296,17 +300,17 @@ function doAction(){
   if(c.type==="sleep"){ sleep(); return; }
   if(c.type==="farm"){
     const idx=c.idx, t=game.tiles[idx], w=plotWorld(idx), cc=tileClient(w.tx,w.ty);
-    if(t.state==="empty"){ if(!spend(COST.TILL)){SFX.error();return;} t.state="tilled"; SFX.till();
+    if(t.state==="empty"){ if(!spend(COST.TILL)){SFX.error();return;} t.state="tilled"; SFX.till(); gainExp(2);
       burst(cc.x,cc.y,["#9a6336","#7d4d29","#c79a5b"],7); setSpeech("土をたがやした！種をまこう🌱",1500); saveGame(); }
     else if(t.state==="tilled"){ ensureActiveSeed();
       if(!activeSeed){ toast("ショップ(🛒)で種を買ってね"); SFX.error(); return; }
       plant(idx,activeSeed); }
     else if(t.state==="planted"){
       if(t.growth>=CROPS[t.crop].days){ if(!spend(COST.HARVEST)){SFX.error();return;} game.shipping.push(t.crop);
-        const cf=CROPS[t.crop]; Object.assign(t,newTile()); t.state="tilled"; SFX.harvest();
+        const cf=CROPS[t.crop]; Object.assign(t,newTile()); t.state="tilled"; SFX.harvest(); gainExp(4);
         burst(cc.x,cc.y,["#ffe14d","#ff8fc0","#67b23f","#fff"],12); floatText(cc.x,cc.y-6,"+1 📦","#3a7720");
         setSpeech(pick(LINES_HARVEST),2500); saveGame(); }
-      else if(!t.watered){ if(!spend(COST.WATER)){SFX.error();return;} t.watered=true; SFX.water();
+      else if(!t.watered){ if(!spend(COST.WATER)){SFX.error();return;} t.watered=true; SFX.water(); gainExp(1);
         burst(cc.x,cc.y,["#9fd0ff","#5cb6e8","#cdeaff"],7); saveGame(); }
       else toast("もう水やり済み。ねむると育つよ😴"); }
   }
@@ -314,7 +318,7 @@ function doAction(){
 function plant(idx,crop){ const t=game.tiles[idx];
   if(game.seeds[crop]<=0){ toast("その種がないよ"); SFX.error(); return; }
   if(game.stamina<COST.PLANT){ toast("体力が足りない…ねよう😴"); SFX.error(); return; }
-  game.stamina-=COST.PLANT; game.seeds[crop]--; Object.assign(t,newTile()); t.state="planted"; t.crop=crop;
+  game.stamina-=COST.PLANT; game.seeds[crop]--; gainExp(1); Object.assign(t,newTile()); t.state="planted"; t.crop=crop;
   closeSheet(); SFX.plant(); const w=plotWorld(idx),cc=tileClient(w.tx,w.ty);
   burst(cc.x,cc.y,["#67b23f","#8cc95e","#4d8a2c"],7); setSpeech(`${CROPS[crop].name}を植えた！水をあげよう💧`,1800);
   ensureActiveSeed(); renderSeedBar(); saveGame(); }
@@ -327,6 +331,12 @@ function renderSeedBar(){ const bar=document.getElementById("seedbar"); const ow
   bar.querySelectorAll("canvas[data-icon]").forEach(cv=>drawIcon(cv,cv.dataset.icon));
   bar.querySelectorAll("[data-seed]").forEach(b=>b.onclick=()=>{ activeSeed=b.dataset.seed; SFX.unlock(); SFX.plant(); renderSeedBar(); }); }
 function spend(cost){ if(game.stamina<cost){ toast("体力が足りない…ねよう😴"); return false; } game.stamina-=cost; return true; }
+function expNeed(L){ return 25+(L-1)*20; }
+function gainExp(n){ game.exp+=n; let need=expNeed(game.level);
+  while(game.exp>=need){ game.exp-=need; game.level++; game.maxStamina=9+game.level; game.stamina=game.maxStamina; levelUpFx(); need=expNeed(game.level); } }
+function levelUpFx(){ SFX.expand(); const c=entityClient(player.x,player.y-0.8);
+  burst(c.x,c.y,["#ffe14d","#9be84d","#ff8fc0","#fff"],16); floatText(c.x,c.y,"⭐Lv"+game.level+"！体力+1","#3fae54");
+  setSpeech(`レベル${game.level}になった！最大体力がアップ⚡✨`,2600); }
 function buy(crop){ const cf=CROPS[crop];
   if(game.money<cf.seed){ toast("おかねが足りないよ💸"); SFX.error(); setSpeech(pick(LINES_BROKE),2200); return; }
   game.money-=cf.seed; game.seeds[crop]++; activeSeed=crop; SFX.buy(); openShop(); renderSeedBar(); toast(`${cf.name}の種を買った！`); saveGame(); }
@@ -409,8 +419,9 @@ function R(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(Math.round(x),Math.round(y)
 // 16分割ピクセル（ox,oyはタイル左上スクリーン座標, sz=タイルのスクリーンサイズ）
 function P(ox,oy,sz,x,y,w,h,c){ const u=sz/16; R(ox+x*u,oy+y*u,w*u,h*u,c); }
 
-function tileClient(tx,ty){ const r=canvas.getBoundingClientRect(); const sX=r.width/W, sY=r.height/H;
-  const sx=(tx+0.5)*TILE-cam.x, sy=(ty+0.5)*TILE-cam.y; return { x:r.left+sx*sX, y:r.top+sy*sY }; }
+function tileClient(tx,ty){ return entityClient(tx+0.5,ty+0.5); }
+function entityClient(wx,wy){ const r=canvas.getBoundingClientRect(); const sX=r.width/W, sY=r.height/H;
+  const sx=wx*TILE-cam.x, sy=wy*TILE-cam.y; return { x:r.left+sx*sX, y:r.top+sy*sY }; }
 
 function drawGround(ox,oy,sz,tx,ty){ const path=PATH.has(tx+","+ty);
   if(path){ R(ox,oy,sz,sz,"#cdab74"); P(ox,oy,sz,3,4,1,1,"#bd9a63"); P(ox,oy,sz,10,9,1,1,"#bd9a63"); }
@@ -544,6 +555,8 @@ function updateHUD(){ document.getElementById("dayVal").textContent=game.day;
   document.getElementById("moneyVal").textContent=game.money.toLocaleString();
   document.getElementById("staminaVal").textContent=game.stamina;
   document.getElementById("staminaBar").style.width=(game.stamina/game.maxStamina*100)+"%";
+  document.getElementById("levelVal").textContent=game.level;
+  document.getElementById("expBar").style.width=Math.min(100,game.exp/expNeed(game.level)*100)+"%";
   const c=getContext(); const btn=document.getElementById("actionBtn");
   btn.querySelector(".ico").textContent=c?c.ico:"✋"; btn.querySelector(".lbl").textContent=c?c.label:"—";
   btn.classList.toggle("dim",!c||!!(c&&c.none)); }
