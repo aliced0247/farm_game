@@ -5,18 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#8ec96a" />
-<title>ぼくじょう物語 🌱 Step1</title>
+<title>ぼくじょう物語 🌱 Step2</title>
 <style>
   :root{
-    --bar:#6b4a2b;
-    --bar2:#8a623c;
-    --panel:#fff7e6;
-    --panel2:#ffe9b8;
-    --line:#c79a5b;
-    --green:#67b23f;
-    --green-d:#4d8a2c;
-    --text:#4a3526;
-    --gold:#f4b740;
+    --bar:#6b4a2b; --bar2:#8a623c; --panel:#fff7e6; --panel2:#ffe9b8;
+    --line:#c79a5b; --green:#67b23f; --green-d:#4d8a2c; --text:#4a3526; --gold:#f4b740;
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ margin:0; padding:0; height:100%; }
@@ -27,15 +20,12 @@
       radial-gradient(circle at 20% 10%, #aee07f 0 12%, transparent 12.5%),
       radial-gradient(circle at 80% 30%, #aee07f 0 10%, transparent 10.5%),
       linear-gradient(180deg,#a9e077,#8ec96a);
-    color:var(--text);
-    user-select:none; -webkit-user-select:none;
+    color:var(--text); user-select:none; -webkit-user-select:none;
     overscroll-behavior:none; touch-action:manipulation;
-    display:flex; flex-direction:column; align-items:center;
-    min-height:100%;
+    display:flex; flex-direction:column; align-items:center; min-height:100%;
   }
   #app{
-    width:100%; max-width:480px; min-height:100vh;
-    min-height:100dvh;
+    width:100%; max-width:480px; min-height:100vh; min-height:100dvh;
     display:flex; flex-direction:column;
     padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
   }
@@ -49,9 +39,8 @@
   }
   .stat{
     flex:1; background:var(--panel); border:2px solid var(--line);
-    border-radius:12px; padding:6px 6px; text-align:center;
-    display:flex; flex-direction:column; gap:2px;
-    box-shadow:inset 0 -3px 0 #e7cf9a;
+    border-radius:12px; padding:6px; text-align:center;
+    display:flex; flex-direction:column; gap:2px; box-shadow:inset 0 -3px 0 #e7cf9a;
   }
   .stat .lbl{ font-size:10px; color:#9a7b4a; font-weight:700; letter-spacing:.5px; }
   .stat .val{ font-size:18px; font-weight:800; line-height:1; }
@@ -59,52 +48,44 @@
   #staminaBar{ height:100%; width:100%; background:linear-gradient(90deg,#ffd14d,#ff8a3d); transition:width .3s; }
 
   /* ===== Field ===== */
-  #fieldArea{
-    flex:1; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; padding:14px 14px 4px;
-  }
+  #fieldArea{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px 12px 4px; }
   #fieldFrame{
-    background:linear-gradient(180deg,#b07a44,#8a5a30);
-    padding:10px; border-radius:18px;
-    box-shadow:0 6px 0 #5f3c1f, 0 10px 18px rgba(0,0,0,.25);
-    border:3px solid #6b4628;
+    background:linear-gradient(180deg,#b07a44,#8a5a30); padding:8px; border-radius:18px;
+    box-shadow:0 6px 0 #5f3c1f, 0 10px 18px rgba(0,0,0,.25); border:3px solid #6b4628;
+    max-width:100%;
   }
-  #grid{
-    display:grid; grid-template-columns:repeat(4,1fr); gap:6px;
-    background:#6b4628; padding:6px; border-radius:10px;
-  }
+  #grid{ display:grid; gap:5px; background:#6b4628; padding:5px; border-radius:10px; }
   .tile{
-    width:100%; aspect-ratio:1/1; position:relative;
-    border-radius:8px; overflow:hidden; cursor:pointer;
-    background:#79b84e;
-    box-shadow:inset 0 0 0 2px rgba(0,0,0,.12);
-    transition:transform .07s;
+    width:100%; aspect-ratio:1/1; position:relative; border-radius:7px; overflow:hidden; cursor:pointer;
+    background:#79b84e; box-shadow:inset 0 0 0 2px rgba(0,0,0,.12); transition:transform .07s;
   }
-  .tile:active{ transform:scale(.94); }
+  .tile:active{ transform:scale(.92); }
   .tile canvas{ width:100%; height:100%; display:block; image-rendering:pixelated; }
   .tile.ready{ animation:bob .9s ease-in-out infinite; box-shadow:inset 0 0 0 3px #ffe14d, 0 0 12px #ffe14d99; }
-  .tile .badge{
-    position:absolute; top:-2px; right:-2px; font-size:13px;
-    filter:drop-shadow(0 1px 0 #00000055);
-  }
+  .tile .badge{ position:absolute; top:-2px; right:-1px; font-size:12px; filter:drop-shadow(0 1px 0 #00000055); }
   @keyframes bob{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-3px);} }
+  #hint{ margin-top:8px; font-size:12px; color:#3c6b1f; font-weight:700; background:#ffffffbb; padding:5px 12px; border-radius:20px; min-height:14px; text-align:center; }
 
-  #hint{
-    margin-top:10px; font-size:12px; color:#3c6b1f; font-weight:700;
-    background:#ffffffbb; padding:5px 12px; border-radius:20px;
-    min-height:14px;
+  /* ===== Character ===== */
+  #charArea{ display:flex; align-items:flex-end; gap:8px; padding:4px 16px 0; max-width:480px; width:100%; }
+  #charCanvas{ width:72px; height:72px; image-rendering:pixelated; flex:none; animation:charBob 1.8s ease-in-out infinite; }
+  @keyframes charBob{ 0%,100%{ transform:translateY(0) rotate(-1deg);} 50%{ transform:translateY(-5px) rotate(1deg);} }
+  #speech{
+    flex:1; background:#fff; border:2px solid var(--line); border-radius:14px;
+    padding:9px 12px; font-size:12.5px; font-weight:700; color:#7a5326; position:relative;
+    box-shadow:0 3px 0 #e7cf9a; line-height:1.45; min-height:18px;
   }
+  #speech::after{ content:""; position:absolute; left:-9px; bottom:14px; border:7px solid transparent; border-right-color:#fff; }
+  #speech::before{ content:""; position:absolute; left:-12px; bottom:13px; border:8px solid transparent; border-right-color:var(--line); }
 
   /* ===== Bottom bar ===== */
   #bottombar{
-    display:flex; gap:10px; padding:12px 14px calc(12px + env(safe-area-inset-bottom));
-    background:linear-gradient(180deg,var(--bar2),var(--bar));
-    box-shadow:0 -4px 0 #50341d;
+    display:flex; gap:10px; padding:10px 14px calc(12px + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,var(--bar2),var(--bar)); box-shadow:0 -4px 0 #50341d;
   }
   .btn{
-    flex:1; border:none; border-radius:14px; padding:14px 6px;
-    font-size:16px; font-weight:800; color:#fff; cursor:pointer;
-    font-family:inherit; display:flex; align-items:center; justify-content:center; gap:6px;
+    flex:1; border:none; border-radius:14px; padding:14px 6px; font-size:16px; font-weight:800;
+    color:#fff; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:6px;
     box-shadow:0 4px 0 rgba(0,0,0,.3); transition:transform .06s, box-shadow .06s;
   }
   .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.3); }
@@ -112,69 +93,54 @@
   .btn-sleep{ background:linear-gradient(180deg,#9a7bd6,#7253b8); }
 
   /* ===== Modal / sheet ===== */
-  #overlay{
-    position:fixed; inset:0; background:rgba(40,25,10,.5);
-    display:none; align-items:flex-end; justify-content:center; z-index:20;
-  }
+  #overlay{ position:fixed; inset:0; background:rgba(40,25,10,.5); display:none; align-items:flex-end; justify-content:center; z-index:20; }
   #overlay.show{ display:flex; }
   .sheet{
-    width:100%; max-width:480px; background:var(--panel);
-    border-radius:22px 22px 0 0; padding:18px 16px calc(20px + env(safe-area-inset-bottom));
-    box-shadow:0 -6px 20px rgba(0,0,0,.3);
-    animation:slideUp .22s ease;
-    border-top:4px solid var(--line);
+    width:100%; max-width:480px; background:var(--panel); border-radius:22px 22px 0 0;
+    padding:18px 16px calc(20px + env(safe-area-inset-bottom)); box-shadow:0 -6px 20px rgba(0,0,0,.3);
+    animation:slideUp .22s ease; border-top:4px solid var(--line); max-height:82vh; overflow-y:auto;
   }
   @keyframes slideUp{ from{ transform:translateY(100%);} to{ transform:translateY(0);} }
-  .sheet h2{ margin:2px 0 14px; font-size:20px; text-align:center; color:#7a5326; }
+  .sheet h2{ margin:2px 0 10px; font-size:20px; text-align:center; color:#7a5326; }
+  .sectionTtl{ font-size:13px; font-weight:800; color:#9a7b4a; margin:14px 4px 8px; }
   .item{
-    display:flex; align-items:center; gap:12px; padding:10px;
-    background:#fff; border:2px solid var(--line); border-radius:14px; margin-bottom:10px;
-    box-shadow:inset 0 -3px 0 #f0e2bf;
+    display:flex; align-items:center; gap:12px; padding:10px; background:#fff;
+    border:2px solid var(--line); border-radius:14px; margin-bottom:10px; box-shadow:inset 0 -3px 0 #f0e2bf;
   }
-  .item canvas{ width:44px; height:44px; image-rendering:pixelated;
-    background:#bfe89a; border-radius:8px; flex:none; }
+  .item canvas{ width:44px; height:44px; image-rendering:pixelated; background:#bfe89a; border-radius:8px; flex:none; }
+  .item .ico{ width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; font-size:30px; background:#e6f3d6; border-radius:8px; }
   .item .info{ flex:1; min-width:0; }
   .item .nm{ font-weight:800; font-size:15px; }
   .item .sub{ font-size:11px; color:#9a7b4a; line-height:1.4; }
   .item .own{ font-size:11px; color:#3a8fce; font-weight:700; }
   .item .act{
-    flex:none; border:none; border-radius:10px; padding:10px 14px;
-    font-weight:800; font-size:14px; color:#fff; cursor:pointer; font-family:inherit;
-    background:linear-gradient(180deg,#6cc24a,#4d9a2c); box-shadow:0 3px 0 #3a7720;
+    flex:none; border:none; border-radius:10px; padding:10px 14px; font-weight:800; font-size:14px;
+    color:#fff; cursor:pointer; font-family:inherit; background:linear-gradient(180deg,#6cc24a,#4d9a2c); box-shadow:0 3px 0 #3a7720;
   }
   .item .act:active{ transform:translateY(2px); box-shadow:0 1px 0 #3a7720; }
   .item .act:disabled{ background:#cbb88f; box-shadow:0 3px 0 #a89564; opacity:.7; }
-  .closeBtn{
-    width:100%; margin-top:4px; padding:13px; border:none; border-radius:14px;
-    background:#e7cf9a; color:#6b4a2b; font-weight:800; font-size:15px; font-family:inherit; cursor:pointer;
-  }
+  .item .act.buyx{ background:linear-gradient(180deg,#f0a93a,#d4861a); box-shadow:0 3px 0 #b06d12; }
+  .closeBtn{ width:100%; margin-top:6px; padding:13px; border:none; border-radius:14px; background:#e7cf9a; color:#6b4a2b; font-weight:800; font-size:15px; font-family:inherit; cursor:pointer; }
+  .resetBtn{ width:100%; margin-top:10px; padding:11px; border:none; border-radius:12px; background:#f4d6d6; color:#b5483f; font-weight:700; font-size:13px; font-family:inherit; cursor:pointer; }
+  .saveNote{ text-align:center; font-size:11px; color:#9a7b4a; margin-top:10px; }
 
   /* ===== Morning popup ===== */
-  #morning{
-    position:fixed; inset:0; z-index:30; display:none;
-    align-items:center; justify-content:center;
-    background:radial-gradient(circle at 50% 38%, rgba(255,236,170,.96), rgba(255,210,120,.96));
-  }
+  #morning{ position:fixed; inset:0; z-index:30; display:none; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 38%, rgba(255,236,170,.96), rgba(255,210,120,.96)); }
   #morning.show{ display:flex; animation:fade .3s; }
   @keyframes fade{ from{opacity:0} to{opacity:1} }
   .mcard{ text-align:center; padding:24px; }
   .mcard .sun{ font-size:64px; animation:bob 1.6s ease-in-out infinite; }
   .mcard .d{ font-size:34px; font-weight:900; color:#a85f17; margin:6px 0; text-shadow:0 2px 0 #fff6; }
-  .mcard .earn{ font-size:18px; font-weight:800; color:#3a7720; margin:8px 0 18px; min-height:22px;}
-  .mcard .go{
-    border:none; border-radius:16px; padding:14px 40px; font-size:18px; font-weight:900;
-    color:#fff; background:linear-gradient(180deg,#ffb13d,#f0931a); box-shadow:0 5px 0 #c4761a;
-    font-family:inherit; cursor:pointer;
-  }
+  .mcard .earn{ font-size:17px; font-weight:800; color:#3a7720; margin:8px 0 18px; min-height:22px; }
+  .mcard .go{ border:none; border-radius:16px; padding:14px 40px; font-size:18px; font-weight:900; color:#fff;
+    background:linear-gradient(180deg,#ffb13d,#f0931a); box-shadow:0 5px 0 #c4761a; font-family:inherit; cursor:pointer; }
   .mcard .go:active{ transform:translateY(3px); box-shadow:0 2px 0 #c4761a; }
 
   /* ===== Toast ===== */
-  #toast{
-    position:fixed; left:50%; bottom:96px; transform:translateX(-50%) translateY(20px);
-    background:#3a2a18ee; color:#fff; padding:10px 18px; border-radius:20px;
-    font-size:14px; font-weight:700; opacity:0; pointer-events:none; transition:.25s; z-index:40;
-    max-width:90%; text-align:center;
-  }
+  #toast{ position:fixed; left:50%; bottom:150px; transform:translateX(-50%) translateY(20px);
+    background:#3a2a18ee; color:#fff; padding:10px 18px; border-radius:20px; font-size:14px; font-weight:700;
+    opacity:0; pointer-events:none; transition:.25s; z-index:40; max-width:90%; text-align:center; }
   #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 </style>
 </head>
@@ -184,17 +150,19 @@
     <div class="stat"><span class="lbl">DAY</span><span class="val" id="dayVal">1</span></div>
     <div class="stat"><span class="lbl">💰 おかね</span><span class="val" id="moneyVal">500</span></div>
     <div class="stat">
-      <span class="lbl">⚡ たいりょく</span>
-      <span class="val" id="staminaVal">10</span>
+      <span class="lbl">⚡ たいりょく</span><span class="val" id="staminaVal">10</span>
       <div id="staminaBarWrap"><div id="staminaBar"></div></div>
     </div>
   </div>
 
   <div id="fieldArea">
-    <div id="fieldFrame">
-      <div id="grid"></div>
-    </div>
+    <div id="fieldFrame"><div id="grid"></div></div>
     <div id="hint">マスをタップして畑をたがやそう！</div>
+  </div>
+
+  <div id="charArea">
+    <canvas id="charCanvas" width="96" height="96"></canvas>
+    <div id="speech">おはよ〜！今日もキラキラいくよ🎀</div>
   </div>
 
   <div id="bottombar">
@@ -220,108 +188,203 @@
 "use strict";
 
 /* ===================== データ ===================== */
+const SAVE_KEY = "farmgame_save_v2";
 const COST = { TILL:2, PLANT:1, WATER:1, HARVEST:1 };
 
+// 作物（Step2で3種追加・バランス調整）
 const CROPS = {
-  turnip: { name:"カブ",         seed:50,  days:2, sell:120, leaf:"#5fbf4f", fruit:"#f3f1ea", fruit2:"#bb74e0" },
-  tomato: { name:"トマト",       seed:80,  days:3, sell:200, leaf:"#4fa83a", fruit:"#e8473f", fruit2:"#ff7a6e" },
-  corn:   { name:"トウモロコシ", seed:120, days:5, sell:400, leaf:"#6cbf3a", fruit:"#f5d23b", fruit2:"#e8a92b" },
+  turnip:     { name:"カブ",         seed:50,  days:2, sell:120, leaf:"#5fbf4f", fruit:"#f3f1ea", fruit2:"#bb74e0" },
+  potato:     { name:"じゃがいも",   seed:70,  days:3, sell:180, leaf:"#4f9a3a", fruit:"#c08a4a", fruit2:"#e0b878" },
+  tomato:     { name:"トマト",       seed:80,  days:3, sell:200, leaf:"#4fa83a", fruit:"#e8473f", fruit2:"#ff7a6e" },
+  strawberry: { name:"いちご",       seed:150, days:4, sell:360, leaf:"#4f9a3a", fruit:"#e8473f", fruit2:"#ffffff" },
+  corn:       { name:"トウモロコシ", seed:120, days:5, sell:400, leaf:"#6cbf3a", fruit:"#f5d23b", fruit2:"#e8a92b" },
+  watermelon: { name:"すいか",       seed:300, days:6, sell:780, leaf:"#5aa83a", fruit:"#46b85a", fruit2:"#2f7d3c" },
 };
-const CROP_IDS = ["turnip","tomato","corn"];
+const CROP_IDS = ["turnip","potato","tomato","strawberry","corn","watermelon"];
 
-const game = {
-  day:1, money:500, stamina:10, maxStamina:10,
-  seeds:{ turnip:0, tomato:0, corn:0 },
-  tiles:Array.from({length:16},()=>({ state:"empty", crop:null, growth:0, watered:false })),
-  shipping:[],
-};
+// 畑の拡張プラン
+const EXPANSIONS = [
+  { cols:6, rows:4, cost:1000 },
+  { cols:6, rows:6, cost:3000 },
+];
+
+// キャラのセリフ（ホス狂ちゃん）
+const LINES_MORNING = [
+  "おはよ〜！今日もキラキラいくよ🎀",
+  "ふぁ〜あ…よく寝た♪ さ、かせぐわよ💖",
+  "今日もせっせと収穫して、夜は推しに会いに行くの✨",
+];
+const LINES_HARVEST = [
+  "売れたら推しにシャンパン入れちゃう？🍾 なんてね♡",
+  "水やりは愛💧 推しへの気持ちと一緒よね♡",
+  "畑ひろげて、いつか伝説の太客になるんだから✨",
+  "この子たち、立派に育って…えらいぞ〜♪",
+  "もうひと稼ぎして、今日は同伴いけるかな…!?",
+];
+const LINES_BROKE = [
+  "おかねが無い…これじゃ会いに行けないよ〜😭",
+  "種代も無いなんて…まずは収穫しなきゃ💦",
+];
+
+function newTile(){ return { state:"empty", crop:null, growth:0, watered:false }; }
+
+function freshGame(){
+  return {
+    day:1, money:500, stamina:10, maxStamina:10,
+    cols:4, rows:4,
+    seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])),
+    tiles:Array.from({length:16}, newTile),
+    shipping:[],
+  };
+}
+
+let game = loadGame() || freshGame();
+
+/* ===================== セーブ／ロード ===================== */
+function saveGame(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(game)); }catch(e){}
+}
+function loadGame(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return null;
+    const g = JSON.parse(raw);
+    // 念のため新しい作物キーを補完
+    CROP_IDS.forEach(c=>{ if(g.seeds[c]==null) g.seeds[c]=0; });
+    if(!g.cols) g.cols=4; if(!g.rows) g.rows=4;
+    if(!Array.isArray(g.tiles)) g.tiles=Array.from({length:16}, newTile);
+    while(g.tiles.length < g.cols*g.rows) g.tiles.push(newTile());
+    if(!Array.isArray(g.shipping)) g.shipping=[];
+    return g;
+  }catch(e){ return null; }
+}
+function resetGame(){
+  if(!confirm("本当に最初からはじめる？\nいまの畑・おかね・進行はすべて消えます。")) return;
+  localStorage.removeItem(SAVE_KEY);
+  game = freshGame();
+  closeSheet(); buildGrid(); render();
+  setSpeech("よ〜し、心機一転！またイチからがんばろ🎀");
+  hint("マスをタップして畑をたがやそう！");
+}
 
 /* ===================== ピクセル描画 ===================== */
-// 論理16x16グリッドにドット絵を描く
-function mkCanvas(el){
-  const c = el; const ctx = c.getContext("2d");
-  return { c, ctx, U:c.width/16 };
-}
 function px(ctx,U,x,y,w,h,col){ ctx.fillStyle=col; ctx.fillRect(x*U,y*U,w*U,h*U); }
 
 function drawGrass(ctx,U){
   px(ctx,U,0,0,16,16,"#79b84e");
-  px(ctx,U,0,0,16,16,"#79b84e");
-  // ちょっとした草の濃淡
-  const spots=[[2,3],[6,11],[11,5],[13,12],[8,2]];
-  spots.forEach(([x,y])=>{ px(ctx,U,x,y,1,1,"#67a83e"); px(ctx,U,x,y+1,1,1,"#8cc95e"); });
+  [[2,3],[6,11],[11,5],[13,12],[8,2]].forEach(([x,y])=>{ px(ctx,U,x,y,1,1,"#67a83e"); px(ctx,U,x,y+1,1,1,"#8cc95e"); });
 }
 function drawSoil(ctx,U,watered){
   const base = watered ? "#6e4326" : "#9a6336";
   const dark = watered ? "#583320" : "#7d4d29";
-  px(ctx,U,0,0,16,16,"#79b84e");          // 周りの草
-  px(ctx,U,1,1,14,14,base);                // 土
-  // うね
+  px(ctx,U,0,0,16,16,"#79b84e");
+  px(ctx,U,1,1,14,14,base);
   for(let y=2;y<14;y+=3){ px(ctx,U,2,y,12,1,dark); }
-  if(watered){ // 水たまりキラ
-    px(ctx,U,4,4,1,1,"#9fd0ff"); px(ctx,U,10,8,1,1,"#9fd0ff"); px(ctx,U,7,11,1,1,"#9fd0ff");
-  }
+  if(watered){ px(ctx,U,4,4,1,1,"#9fd0ff"); px(ctx,U,10,8,1,1,"#9fd0ff"); px(ctx,U,7,11,1,1,"#9fd0ff"); }
 }
-// 苗・作物（progress:0..1+, mature時はfruit表示）
 function drawPlant(ctx,U,crop,growth){
   const cf=CROPS[crop]; const ratio=growth/cf.days;
-  // 茎
-  if(ratio<0.45){
-    // 芽
-    px(ctx,U,7,9,2,4,cf.leaf);
-    px(ctx,U,5,9,2,2,cf.leaf);
-    px(ctx,U,9,9,2,2,cf.leaf);
-  } else if(ratio<1){
-    // 生長中
-    px(ctx,U,7,6,2,7,"#4d8a2c");
-    px(ctx,U,4,7,3,2,cf.leaf); px(ctx,U,9,8,3,2,cf.leaf);
-    px(ctx,U,5,5,2,2,cf.leaf); px(ctx,U,9,5,2,2,cf.leaf);
-  } else {
-    // 収穫OK
-    px(ctx,U,7,8,2,5,"#4d8a2c");
-    px(ctx,U,4,8,3,2,cf.leaf); px(ctx,U,9,9,3,2,cf.leaf);
+  const p=(x,y,w,h,c)=>px(ctx,U,x,y,w,h,c);
+  if(ratio<0.45){ // 芽
+    p(7,9,2,4,cf.leaf); p(5,9,2,2,cf.leaf); p(9,9,2,2,cf.leaf);
+  } else if(ratio<1){ // 生長中
+    p(7,6,2,7,"#4d8a2c"); p(4,7,3,2,cf.leaf); p(9,8,3,2,cf.leaf); p(5,5,2,2,cf.leaf); p(9,5,2,2,cf.leaf);
+  } else { // 収穫OK：作物ごとの見た目
     if(crop==="corn"){
-      px(ctx,U,6,3,4,6,cf.fruit); px(ctx,U,6,3,4,6,cf.fruit);
-      for(let y=4;y<8;y+=2){ px(ctx,U,6,y,4,1,cf.fruit2); }
-      px(ctx,U,6,2,2,2,cf.leaf); px(ctx,U,9,3,2,2,cf.leaf);
+      p(7,8,2,5,"#4d8a2c"); p(6,3,4,6,cf.fruit);
+      for(let y=4;y<8;y+=2) p(6,y,4,1,cf.fruit2);
+      p(6,2,2,2,cf.leaf); p(9,3,2,2,cf.leaf);
     } else if(crop==="tomato"){
-      px(ctx,U,5,5,3,3,cf.fruit); px(ctx,U,9,4,3,3,cf.fruit);
-      px(ctx,U,5,5,1,1,cf.fruit2); px(ctx,U,9,4,1,1,cf.fruit2);
-      px(ctx,U,6,4,1,1,cf.leaf); px(ctx,U,10,3,1,1,cf.leaf);
-    } else { // turnip
-      px(ctx,U,6,7,5,5,cf.fruit);
-      px(ctx,U,6,11,5,1,"#d8d4c8");
-      px(ctx,U,6,6,2,2,cf.fruit2); px(ctx,U,8,5,2,2,cf.fruit2);
+      p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf);
+      p(5,5,3,3,cf.fruit); p(9,4,3,3,cf.fruit); p(5,5,1,1,cf.fruit2); p(9,4,1,1,cf.fruit2);
+    } else if(crop==="turnip"){
+      p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf);
+      p(6,7,5,5,cf.fruit); p(6,11,5,1,"#d8d4c8"); p(6,6,2,2,cf.fruit2); p(8,5,2,2,cf.fruit2);
+    } else if(crop==="potato"){
+      p(7,6,2,4,"#4d8a2c"); p(5,6,3,2,cf.leaf); p(9,7,3,2,cf.leaf);
+      p(4,10,4,4,cf.fruit); p(8,10,4,4,cf.fruit); p(5,10,1,1,cf.fruit2); p(9,10,1,1,cf.fruit2);
+    } else if(crop==="strawberry"){
+      p(5,7,6,2,cf.leaf); p(4,8,2,2,cf.leaf); p(10,8,2,2,cf.leaf);
+      p(5,10,3,4,cf.fruit); p(9,10,3,4,cf.fruit);
+      p(6,11,1,1,cf.fruit2); p(7,12,1,1,cf.fruit2); p(10,11,1,1,cf.fruit2); p(11,12,1,1,cf.fruit2);
+    } else if(crop==="watermelon"){
+      p(4,7,2,2,cf.leaf);
+      p(5,8,7,6,cf.fruit);
+      p(6,8,1,6,cf.fruit2); p(8,8,1,6,cf.fruit2); p(10,8,1,6,cf.fruit2);
+      p(6,8,2,1,"#7fd98e");
     }
   }
 }
-
 function drawTile(canvas,t){
-  const {ctx,U}=mkCanvas(canvas);
+  const ctx=canvas.getContext("2d"), U=canvas.width/16;
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(t.state==="empty"){ drawGrass(ctx,U); }
-  else if(t.state==="tilled"){ drawSoil(ctx,U,t.watered); }
+  if(t.state==="empty") drawGrass(ctx,U);
+  else if(t.state==="tilled") drawSoil(ctx,U,t.watered);
   else if(t.state==="planted"){ drawSoil(ctx,U,t.watered); drawPlant(ctx,U,t.crop,t.growth); }
 }
 function drawIcon(canvas,crop){
-  const {ctx,U}=mkCanvas(canvas);
+  const ctx=canvas.getContext("2d"), U=canvas.width/16;
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawSoil(ctx,U,false);
-  drawPlant(ctx,U,crop,CROPS[crop].days); // mature見た目
+  drawSoil(ctx,U,false); drawPlant(ctx,U,crop,CROPS[crop].days);
 }
 
-/* ===================== UI構築 ===================== */
+/* ----- 自分のキャラ（ツインテール・ホス狂ちゃん 24x24） ----- */
+function drawChar(){
+  const c=document.getElementById("charCanvas"); const ctx=c.getContext("2d"); const U=c.width/24;
+  ctx.clearRect(0,0,c.width,c.height);
+  const p=(x,y,w,h,col)=>px(ctx,U,x,y,w,h,col);
+  const HAIR="#ff8fc0", HAIR_D="#e96fa6", HAIR_H="#ffc4dd";
+  const SKIN="#ffe1c6", EYE="#9a5fd6", WHT="#ffffff", MOUTH="#d4607f";
+  const BLUSH="#ff9ecb", DRESS="#2b2b35", FRILL="#ff8fc0", HEART="#ff5b8a";
+  // ハートのきらめき
+  p(18,1,1,1,HEART); p(20,1,1,1,HEART); p(18,2,3,1,HEART); p(19,3,1,1,HEART);
+  // ツインテール（左右のふわふわ）
+  p(2,6,5,10,HAIR); p(2,6,1,10,HAIR_D); p(3,7,1,3,HAIR_H);
+  p(17,6,5,10,HAIR); p(21,6,1,10,HAIR_D); p(20,7,1,3,HAIR_H);
+  // リボン（結び目）
+  p(5,6,3,2,HEART); p(16,6,3,2,HEART);
+  // 髪（前髪・トップ）
+  p(7,3,10,6,HAIR); p(7,3,10,1,HAIR_H); p(8,8,1,4,HAIR); p(15,8,1,4,HAIR);
+  // 顔
+  p(8,8,8,7,SKIN);
+  // 前髪のすきま
+  p(9,8,2,2,HAIR); p(13,8,2,2,HAIR);
+  // 目（大きめキラキラ）
+  p(9,10,2,3,WHT); p(13,10,2,3,WHT);
+  p(9,11,2,2,EYE); p(13,11,2,2,EYE);
+  p(9,10,1,1,WHT); p(13,10,1,1,WHT);
+  // ほっぺ・口
+  p(8,12,1,1,BLUSH); p(15,12,1,1,BLUSH);
+  p(11,13,2,1,MOUTH);
+  // 首
+  p(11,15,2,1,SKIN);
+  // ドレス（黒×ピンクフリルのギャル風）
+  p(8,16,8,6,DRESS); p(8,16,8,1,WHT); p(8,21,8,1,FRILL);
+  p(9,18,1,1,FRILL); p(14,18,1,1,FRILL);
+  // 腕
+  p(7,16,1,4,SKIN); p(16,16,1,4,SKIN);
+  // 脚
+  p(10,22,1,2,SKIN); p(13,22,1,2,SKIN);
+}
+
+/* ===================== グリッド構築 ===================== */
 const grid=document.getElementById("grid");
 const tileEls=[];
-game.tiles.forEach((t,i)=>{
-  const d=document.createElement("div"); d.className="tile";
-  const cv=document.createElement("canvas"); cv.width=64; cv.height=64;
-  const badge=document.createElement("span"); badge.className="badge";
-  d.appendChild(cv); d.appendChild(badge);
-  d.addEventListener("click",()=>onTile(i));
-  grid.appendChild(d);
-  tileEls.push({d,cv,badge});
-});
+function buildGrid(){
+  grid.style.gridTemplateColumns=`repeat(${game.cols},1fr)`;
+  grid.innerHTML=""; tileEls.length=0;
+  const total=game.cols*game.rows;
+  // セル小さくなりすぎ防止：列が多いほどcanvasは据え置き、CSSで縮小
+  for(let i=0;i<total;i++){
+    const d=document.createElement("div"); d.className="tile";
+    const cv=document.createElement("canvas"); cv.width=64; cv.height=64;
+    const badge=document.createElement("span"); badge.className="badge";
+    d.appendChild(cv); d.appendChild(badge);
+    d.addEventListener("click",()=>onTile(i));
+    grid.appendChild(d);
+    tileEls.push({d,cv,badge});
+  }
+}
 
 function render(){
   document.getElementById("dayVal").textContent=game.day;
@@ -329,7 +392,7 @@ function render(){
   document.getElementById("staminaVal").textContent=game.stamina;
   document.getElementById("staminaBar").style.width=(game.stamina/game.maxStamina*100)+"%";
   game.tiles.forEach((t,i)=>{
-    const el=tileEls[i];
+    const el=tileEls[i]; if(!el) return;
     drawTile(el.cv,t);
     const ready = t.state==="planted" && t.growth>=CROPS[t.crop].days;
     el.d.classList.toggle("ready",ready);
@@ -337,13 +400,14 @@ function render(){
     else if(t.state==="planted" && t.watered) el.badge.textContent="💧";
     else el.badge.textContent="";
   });
+  saveGame();
 }
 
 /* ===================== ゲーム操作 ===================== */
 function onTile(i){
   const t=game.tiles[i];
   if(t.state==="empty"){
-    if(!spend(COST.TILL,"たがやす")) return;
+    if(!spend(COST.TILL)) return;
     t.state="tilled"; hint("土をたがやした！ 種をまこう 🌱"); render();
   }
   else if(t.state==="tilled"){
@@ -354,17 +418,16 @@ function onTile(i){
   else if(t.state==="planted"){
     const ready=t.growth>=CROPS[t.crop].days;
     if(ready){
-      if(!spend(COST.HARVEST,"収穫")) return;
+      if(!spend(COST.HARVEST)) return;
       game.shipping.push(t.crop);
       const nm=CROPS[t.crop].name;
-      t.state="tilled"; t.crop=null; t.growth=0; t.watered=false;
-      hint(`${nm}を収穫！出荷箱へ入れたよ 📦`); render();
+      Object.assign(t,newTile()); t.state="tilled";
+      hint(`${nm}を収穫！出荷箱へ入れたよ 📦`);
+      setSpeech(pick(LINES_HARVEST)); render();
     } else if(!t.watered){
-      if(!spend(COST.WATER,"水やり")) return;
+      if(!spend(COST.WATER)) return;
       t.watered=true; hint("お水をあげた 💧 ねむると成長するよ"); render();
-    } else {
-      toast("もう水やり済み。ねむると育つよ 😴");
-    }
+    } else { toast("もう水やり済み。ねむると育つよ 😴"); }
   }
 }
 
@@ -373,39 +436,40 @@ function plant(i,crop){
   if(game.seeds[crop]<=0){ toast("その種がないよ"); return; }
   if(game.stamina<COST.PLANT){ toast("体力が足りない…ねよう 😴"); return; }
   game.stamina-=COST.PLANT; game.seeds[crop]--;
-  t.state="planted"; t.crop=crop; t.growth=0; t.watered=false;
+  Object.assign(t,newTile()); t.state="planted"; t.crop=crop;
   closeSheet(); hint(`${CROPS[crop].name}の種をまいた！水をあげよう 💧`); render();
 }
 
-function spend(cost,label){
+function spend(cost){
   if(game.stamina<cost){ toast("体力が足りない…ねよう 😴"); return false; }
   game.stamina-=cost; return true;
 }
 
 function buy(crop){
   const cf=CROPS[crop];
-  if(game.money<cf.seed){ toast("おかねが足りないよ 💸"); return; }
+  if(game.money<cf.seed){ toast("おかねが足りないよ 💸"); setSpeech(pick(LINES_BROKE)); return; }
   game.money-=cf.seed; game.seeds[crop]++;
-  render(); openShop(); // 数を更新
-  toast(`${cf.name}の種を買った！`);
+  render(); openShop(); toast(`${cf.name}の種を買った！`);
+}
+
+function buyExpansion(idx){
+  const ex=EXPANSIONS[idx];
+  if(game.money<ex.cost){ toast("おかねが足りないよ 💸"); return; }
+  game.money-=ex.cost; game.cols=ex.cols; game.rows=ex.rows;
+  while(game.tiles.length < game.cols*game.rows) game.tiles.push(newTile());
+  buildGrid(); render(); openShop();
+  toast(`畑をひろげた！ ${ex.cols}×${ex.rows} 🌾`);
+  setSpeech("畑がひろくなった〜！もっと貢げちゃう✨");
 }
 
 /* ねる → 夜に出荷＆成長 → 朝 */
 function sleep(){
-  // 出荷箱 → おかね
   let earn=0; const sold={};
   game.shipping.forEach(c=>{ earn+=CROPS[c].sell; sold[c]=(sold[c]||0)+1; });
-  game.shipping=[];
-  game.money+=earn;
-  // 成長（水やりしたものだけ）
-  game.tiles.forEach(t=>{
-    if(t.state==="planted" && t.watered){ t.growth++; }
-    t.watered=false;
-  });
-  // 翌朝
+  game.shipping=[]; game.money+=earn;
+  game.tiles.forEach(t=>{ if(t.state==="planted" && t.watered) t.growth++; t.watered=false; });
   game.day++; game.stamina=game.maxStamina;
-  render();
-  showMorning(earn,sold);
+  render(); showMorning(earn,sold);
 }
 
 /* ===================== シート（ショップ／植える） ===================== */
@@ -414,20 +478,36 @@ const sheet=document.getElementById("sheet");
 function closeSheet(){ overlay.classList.remove("show"); }
 
 function openShop(){
-  let html=`<h2>🛒 たねやさん</h2>`;
+  let html=`<h2>🛒 ショップ</h2><div class="sectionTtl">🌱 たね</div>`;
   CROP_IDS.forEach(c=>{
-    const cf=CROPS[c]; const canAfford=game.money>=cf.seed;
+    const cf=CROPS[c]; const ok=game.money>=cf.seed;
     html+=`<div class="item">
       <canvas width="64" height="64" data-icon="${c}"></canvas>
-      <div class="info">
-        <div class="nm">${cf.name}</div>
-        <div class="sub">種 ${cf.seed}円 ・ ${cf.days}日で収穫 ・ 売値 ${cf.sell}円</div>
-        <div class="own">手持ちの種：${game.seeds[c]}こ</div>
-      </div>
-      <button class="act" data-buy="${c}" ${canAfford?"":"disabled"}>買う</button>
+      <div class="info"><div class="nm">${cf.name}</div>
+        <div class="sub">種 ${cf.seed}円 ・ ${cf.days}日 ・ 売値 ${cf.sell}円</div>
+        <div class="own">手持ち：${game.seeds[c]}こ</div></div>
+      <button class="act" data-buy="${c}" ${ok?"":"disabled"}>買う</button>
     </div>`;
   });
+  // 畑拡張
+  html+=`<div class="sectionTtl">🌾 畑をひろげる</div>`;
+  const cur=game.cols*game.rows;
+  const next=EXPANSIONS.filter(e=>e.cols*e.rows>cur);
+  if(next.length===0){
+    html+=`<div class="item"><div class="ico">🌾</div><div class="info"><div class="nm">最大サイズ！</div>
+      <div class="sub">これ以上は今のところ広げられないよ</div></div></div>`;
+  } else {
+    next.forEach(ex=>{
+      const idx=EXPANSIONS.indexOf(ex); const ok=game.money>=ex.cost;
+      html+=`<div class="item"><div class="ico">🌾</div>
+        <div class="info"><div class="nm">${ex.cols}×${ex.rows}（${ex.cols*ex.rows}マス）</div>
+        <div class="sub">いまの畑をひろげる</div></div>
+        <button class="act buyx" data-expand="${idx}" ${ok?"":"disabled"}>${ex.cost}円</button></div>`;
+    });
+  }
   html+=`<button class="closeBtn" data-close>とじる</button>`;
+  html+=`<button class="resetBtn" data-reset>🗑 最初からはじめる</button>`;
+  html+=`<div class="saveNote">💾 進行はこの端末に自動でセーブされています</div>`;
   sheet.innerHTML=html; mountSheet();
   overlay.classList.add("show");
 }
@@ -438,11 +518,9 @@ function openPlant(i){
     const cf=CROPS[c]; const has=game.seeds[c]>0;
     html+=`<div class="item">
       <canvas width="64" height="64" data-icon="${c}"></canvas>
-      <div class="info">
-        <div class="nm">${cf.name}</div>
+      <div class="info"><div class="nm">${cf.name}</div>
         <div class="sub">${cf.days}日で収穫 ・ 売値 ${cf.sell}円</div>
-        <div class="own">手持ちの種：${game.seeds[c]}こ</div>
-      </div>
+        <div class="own">手持ち：${game.seeds[c]}こ</div></div>
       <button class="act" data-plant="${c}" ${has?"":"disabled"}>植える</button>
     </div>`;
   });
@@ -454,7 +532,9 @@ function openPlant(i){
 function mountSheet(plantIndex){
   sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>drawIcon(cv,cv.dataset.icon));
   sheet.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>buy(b.dataset.buy));
+  sheet.querySelectorAll("[data-expand]").forEach(b=>b.onclick=()=>buyExpansion(+b.dataset.expand));
   sheet.querySelectorAll("[data-plant]").forEach(b=>b.onclick=()=>plant(plantIndex,b.dataset.plant));
+  sheet.querySelectorAll("[data-reset]").forEach(b=>b.onclick=resetGame);
   sheet.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeSheet);
 }
 
@@ -470,7 +550,7 @@ function showMorning(earn,sold){
 }
 document.getElementById("mGo").onclick=()=>{
   document.getElementById("morning").classList.remove("show");
-  hint("あたらしい一日のはじまり！");
+  hint("あたらしい一日のはじまり！"); setSpeech(pick(LINES_MORNING));
 };
 
 /* ===================== 雑多 ===================== */
@@ -481,11 +561,16 @@ function toast(msg){
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove("show"),1700);
 }
 function hint(msg){ document.getElementById("hint").textContent=msg; }
+function setSpeech(msg){ document.getElementById("speech").textContent=msg; }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
 document.getElementById("shopBtn").onclick=openShop;
 document.getElementById("sleepBtn").onclick=sleep;
 overlay.addEventListener("click",e=>{ if(e.target===overlay) closeSheet(); });
 
+/* ===================== 起動 ===================== */
+buildGrid();
+drawChar();
 render();
 </script>
 </body>
