@@ -202,6 +202,20 @@ const FAIRY_DAY=5, FAIRY_HOME={x:5*16+8,y:5*16+2};
 const GIFTS=[ {key:"candy",name:"あめ",emoji:"🍬",cost:50,aff:3},
   {key:"flower",name:"おはな",emoji:"💐",cost:150,aff:8},
   {key:"jewel",name:"ほうせき",emoji:"💎",cost:500,aff:25} ];
+// ホストクラブ（夜の街）
+const HOST_NAME="レオ";
+const HOST_RANKS=[ {min:0,name:"初回",emoji:"🌱"}, {min:3000,name:"担当",emoji:"💕"},
+  {min:15000,name:"本指名",emoji:"⭐"}, {min:50000,name:"姫",emoji:"👑"} ];
+function hostRank(s){ let r=HOST_RANKS[0]; for(const x of HOST_RANKS)if(s>=x.min)r=x; return r; }
+const HOST_GIFTS=[ {key:"drink",name:"ドリンク",emoji:"🥃",cost:300},
+  {key:"champ",name:"シャンパン",emoji:"🍾",cost:1000},
+  {key:"tower",name:"シャンパンタワー",emoji:"🗼",cost:5000} ];
+const HOST_LINES=["今日も会いに来てくれたんだ、うれしいよ♡","畑がんばってるんだってね、えらい姫だ✨",
+  "会えない日も君のこと考えてたよ？…なんてね♪","次はどこまで突き抜けちゃう？😏","君のためにシャンパン冷やしといたよ🍾",
+  "推されると照れるな…ありがと♡","おかえり。今日はどんな一日だった？"];
+const HOST_REACT={ drink:["かんぱ〜い🥃 ありがと姫♡","その一杯、効くわ〜✨"],
+  champ:["シャンパンいただきます🍾✨","パンッ！最高の音でしょ♡","君がナンバーワンだよ"],
+  tower:["タワーきたーー🗼🍾✨ 君は伝説だよ！！","店中ざわついてる…さすが姫♡","一生ついていきます！！"] };
 // 動物のおとしもの＆加工品（倉庫アイテム）
 const PRODUCTS={
   egg:{name:"たまご",emoji:"🥚",sell:EGG_SELL},
@@ -229,7 +243,7 @@ const LINES_BROKE=["おかねが無い…これじゃ会いに行けないよ〜
 function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
 function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,exp:0,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], drops:[],
-  storage:{}, feed:0, cooking:[], fairy:{appeared:false,greeted:false,affection:0} }; }
+  storage:{}, feed:0, cooking:[], fairy:{appeared:false,greeted:false,affection:0}, host:{spent:0,lineDay:0,line:""} }; }
 let game=loadGame()||freshGame();
 let activeSeed=null;
 
@@ -242,7 +256,8 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   if(!Array.isArray(g.drops))g.drops=Array.isArray(g.eggs)?g.eggs.map(e=>({tx:e.tx,ty:e.ty,kind:"egg"})):[]; delete g.eggs;
   g.animals.forEach(a=>{ if(!a.type)a.type="chicken"; if(a.fed==null)a.fed=false; });
   if(!g.storage||typeof g.storage!=="object")g.storage={}; if(g.feed==null)g.feed=0; if(!Array.isArray(g.cooking))g.cooking=[];
-  if(!g.fairy)g.fairy={appeared:false,greeted:false,affection:0}; return g; }catch(e){ return null; } }
+  if(!g.fairy)g.fairy={appeared:false,greeted:false,affection:0};
+  if(!g.host)g.host={spent:0,lineDay:0,line:""}; return g; }catch(e){ return null; } }
 function resetGame(){ if(!confirm("本当に最初からはじめる？\nいまの畑・おかね・進行はすべて消えます。"))return;
   localStorage.removeItem(SAVE_KEY); game=freshGame(); activeSeed=null; closeSheet(); renderSeedBar();
   if(GS){ GS.player.setPosition(8*16+8,10*16+14); GS.facing="down"; GS.buildPlots(); GS.buildAnimals(); GS.buildFairy(); }
@@ -254,10 +269,11 @@ const HOUSE={x:2,y:2,w:3,h:2,trig:{x:3,y:4}};
 const SHOP ={x:13,y:2,w:3,h:2,trig:{x:14,y:4}};
 const ANIMAL_SHOP={x:13,y:10,w:3,h:2,trig:{x:14,y:9}};
 const KITCHEN={x:7,y:2,w:3,h:2,trig:{x:8,y:4}};      // 加工小屋
+const HOST_CLUB={x:10,y:2,w:3,h:2,trig:{x:11,y:4}};  // ホストクラブ（夜の街への入口）
 const PASTURE={x0:12,y0:6,x1:16,y1:8};               // ニワトリの放牧エリア（タイル範囲）
 function inPasture(tx,ty){ return tx>=PASTURE.x0&&tx<=PASTURE.x1&&ty>=PASTURE.y0&&ty<=PASTURE.y1; }
 const POND=[[2,9],[3,9],[2,10],[3,10]];
-const TREES=[[5,3],[11,3],[2,7],[3,8]];
+const TREES=[[5,3],[16,2],[2,7],[3,8]];
 const PATH=new Set(); for(let x=3;x<=14;x++)PATH.add(x+",5"); PATH.add("3,4"); PATH.add("14,4");
 function isSolidTile(tx,ty){ if(tx<0||ty<0||tx>=MAP_W||ty>=MAP_H)return true;
   if(tx===0||ty===0||tx===MAP_W-1||ty===MAP_H-1)return true;
@@ -265,6 +281,7 @@ function isSolidTile(tx,ty){ if(tx<0||ty<0||tx>=MAP_W||ty>=MAP_H)return true;
   if(tx>=SHOP.x&&tx<SHOP.x+SHOP.w&&ty>=SHOP.y&&ty<SHOP.y+SHOP.h)return true;
   if(tx>=ANIMAL_SHOP.x&&tx<ANIMAL_SHOP.x+ANIMAL_SHOP.w&&ty>=ANIMAL_SHOP.y&&ty<ANIMAL_SHOP.y+ANIMAL_SHOP.h)return true;
   if(tx>=KITCHEN.x&&tx<KITCHEN.x+KITCHEN.w&&ty>=KITCHEN.y&&ty<KITCHEN.y+KITCHEN.h)return true;
+  if(tx>=HOST_CLUB.x&&tx<HOST_CLUB.x+HOST_CLUB.w&&ty>=HOST_CLUB.y&&ty<HOST_CLUB.y+HOST_CLUB.h)return true;
   if(POND.some(([x,y])=>x===tx&&y===ty))return true;
   if(TREES.some(([x,y])=>x===tx&&y===ty))return true; return false; }
 function plotIndex(tx,ty){ if(tx>=FARM_X&&tx<FARM_X+game.cols&&ty>=FARM_Y&&ty<FARM_Y+game.rows)return (ty-FARM_Y)*game.cols+(tx-FARM_X); return -1; }
@@ -352,6 +369,20 @@ function drawCowC(x,frame){ const W="#fbfbfb",Wd="#e4e4ea",K="#2c2c33",P="#ffb3c
   rc(x,7,12,2,2,P); rc(x,9,12,2,2,P); }              // うし乳
 function drawMilkC(x){ rc(x,5,5,6,9,"#ffffff"); rc(x,5,5,1,9,"#e6e6ea"); rc(x,5,13,6,1,"#d8d8df");
   rc(x,6,3,4,2,"#7ec8f0"); rc(x,6,2,4,1,"#a8ddf7"); rc(x,6,8,4,3,"#bfe6ff"); rc(x,7,8,2,1,"#eaf7ff"); }
+function drawHostClubC(x){ rc(x,0,16,48,24,"#241830"); rc(x,0,16,48,4,"#3a2850");      // 建物
+  rc(x,-2,2,52,16,"#3b1f4d"); rc(x,-2,2,52,3,"#ff5fa2");                              // ネオン屋根
+  rc(x,2,18,44,2,"#ff5fa2"); rc(x,2,36,44,2,"#5fd8ff");                               // ネオンの帯
+  rc(x,19,24,10,16,"#120c1a"); rc(x,19,24,10,2,"#ffd84d"); rc(x,27,31,1,2,"#ffd84d"); // ドア
+  rc(x,6,22,6,8,"#ff8fd0"); rc(x,36,22,6,8,"#7fe0ff"); rc(x,7,23,2,2,"#fff"); rc(x,37,23,2,2,"#fff"); // 窓
+  x.font="9px serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("🍾",24,9); }
+function drawHostC(x){ const SKIN="#ffe0c4",HAIR="#3a2a40",HAIRh="#5a4660",SUIT="#15111c",SHIRT="#ffffff",TIE="#ff5fa2";
+  rc(x,3,2,10,6,HAIR); rc(x,3,2,10,2,HAIRh); rc(x,2,4,2,5,HAIR); rc(x,12,4,2,5,HAIR); // 髪
+  rc(x,4,6,8,6,SKIN);                                                     // 顔
+  rc(x,5,8,1,2,"#3a2a40"); rc(x,10,8,1,2,"#3a2a40"); rc(x,5,8,1,1,"#fff"); rc(x,10,8,1,1,"#fff"); // 目
+  rc(x,7,10,2,1,"#c86a7a");                                              // 口
+  rc(x,3,12,10,4,SUIT);                                                  // スーツ
+  rc(x,7,12,2,4,SHIRT); rc(x,7,12,2,2,TIE);                              // シャツ＆ネクタイ
+  rc(x,11,4,1,1,"#fff"); rc(x,13,7,1,1,"#ffd84d"); }                     // キラ
 function drawFairyC(x,frame){ const SKIN="#ffe1c6",HAIR="#b58cff",DRESS="#ff9ed6",WING="#bfeaff",WINGd="#8fd0ff",GLOW="#fff6b0";
   x.save(); x.globalAlpha=.45; x.fillStyle=GLOW; x.beginPath(); x.arc(8,8,7,0,7); x.fill(); x.restore();
   const wy=frame?5:6; rc(x,1,wy,4,5,WING); rc(x,11,wy,4,5,WING); rc(x,1,wy,1,5,WINGd); rc(x,14,wy,1,5,WINGd);
@@ -390,6 +421,7 @@ class Farm extends Phaser.Scene{
     this.add.image(SHOP.x*TS,SHOP.y*TS-2,"shop").setOrigin(0,0).setDepth((SHOP.y+SHOP.h)*TS);
     this.add.image(ANIMAL_SHOP.x*TS,ANIMAL_SHOP.y*TS-2,"animalshop").setOrigin(0,0).setDepth((ANIMAL_SHOP.y+ANIMAL_SHOP.h)*TS);
     this.add.image(KITCHEN.x*TS,KITCHEN.y*TS-2,"kitchen").setOrigin(0,0).setDepth((KITCHEN.y+KITCHEN.h)*TS);
+    this.add.image(HOST_CLUB.x*TS,HOST_CLUB.y*TS-2,"hostclub").setOrigin(0,0).setDepth((HOST_CLUB.y+HOST_CLUB.h)*TS);
     // 木
     TREES.forEach(([x,y])=>this.add.image(x*TS,y*TS-TS,"tree").setOrigin(0,0).setDepth((y+1)*TS));
     // 当たり判定（静的）
@@ -420,7 +452,7 @@ class Farm extends Phaser.Scene{
     add("tree",16,32,drawTreeC); add("pond",16,16,drawPondC); add("fence",16,16,drawFenceC);
     add("house",48,40,drawHouseC); add("shop",48,40,drawShopC); add("animalshop",48,40,drawAnimalShopC);
     add("coop",16,16,drawCoopGroundC); add("egg",16,16,drawEggC); add("milk",16,16,drawMilkC);
-    add("kitchen",48,40,drawKitchenC);
+    add("kitchen",48,40,drawKitchenC); add("hostclub",48,40,drawHostClubC);
     add("chicken_0",16,16,x=>drawChickenC(x,0)); add("chicken_1",16,16,x=>drawChickenC(x,1));
     add("cow_0",22,16,x=>drawCowC(x,0)); add("cow_1",22,16,x=>drawCowC(x,1));
     add("fairy_0",16,16,x=>drawFairyC(x,0)); add("fairy_1",16,16,x=>drawFairyC(x,1));
@@ -510,6 +542,7 @@ function getContext(){ const p=playerTile();
   if(p.x===SHOP.trig.x&&p.y===SHOP.trig.y)return {type:"shop",ico:"🛒",label:"ショップ",trig:SHOP.trig};
   if(p.x===ANIMAL_SHOP.trig.x&&p.y===ANIMAL_SHOP.trig.y)return {type:"animalshop",ico:"🐔",label:"どうぶつ屋",trig:ANIMAL_SHOP.trig};
   if(p.x===KITCHEN.trig.x&&p.y===KITCHEN.trig.y)return {type:"kitchen",ico:"🍳",label:"加工小屋",trig:KITCHEN.trig};
+  if(p.x===HOST_CLUB.trig.x&&p.y===HOST_CLUB.trig.y)return {type:"host",ico:"🍾",label:"ホストクラブ",trig:HOST_CLUB.trig};
   if(GS&&game.fairy&&game.fairy.appeared&&GS.fairyX!=null){ const dx=GS.player.x-GS.fairyX, dy=GS.player.y-GS.fairyY;
     if(dx*dx+dy*dy < (1.6*TS)*(1.6*TS))return {type:"fairy",ico:"🧚",label:"プレゼント"}; }
   const f=frontTile();
@@ -533,6 +566,7 @@ function doAction(){ const c=getContext(); if(!c){ toast("近づいてからボ�
   if(c.type==="shop"){ SFX.buy(); openShop(); return; }
   if(c.type==="animalshop"){ SFX.buy(); openAnimalShop(); return; }
   if(c.type==="kitchen"){ SFX.buy(); openKitchen(); return; }
+  if(c.type==="host"){ SFX.buy(); openHostClub(); return; }
   if(c.type==="feed"){ feedAnimals(); return; }
   if(c.type==="fairy"){ SFX.plant(); openFairy(); return; }
   if(c.type==="sleep"){ sleep(); return; }
@@ -661,6 +695,29 @@ function sellStorage(k){ if(!(game.storage[k]>0))return; const s=prodInfo(k).sel
   SFX.coin(); toast(`${prodInfo(k).name}を売った +${s}円`); openKitchen(); saveGame(); }
 function sellAllStorage(){ let total=0; Object.keys(game.storage).forEach(k=>{ total+=prodInfo(k).sell*game.storage[k]; });
   if(total<=0)return; game.money+=total; game.storage={}; SFX.coin(); setSpeech(`まとめて出荷〜！💰 +${total.toLocaleString()}円`,2200); openKitchen(); saveGame(); }
+function openHostClub(){ const ho=game.host;
+  if(ho.lineDay!==game.day){ ho.line=pick(HOST_LINES); ho.lineDay=game.day; saveGame(); }
+  const rank=hostRank(ho.spent), idx=HOST_RANKS.indexOf(rank), next=HOST_RANKS[idx+1];
+  const prog = next ? `次の「${next.name}」まで あと ${(next.min-ho.spent).toLocaleString()}円💸` : "最高ランク「姫」達成！👑✨";
+  let h=`<h2>🍾 ホストクラブ</h2>`;
+  h+=`<div class="item"><canvas width="72" height="72" data-host style="image-rendering:pixelated;border-radius:12px;background:#2a1d38;flex:none"></canvas>
+    <div class="info"><div class="nm">${HOST_NAME} <span style="color:#ff5fa2">${rank.emoji}${rank.name}</span></div>
+    <div class="sub">「${ho.line||HOST_LINES[0]}」</div><div class="own">貢ぎ合計：${ho.spent.toLocaleString()}円</div></div></div>`;
+  h+=`<div class="saveNote">${prog}</div><div class="sectionTtl">🥂 貢ぐ</div>`;
+  HOST_GIFTS.forEach(g=>{ const ok=game.money>=g.cost;
+    h+=`<div class="item"><div class="ico">${g.emoji}</div><div class="info"><div class="nm">${g.name}</div>
+      <div class="sub">${g.cost.toLocaleString()}円</div></div>
+      <button class="act" data-hostgift="${g.key}" ${ok?"":"disabled"}>貢ぐ</button></div>`; });
+  h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
+function hostGift(key){ const g=HOST_GIFTS.find(x=>x.key===key); if(!g)return;
+  if(game.money<g.cost){ toast("おかねが足りないよ💸"); SFX.error(); setSpeech("お金ためてからまた来てね？♡",2200); return; }
+  const before=hostRank(game.host.spent); game.money-=g.cost; game.host.spent+=g.cost; SFX.coin();
+  const after=hostRank(game.host.spent), p=playerTile();
+  if(GS){ GS.fxBurst(p.x,p.y,["#ff5fa2","#ffd84d","#5fd8ff","#ffffff"]); GS.fxFloat(p.x,p.y,"-"+g.cost.toLocaleString()+"円","#ff5fa2"); }
+  if(after!==before){ SFX.expand(); if(GS)GS.fxBurst(p.x,p.y,["#ffd84d","#ff5fa2","#ffffff","#5fd8ff"]);
+    setSpeech(`${after.emoji} ランクアップ！「${after.name}」になった！🎉`,3200); }
+  else setSpeech(pick(HOST_REACT[key]),2400);
+  openHostClub(); saveGame(); }
 function openFairy(){ const a=game.fairy.affection, hearts=Math.round(a/20), r=a/100;
   let status; if(r<0.25)status="気まぐれ。たま〜にお水あげる程度…💤"; else if(r<0.6)status="ちょっと手伝ってくれる🌱";
   else if(r<1)status="けっこう頼れる！💧"; else status="毎朝ぜんぶ水やり！最高のパートナー✨";
@@ -686,6 +743,9 @@ function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>d
   sheet.querySelectorAll("[data-cook]").forEach(b=>b.onclick=()=>cookRecipe(b.dataset.cook));
   sheet.querySelectorAll("[data-sell]").forEach(b=>b.onclick=()=>sellStorage(b.dataset.sell));
   sheet.querySelectorAll("[data-sellall]").forEach(b=>b.onclick=sellAllStorage);
+  sheet.querySelectorAll("canvas[data-host]").forEach(cv=>{ const c=cv.getContext("2d"); c.imageSmoothingEnabled=false;
+    const a=mkCanvas(16,16,drawHostC); c.drawImage(a,0,0,cv.width,cv.height); });
+  sheet.querySelectorAll("[data-hostgift]").forEach(b=>b.onclick=()=>hostGift(b.dataset.hostgift));
   sheet.querySelectorAll("[data-gift]").forEach(b=>b.onclick=()=>giveGift(b.dataset.gift));
   sheet.querySelectorAll("[data-expand]").forEach(b=>b.onclick=()=>buyExpansion(+b.dataset.expand));
   sheet.querySelectorAll("[data-reset]").forEach(b=>b.onclick=resetGame);
