@@ -197,19 +197,39 @@ const CROPS={
 const CROP_IDS=["turnip","potato","tomato","strawberry","corn","watermelon"];
 const EXPANSIONS=[ {cols:6,rows:4,cost:1000}, {cols:6,rows:6,cost:3000} ];
 const CHICKEN_COST=800, EGG_SELL=80, MAX_CHICKENS=6;
+const COW_COST=2500, MILK_SELL=150, MAX_COWS=4, FEED_COST=25;
 const FAIRY_DAY=5, FAIRY_HOME={x:5*16+8,y:5*16+2};
 const GIFTS=[ {key:"candy",name:"あめ",emoji:"🍬",cost:50,aff:3},
   {key:"flower",name:"おはな",emoji:"💐",cost:150,aff:8},
   {key:"jewel",name:"ほうせき",emoji:"💎",cost:500,aff:25} ];
-function prodInfo(id){ if(CROPS[id])return {name:CROPS[id].name,sell:CROPS[id].sell}; if(id==="egg")return {name:"たまご",sell:EGG_SELL}; return {name:id,sell:0}; }
+// 動物のおとしもの＆加工品（倉庫アイテム）
+const PRODUCTS={
+  egg:{name:"たまご",emoji:"🥚",sell:EGG_SELL},
+  milk:{name:"牛乳",emoji:"🥛",sell:MILK_SELL},
+  omelet:{name:"オムレツ",emoji:"🍳",sell:220},
+  cheese:{name:"チーズ",emoji:"🧀",sell:360},
+  butter:{name:"バター",emoji:"🧈",sell:300},
+  pudding:{name:"プリン",emoji:"🍮",sell:560},
+  cake:{name:"ケーキ",emoji:"🎂",sell:980},
+};
+// 加工レシピ（材料は倉庫から消費、翌朝に完成して倉庫へ）
+const RECIPES=[
+  {key:"omelet", out:"omelet", emoji:"🍳", name:"オムレツ", need:{egg:1}},
+  {key:"cheese", out:"cheese", emoji:"🧀", name:"チーズ", need:{milk:1}},
+  {key:"butter", out:"butter", emoji:"🧈", name:"バター", need:{milk:1}},
+  {key:"pudding",out:"pudding",emoji:"🍮", name:"プリン", need:{egg:1,milk:1}},
+  {key:"cake",   out:"cake",   emoji:"🎂", name:"ケーキ", need:{egg:2,milk:1}},
+];
+function prodInfo(id){ if(CROPS[id])return {name:CROPS[id].name,sell:CROPS[id].sell};
+  if(PRODUCTS[id])return {name:PRODUCTS[id].name,sell:PRODUCTS[id].sell}; return {name:id,sell:0}; }
 const LINES_MORNING=["おはよ〜！今日もキラキラいくよ🎀","ふぁ〜あ…よく寝た♪ さ、かせぐわよ💖","今日もせっせと働いて、夜は推しに会いに行くの✨"];
 const LINES_HARVEST=["売れたら推しにシャンパン入れちゃう？🍾 なんてね♡","この子たち立派に育って…えらいぞ〜♪","畑ひろげて伝説の太客になるんだから✨","もうひと稼ぎして、今日は同伴いけるかな…!?"];
 const LINES_BROKE=["おかねが無い…これじゃ会いに行けないよ〜😭","種代も無いなんて…まずは収穫しなきゃ💦"];
 
 function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
 function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,exp:0,cols:4,rows:4,
-  seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], eggs:[],
-  fairy:{appeared:false,greeted:false,affection:0} }; }
+  seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], drops:[],
+  storage:{}, feed:0, cooking:[], fairy:{appeared:false,greeted:false,affection:0} }; }
 let game=loadGame()||freshGame();
 let activeSeed=null;
 
@@ -218,7 +238,10 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   CROP_IDS.forEach(c=>{ if(g.seeds[c]==null)g.seeds[c]=0; }); if(!g.cols)g.cols=4; if(!g.rows)g.rows=4;
   if(g.level==null)g.level=1; if(g.exp==null)g.exp=0; g.maxStamina=14+g.level; if(g.stamina>g.maxStamina)g.stamina=g.maxStamina;
   if(!Array.isArray(g.tiles))g.tiles=Array.from({length:16},newTile); while(g.tiles.length<g.cols*g.rows)g.tiles.push(newTile());
-  if(!Array.isArray(g.shipping))g.shipping=[]; if(!Array.isArray(g.animals))g.animals=[]; if(!Array.isArray(g.eggs))g.eggs=[];
+  if(!Array.isArray(g.shipping))g.shipping=[]; if(!Array.isArray(g.animals))g.animals=[];
+  if(!Array.isArray(g.drops))g.drops=Array.isArray(g.eggs)?g.eggs.map(e=>({tx:e.tx,ty:e.ty,kind:"egg"})):[]; delete g.eggs;
+  g.animals.forEach(a=>{ if(!a.type)a.type="chicken"; if(a.fed==null)a.fed=false; });
+  if(!g.storage||typeof g.storage!=="object")g.storage={}; if(g.feed==null)g.feed=0; if(!Array.isArray(g.cooking))g.cooking=[];
   if(!g.fairy)g.fairy={appeared:false,greeted:false,affection:0}; return g; }catch(e){ return null; } }
 function resetGame(){ if(!confirm("本当に最初からはじめる？\nいまの畑・おかね・進行はすべて消えます。"))return;
   localStorage.removeItem(SAVE_KEY); game=freshGame(); activeSeed=null; closeSheet(); renderSeedBar();
@@ -230,6 +253,7 @@ const TS=16, MAP_W=18, MAP_H=13, FARM_X=6, FARM_Y=6;
 const HOUSE={x:2,y:2,w:3,h:2,trig:{x:3,y:4}};
 const SHOP ={x:13,y:2,w:3,h:2,trig:{x:14,y:4}};
 const ANIMAL_SHOP={x:13,y:10,w:3,h:2,trig:{x:14,y:9}};
+const KITCHEN={x:7,y:2,w:3,h:2,trig:{x:8,y:4}};      // 加工小屋
 const PASTURE={x0:12,y0:6,x1:16,y1:8};               // ニワトリの放牧エリア（タイル範囲）
 function inPasture(tx,ty){ return tx>=PASTURE.x0&&tx<=PASTURE.x1&&ty>=PASTURE.y0&&ty<=PASTURE.y1; }
 const POND=[[2,9],[3,9],[2,10],[3,10]];
@@ -240,6 +264,7 @@ function isSolidTile(tx,ty){ if(tx<0||ty<0||tx>=MAP_W||ty>=MAP_H)return true;
   if(tx>=HOUSE.x&&tx<HOUSE.x+HOUSE.w&&ty>=HOUSE.y&&ty<HOUSE.y+HOUSE.h)return true;
   if(tx>=SHOP.x&&tx<SHOP.x+SHOP.w&&ty>=SHOP.y&&ty<SHOP.y+SHOP.h)return true;
   if(tx>=ANIMAL_SHOP.x&&tx<ANIMAL_SHOP.x+ANIMAL_SHOP.w&&ty>=ANIMAL_SHOP.y&&ty<ANIMAL_SHOP.y+ANIMAL_SHOP.h)return true;
+  if(tx>=KITCHEN.x&&tx<KITCHEN.x+KITCHEN.w&&ty>=KITCHEN.y&&ty<KITCHEN.y+KITCHEN.h)return true;
   if(POND.some(([x,y])=>x===tx&&y===ty))return true;
   if(TREES.some(([x,y])=>x===tx&&y===ty))return true; return false; }
 function plotIndex(tx,ty){ if(tx>=FARM_X&&tx<FARM_X+game.cols&&ty>=FARM_Y&&ty<FARM_Y+game.rows)return (ty-FARM_Y)*game.cols+(tx-FARM_X); return -1; }
@@ -307,6 +332,26 @@ function drawAnimalShopC(x){ rc(x,0,18,48,22,"#caa46a"); rc(x,0,18,48,4,"#b78c4f
   rc(x,-2,2,52,18,"#b5483f"); rc(x,-2,2,52,3,"#d4685f");
   rc(x,18,26,12,14,"#8a6038"); rc(x,18,26,12,2,"#a87c4a");
   x.font="9px serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("🐔",24,9); }
+function drawKitchenC(x){ rc(x,0,18,48,22,"#f3e7cf"); rc(x,0,18,48,4,"#e3d2ac");
+  rc(x,-2,2,52,18,"#caa05a"); rc(x,-2,2,52,3,"#e0bd7e");
+  rc(x,33,-4,7,12,"#9a6f40"); rc(x,32,-6,9,3,"#b5895a");            // えんとつ
+  rc(x,18,26,12,14,"#8a6038"); rc(x,18,26,12,2,"#a87c4a");          // ドア
+  rc(x,6,24,9,8,"#bfe6ff"); rc(x,6,24,9,1,"#e6f5ff");               // まど
+  x.font="9px serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("🍳",24,9); }
+function drawCowC(x,frame){ const W="#fbfbfb",Wd="#e4e4ea",K="#2c2c33",P="#ffb3c6",O="#f0a020";
+  rc(x,2,7,3,2,W);                                   // しっぽ側
+  rc(x,3,5,13,7,W); rc(x,3,10,13,2,Wd);              // からだ
+  rc(x,5,6,3,3,K); rc(x,10,9,3,2,K); rc(x,8,5,2,2,K);// ぶち
+  rc(x,14,4,5,6,W);                                  // あたま
+  rc(x,13,3,2,2,K); rc(x,18,3,2,2,K);                // みみ
+  rc(x,14,2,1,2,Wd); rc(x,18,2,1,2,Wd);              // つの
+  rc(x,16,7,4,3,P);                                  // はな
+  rc(x,15,5,1,1,K); rc(x,18,5,1,1,K);                // め
+  rc(x,5,11,2,3,K); rc(x,12,11,2,3,K);               // あし
+  if(frame){ rc(x,7,12,2,2,K); rc(x,10,12,2,2,K); }
+  rc(x,7,12,2,2,P); rc(x,9,12,2,2,P); }              // うし乳
+function drawMilkC(x){ rc(x,5,5,6,9,"#ffffff"); rc(x,5,5,1,9,"#e6e6ea"); rc(x,5,13,6,1,"#d8d8df");
+  rc(x,6,3,4,2,"#7ec8f0"); rc(x,6,2,4,1,"#a8ddf7"); rc(x,6,8,4,3,"#bfe6ff"); rc(x,7,8,2,1,"#eaf7ff"); }
 function drawFairyC(x,frame){ const SKIN="#ffe1c6",HAIR="#b58cff",DRESS="#ff9ed6",WING="#bfeaff",WINGd="#8fd0ff",GLOW="#fff6b0";
   x.save(); x.globalAlpha=.45; x.fillStyle=GLOW; x.beginPath(); x.arc(8,8,7,0,7); x.fill(); x.restore();
   const wy=frame?5:6; rc(x,1,wy,4,5,WING); rc(x,11,wy,4,5,WING); rc(x,1,wy,1,5,WINGd); rc(x,14,wy,1,5,WINGd);
@@ -344,6 +389,7 @@ class Farm extends Phaser.Scene{
     this.add.image(HOUSE.x*TS,HOUSE.y*TS-2,"house").setOrigin(0,0).setDepth((HOUSE.y+HOUSE.h)*TS);
     this.add.image(SHOP.x*TS,SHOP.y*TS-2,"shop").setOrigin(0,0).setDepth((SHOP.y+SHOP.h)*TS);
     this.add.image(ANIMAL_SHOP.x*TS,ANIMAL_SHOP.y*TS-2,"animalshop").setOrigin(0,0).setDepth((ANIMAL_SHOP.y+ANIMAL_SHOP.h)*TS);
+    this.add.image(KITCHEN.x*TS,KITCHEN.y*TS-2,"kitchen").setOrigin(0,0).setDepth((KITCHEN.y+KITCHEN.h)*TS);
     // 木
     TREES.forEach(([x,y])=>this.add.image(x*TS,y*TS-TS,"tree").setOrigin(0,0).setDepth((y+1)*TS));
     // 当たり判定（静的）
@@ -358,8 +404,8 @@ class Farm extends Phaser.Scene{
     this.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); this.cameras.main.startFollow(this.player,true,0.18,0.18);
     this.cameras.main.setBackgroundColor("#6ea83f"); this.applyZoom();
     this.scale.on("resize",this.applyZoom,this);
-    // 動物・たまご・妖精
-    this.chickens=[]; this.eggSprites=[]; this.buildAnimals();
+    // 動物・おとしもの・妖精
+    this.animalSprs=[]; this.eggSprites=[]; this.buildAnimals();
     this.fairySpr=null; this.fairyX=null; this.fairyY=null; this.buildFairy();
     // ハイライト
     this.hl=this.add.graphics().setDepth(99999);
@@ -373,8 +419,10 @@ class Farm extends Phaser.Scene{
     CROP_IDS.forEach(c=>{ for(let s=0;s<3;s++) add("crop_"+c+"_"+s,16,16,x=>drawPlantC(x,c,s)); });
     add("tree",16,32,drawTreeC); add("pond",16,16,drawPondC); add("fence",16,16,drawFenceC);
     add("house",48,40,drawHouseC); add("shop",48,40,drawShopC); add("animalshop",48,40,drawAnimalShopC);
-    add("coop",16,16,drawCoopGroundC); add("egg",16,16,drawEggC);
+    add("coop",16,16,drawCoopGroundC); add("egg",16,16,drawEggC); add("milk",16,16,drawMilkC);
+    add("kitchen",48,40,drawKitchenC);
     add("chicken_0",16,16,x=>drawChickenC(x,0)); add("chicken_1",16,16,x=>drawChickenC(x,1));
+    add("cow_0",22,16,x=>drawCowC(x,0)); add("cow_1",22,16,x=>drawCowC(x,1));
     add("fairy_0",16,16,x=>drawFairyC(x,0)); add("fairy_1",16,16,x=>drawFairyC(x,1));
     ["down","up","left","right"].forEach(d=>{ for(let f=0;f<2;f++) add("p_"+d+"_"+f,16,18,x=>drawPlayerC(x,d,f)); });
     add("spark",4,4,x=>{ x.fillStyle="#fff"; x.fillRect(0,0,4,4); });
@@ -390,12 +438,12 @@ class Farm extends Phaser.Scene{
     if(t.state==="planted"){ const r=t.growth/CROPS[t.crop].days; const s=r<0.45?0:(r<1?1:2);
       pl.cr.setTexture("crop_"+t.crop+"_"+s).setVisible(true); } else pl.cr.setVisible(false); }
   refreshAllPlots(){ for(let i=0;i<this.plots.length;i++)this.updatePlot(i); }
-  buildAnimals(){ (this.chickens||[]).forEach(c=>c.spr.destroy()); this.chickens=[];
-    game.animals.forEach(o=>this.addChicken(o)); this.refreshEggs(); }
-  addChicken(obj){ const spr=this.add.image(obj.x,obj.y,"chicken_0").setOrigin(0.5,0.85).setDepth(obj.y);
-    this.chickens.push({obj,spr,vx:0,vy:0,t:Math.random()*2}); }
-  refreshEggs(){ (this.eggSprites||[]).forEach(s=>s.destroy()); this.eggSprites=[];
-    game.eggs.forEach(e=>{ const s=this.add.image(e.tx*TS,e.ty*TS,"egg").setOrigin(0).setDepth(e.ty*TS+TS); this.eggSprites.push(s); }); }
+  buildAnimals(){ (this.animalSprs||[]).forEach(c=>c.spr.destroy()); this.animalSprs=[];
+    game.animals.forEach(o=>this.addAnimal(o)); this.refreshDrops(); }
+  addAnimal(obj){ const spr=this.add.image(obj.x,obj.y,(obj.type==="cow"?"cow_0":"chicken_0")).setOrigin(0.5,0.85).setDepth(obj.y);
+    this.animalSprs.push({obj,spr,vx:0,vy:0,t:Math.random()*2}); }
+  refreshDrops(){ (this.eggSprites||[]).forEach(s=>s.destroy()); this.eggSprites=[];
+    game.drops.forEach(d=>{ const s=this.add.image(d.tx*TS,d.ty*TS,(d.kind==="milk"?"milk":"egg")).setOrigin(0).setDepth(d.ty*TS+TS); this.eggSprites.push(s); }); }
   buildFairy(){ if(this.fairySpr){ this.fairySpr.destroy(); this.fairySpr=null; this.fairyX=this.fairyY=null; }
     this.fairyBusy=false;
     if(game.fairy&&game.fairy.appeared){ this.fairySpr=this.add.image(FAIRY_HOME.x,FAIRY_HOME.y,"fairy_0").setOrigin(0.5,0.7).setDepth(99990); } }
@@ -415,13 +463,14 @@ class Farm extends Phaser.Scene{
         onComplete:()=>{ game.tiles[idx].watered=true; this.updatePlot(idx); SFX.water();
           this.fxBurst(w.tx,w.ty,["#9fd0ff","#5cb6e8","#cdeaff","#ffffff"]); this.time.delayedCall(150,step); }}); };
     step(); }
-  wanderChickens(time,dt){ const x0=PASTURE.x0*TS+4, x1=(PASTURE.x1+1)*TS-4, y0=PASTURE.y0*TS+5, y1=(PASTURE.y1+1)*TS-3;
-    this.chickens.forEach(ch=>{ ch.t-=dt; if(ch.t<=0){ ch.t=0.8+Math.random()*1.8;
-      if(Math.random()<0.45){ ch.vx=0; ch.vy=0; } else { const a=Math.random()*6.283, sp=9; ch.vx=Math.cos(a)*sp; ch.vy=Math.sin(a)*sp; } }
+  wanderAnimals(time,dt){ const x0=PASTURE.x0*TS+4, x1=(PASTURE.x1+1)*TS-4, y0=PASTURE.y0*TS+5, y1=(PASTURE.y1+1)*TS-3;
+    this.animalSprs.forEach(ch=>{ const cow=ch.obj.type==="cow"; ch.t-=dt; if(ch.t<=0){ ch.t=(cow?1.4:0.8)+Math.random()*1.8;
+      if(Math.random()<(cow?0.6:0.45)){ ch.vx=0; ch.vy=0; } else { const a=Math.random()*6.283, sp=cow?5:9; ch.vx=Math.cos(a)*sp; ch.vy=Math.sin(a)*sp; } }
       let nx=ch.obj.x+ch.vx*dt, ny=ch.obj.y+ch.vy*dt;
       if(nx<x0||nx>x1)ch.vx*=-1; if(ny<y0||ny>y1)ch.vy*=-1;
       ch.obj.x=Math.max(x0,Math.min(x1,nx)); ch.obj.y=Math.max(y0,Math.min(y1,ny));
-      const mv=(ch.vx||ch.vy); ch.spr.setTexture(mv&&(Math.floor(time/180)%2)?"chicken_1":"chicken_0");
+      const mv=(ch.vx||ch.vy), fr=Math.floor(time/(cow?260:180))%2;
+      ch.spr.setTexture((cow?"cow_":"chicken_")+(mv&&fr?1:0));
       ch.spr.setPosition(ch.obj.x,ch.obj.y).setDepth(ch.obj.y); }); }
   fxBurst(tx,ty,colors){ const x=tx*TS+8,y=ty*TS+8;
     const e=this.add.particles(x,y,"spark",{ speed:{min:25,max:95}, lifespan:560, scale:{start:1.3,end:0},
@@ -439,7 +488,7 @@ class Farm extends Phaser.Scene{
     if(moving){ this.walkT+=dt; this.frame=Math.floor(this.walkT/0.16)%2; this.stepT=(this.stepT||0)+dt; if(this.stepT>0.28){this.stepT=0;SFX.step();} }
     else { this.walkT=0; this.frame=0; }
     this.player.setTexture("p_"+this.facing+"_"+this.frame); this.player.setDepth(this.player.y);
-    this.wanderChickens(time,dt);
+    this.wanderAnimals(time,dt);
     if(this.fairySpr){ this.fairySpr.setTexture(Math.floor(time/120)%2?"fairy_1":"fairy_0");
       if(!this.fairyBusy){ const s=time/1000; const fx=FAIRY_HOME.x+Math.sin(s*1.1)*11, fy=FAIRY_HOME.y+Math.cos(s*0.8)*7;
         this.fairyX=fx; this.fairyY=fy; this.fairySpr.setPosition(fx,fy); }
@@ -448,23 +497,28 @@ class Farm extends Phaser.Scene{
   }
   updateHighlight(){ this.hl.clear(); const c=getContext(); if(!c)return;
     if(c.type==="farm"){ const w=plotWorld(c.idx); this.hl.lineStyle(1.4,c.none?0xffffff:0xffe14d,c.none?0.5:1);
-      this.hl.strokeRect(w.tx*TS+1,w.ty*TS+1,TS-2,TS-2); }
-    else { const t=(c.type==="sleep")?HOUSE.trig:SHOP.trig; const bob=Math.sin(performance.now()/220)*2;
-      this.hl.fillStyle(0xffe14d,1); this.hl.fillTriangle(t.x*TS+8,t.y*TS-2+bob, t.x*TS+3,t.y*TS-9+bob, t.x*TS+13,t.y*TS-9+bob); } }
+      this.hl.strokeRect(w.tx*TS+1,w.ty*TS+1,TS-2,TS-2); return; }
+    const t=c.trig||c.mark; if(!t)return; const bob=Math.sin(performance.now()/220)*2;
+    this.hl.fillStyle(0xffe14d,1); this.hl.fillTriangle(t.x*TS+8,t.y*TS-2+bob, t.x*TS+3,t.y*TS-9+bob, t.x*TS+13,t.y*TS-9+bob); }
 }
 
 /* ===================== アクション文脈 ===================== */
 function playerTile(){ if(!GS||!GS.player)return {x:8,y:10}; return {x:Math.floor(GS.player.x/TS), y:Math.floor(GS.player.y/TS)}; }
 function frontTile(){ const p=playerTile(); const o={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[GS?GS.facing:"down"]; return {x:p.x+o[0],y:p.y+o[1]}; }
 function getContext(){ const p=playerTile();
-  if(p.x===HOUSE.trig.x&&p.y===HOUSE.trig.y)return {type:"sleep",ico:"🛌",label:"ねる"};
-  if(p.x===SHOP.trig.x&&p.y===SHOP.trig.y)return {type:"shop",ico:"🛒",label:"ショップ"};
-  if(p.x===ANIMAL_SHOP.trig.x&&p.y===ANIMAL_SHOP.trig.y)return {type:"animalshop",ico:"🐔",label:"どうぶつ屋"};
+  if(p.x===HOUSE.trig.x&&p.y===HOUSE.trig.y)return {type:"sleep",ico:"🛌",label:"ねる",trig:HOUSE.trig};
+  if(p.x===SHOP.trig.x&&p.y===SHOP.trig.y)return {type:"shop",ico:"🛒",label:"ショップ",trig:SHOP.trig};
+  if(p.x===ANIMAL_SHOP.trig.x&&p.y===ANIMAL_SHOP.trig.y)return {type:"animalshop",ico:"🐔",label:"どうぶつ屋",trig:ANIMAL_SHOP.trig};
+  if(p.x===KITCHEN.trig.x&&p.y===KITCHEN.trig.y)return {type:"kitchen",ico:"🍳",label:"加工小屋",trig:KITCHEN.trig};
   if(GS&&game.fairy&&game.fairy.appeared&&GS.fairyX!=null){ const dx=GS.player.x-GS.fairyX, dy=GS.player.y-GS.fairyY;
     if(dx*dx+dy*dy < (1.6*TS)*(1.6*TS))return {type:"fairy",ico:"🧚",label:"プレゼント"}; }
   const f=frontTile();
-  const egg=game.eggs.find(e=>(e.tx===p.x&&e.ty===p.y)||(e.tx===f.x&&e.ty===f.y));
-  if(egg)return {type:"egg",egg,ico:"🥚",label:"たまごを拾う"};
+  const drop=game.drops.find(e=>(e.tx===p.x&&e.ty===p.y)||(e.tx===f.x&&e.ty===f.y));
+  if(drop){ const pr=PRODUCTS[drop.kind]||PRODUCTS.egg; return {type:"drop",drop,ico:pr.emoji,label:pr.name+"をひろう",mark:{x:drop.tx,y:drop.ty}}; }
+  if(GS&&game.animals.length){ let near=null;
+    for(const a of game.animals){ const dx=GS.player.x-a.x, dy=GS.player.y-a.y; if(dx*dx+dy*dy<(1.8*TS)*(1.8*TS)){ near=a; break; } }
+    if(near){ const unfed=game.animals.filter(a=>!a.fed).length;
+      if(unfed>0)return {type:"feed",ico:"🌾",label:`えさやり(のこり${unfed})`,mark:{x:Math.floor(near.x/TS),y:Math.floor(near.y/TS)}}; } }
   const idx=plotIndex(f.x,f.y);
   if(idx>=0){ const t=game.tiles[idx];
     if(t.state==="empty")return {type:"farm",idx,ico:"⛏",label:"たがやす"};
@@ -478,11 +532,14 @@ function getContext(){ const p=playerTile();
 function doAction(){ const c=getContext(); if(!c){ toast("近づいてからボタンを押してね"); return; }
   if(c.type==="shop"){ SFX.buy(); openShop(); return; }
   if(c.type==="animalshop"){ SFX.buy(); openAnimalShop(); return; }
+  if(c.type==="kitchen"){ SFX.buy(); openKitchen(); return; }
+  if(c.type==="feed"){ feedAnimals(); return; }
   if(c.type==="fairy"){ SFX.plant(); openFairy(); return; }
   if(c.type==="sleep"){ sleep(); return; }
-  if(c.type==="egg"){ const i=game.eggs.indexOf(c.egg); if(i>=0)game.eggs.splice(i,1); game.shipping.push("egg");
-    SFX.coin(); gainExp(2); GS.fxBurst(c.egg.tx,c.egg.ty,["#fff7e0","#ffe14d","#ffffff"]); GS.fxFloat(c.egg.tx,c.egg.ty,"+1 🥚","#d4861a");
-    GS.refreshEggs(); setSpeech("たまごゲット🥚",1200); saveGame(); return; }
+  if(c.type==="drop"){ const i=game.drops.indexOf(c.drop); if(i>=0)game.drops.splice(i,1);
+    const k=c.drop.kind; game.storage[k]=(game.storage[k]||0)+1; const pr=PRODUCTS[k]||PRODUCTS.egg;
+    SFX.coin(); gainExp(2); GS.fxBurst(c.drop.tx,c.drop.ty,["#fff7e0","#ffe14d","#ffffff"]); GS.fxFloat(c.drop.tx,c.drop.ty,"+1 "+pr.emoji,"#d4861a");
+    GS.refreshDrops(); setSpeech(pr.name+"ゲット"+pr.emoji+" 倉庫(🍳)に貯まるよ",1600); saveGame(); return; }
   const idx=c.idx, t=game.tiles[idx], w=plotWorld(idx);
   if(t.state==="empty"){ if(!spend(COST.TILL)){SFX.error();return;} t.state="tilled"; SFX.till(); gainExp(2);
     GS.fxBurst(w.tx,w.ty,["#9a6336","#7d4d29","#c79a5b"]); GS.updatePlot(idx); setSpeech("土をたがやした！種をまこう🌱",1500); saveGame(); }
@@ -515,20 +572,35 @@ function buyExpansion(i){ const ex=EXPANSIONS[i];
   if(game.money<ex.cost){ toast("おかねが足りないよ💸"); SFX.error(); return; }
   game.money-=ex.cost; game.cols=ex.cols; game.rows=ex.rows; while(game.tiles.length<game.cols*game.rows)game.tiles.push(newTile());
   SFX.expand(); if(GS)GS.buildPlots(); openShop(); toast(`畑をひろげた！ ${ex.cols}×${ex.rows}🌾`); setSpeech("畑がひろくなった〜！✨",2000); saveGame(); }
-function buyChicken(){ if(game.animals.length>=MAX_CHICKENS){ toast("小屋がいっぱいだよ🐔"); return; }
-  if(game.money<CHICKEN_COST){ toast("おかねが足りないよ💸"); SFX.error(); setSpeech(pick(LINES_BROKE),2200); return; }
-  game.money-=CHICKEN_COST; const x0=PASTURE.x0*TS+6,x1=(PASTURE.x1+1)*TS-6,y0=PASTURE.y0*TS+6,y1=(PASTURE.y1+1)*TS-4;
-  const obj={ x:x0+Math.random()*(x1-x0), y:y0+Math.random()*(y1-y0) }; game.animals.push(obj); if(GS)GS.addChicken(obj);
-  SFX.buy(); openAnimalShop(); setSpeech("ニワトリをお迎えした🐔💕 放牧エリアにいるよ",2400); saveGame(); }
+function buyAnimal(type){ const isCow=type==="cow", cost=isCow?COW_COST:CHICKEN_COST, max=isCow?MAX_COWS:MAX_CHICKENS;
+  const cur=game.animals.filter(a=>a.type===type).length;
+  if(cur>=max){ toast(isCow?"牛はこれ以上ふやせないよ🐄":"小屋がいっぱいだよ🐔"); return; }
+  if(game.money<cost){ toast("おかねが足りないよ💸"); SFX.error(); setSpeech(pick(LINES_BROKE),2200); return; }
+  game.money-=cost; const x0=PASTURE.x0*TS+6,x1=(PASTURE.x1+1)*TS-6,y0=PASTURE.y0*TS+6,y1=(PASTURE.y1+1)*TS-4;
+  const obj={ type, fed:false, x:x0+Math.random()*(x1-x0), y:y0+Math.random()*(y1-y0) }; game.animals.push(obj); if(GS)GS.addAnimal(obj);
+  SFX.buy(); openAnimalShop(); setSpeech(isCow?"牛さんをお迎えした🐄💕 えさをあげてね🌾":"ニワトリをお迎えした🐔💕 えさをあげてね🌾",2600); saveGame(); }
+function buyFeed(n){ const cost=FEED_COST*n; if(game.money<cost){ toast("おかねが足りないよ💸"); SFX.error(); return; }
+  game.money-=cost; game.feed+=n; SFX.buy(); openAnimalShop(); toast(`えさ×${n}を買った🌾`); saveGame(); }
+function feedAnimals(){ const unfed=game.animals.filter(a=>!a.fed);
+  if(!unfed.length){ toast("みんな満腹だよ😊"); return; }
+  if(game.feed<=0){ toast("えさが無いよ。どうぶつ屋(🐔)で買おう🌾"); SFX.error(); return; }
+  let n=0; for(const a of unfed){ if(game.feed<=0)break; a.fed=true; game.feed--; n++;
+    if(GS)GS.fxFloat(Math.floor(a.x/TS),Math.floor(a.y/TS),"🌾","#7a9e3a"); }
+  SFX.plant(); gainExp(n);
+  let msg=`${n}匹にごはん🌾 あした産んでくれるよ♪`; if(game.feed<=0&&game.animals.some(a=>!a.fed))msg="えさ切れ…どうぶつ屋で買い足してね";
+  setSpeech(msg,2400); saveGame(); }
 function sleep(){ SFX.sleep(); let earn=0; const sold={};
   game.shipping.forEach(c=>{ const info=prodInfo(c); earn+=info.sell; sold[c]=(sold[c]||0)+1; }); game.shipping=[]; game.money+=earn;
   // 成長（前日に水やりされたマス）
   game.tiles.forEach(t=>{ if(t.state==="planted"&&t.watered)t.growth++; t.watered=false; });
-  // たまご
-  game.animals.forEach(a=>{ const tx=Math.floor(a.x/TS),ty=Math.floor(a.y/TS); if(!game.eggs.some(e=>e.tx===tx&&e.ty===ty))game.eggs.push({tx,ty}); });
+  // おとしもの（えさをあげた動物だけ産む）
+  game.animals.forEach(a=>{ if(!a.fed)return; const tx=Math.floor(a.x/TS),ty=Math.floor(a.y/TS), kind=a.type==="cow"?"milk":"egg";
+    if(!game.drops.some(d=>d.tx===tx&&d.ty===ty))game.drops.push({tx,ty,kind}); a.fed=false; });
   game.day++; game.stamina=game.maxStamina;
+  // 加工小屋：完成した加工品を倉庫へ
+  let dishes=0; game.cooking=game.cooking.filter(c=>{ if(c.ready<=game.day){ game.storage[c.out]=(game.storage[c.out]||0)+1; dishes++; return false; } return true; });
   if(!game.fairy.appeared && game.day>=FAIRY_DAY){ game.fairy.appeared=true; if(GS)GS.buildFairy(); }
-  if(GS){ GS.refreshAllPlots(); GS.refreshEggs(); } saveGame(); showMorning(earn,sold); }
+  if(GS){ GS.refreshAllPlots(); GS.refreshDrops(); } saveGame(); showMorning(earn,sold,dishes); }
 
 /* ===================== シート（DOM UI） ===================== */
 const overlay=document.getElementById("overlay"), sheet=document.getElementById("sheet");
@@ -548,13 +620,47 @@ function openShop(){ let h=`<h2>🛒 ショップ</h2><div class="sectionTtl">�
   h+=`<button class="closeBtn" data-close>とじる</button><button class="resetBtn" data-reset>🗑 最初からはじめる</button>
     <div class="saveNote">💾 進行はこの端末に自動セーブされています</div>`;
   sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
-function openAnimalShop(){ const n=game.animals.length;
-  let h=`<h2>🐔 どうぶつ屋さん</h2>`;
+function openAnimalShop(){ const nc=game.animals.filter(a=>a.type!=="cow").length, nk=game.animals.filter(a=>a.type==="cow").length;
+  let h=`<h2>🐔 どうぶつ屋さん</h2><div class="saveNote">🌾 えさをあげた動物だけ、翌朝おとしものを産むよ</div>`;
+  h+=`<div class="sectionTtl">🐾 どうぶつ</div>`;
   h+=`<div class="item"><div class="ico">🐔</div><div class="info"><div class="nm">ニワトリ</div>
-    <div class="sub">毎朝たまごを産むよ（たまご売値 ${EGG_SELL}円）</div><div class="own">飼育中：${n} / ${MAX_CHICKENS}羽</div></div>
-    <button class="act" data-buychicken ${(game.money>=CHICKEN_COST&&n<MAX_CHICKENS)?"":"disabled"}>${CHICKEN_COST}円</button></div>`;
-  if(n>=MAX_CHICKENS) h+=`<div class="saveNote">小屋がいっぱいだよ🐔（また広げられるようにするね）</div>`;
+    <div class="sub">えさ→翌朝たまご🥚（売値 ${EGG_SELL}円）</div><div class="own">飼育中：${nc} / ${MAX_CHICKENS}羽</div></div>
+    <button class="act" data-buyanimal="chicken" ${(game.money>=CHICKEN_COST&&nc<MAX_CHICKENS)?"":"disabled"}>${CHICKEN_COST}円</button></div>`;
+  h+=`<div class="item"><div class="ico">🐄</div><div class="info"><div class="nm">牛</div>
+    <div class="sub">えさ→翌朝ぎゅうにゅう🥛（売値 ${MILK_SELL}円）</div><div class="own">飼育中：${nk} / ${MAX_COWS}頭</div></div>
+    <button class="act" data-buyanimal="cow" ${(game.money>=COW_COST&&nk<MAX_COWS)?"":"disabled"}>${COW_COST}円</button></div>`;
+  h+=`<div class="sectionTtl">🌾 えさ（手持ち：${game.feed}こ）</div>`;
+  h+=`<div class="item"><div class="ico">🌾</div><div class="info"><div class="nm">えさ</div>
+    <div class="sub">1匹のごはん1回ぶん</div></div>
+    <button class="act" data-buyfeed="1" ${game.money>=FEED_COST?"":"disabled"}>×1 ${FEED_COST}円</button>
+    <button class="act buyx" data-buyfeed="10" ${game.money>=FEED_COST*10?"":"disabled"}>×10 ${FEED_COST*10}円</button></div>`;
   h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
+function openKitchen(){ let h=`<h2>🍳 加工小屋</h2>`;
+  if(game.cooking.length) h+=`<div class="saveNote">加工中：${game.cooking.map(c=>PRODUCTS[c.out].emoji).join(" ")}（あした完成🌙）</div>`;
+  h+=`<div class="sectionTtl">🍳 つくる（あした完成）</div>`;
+  RECIPES.forEach(r=>{ const can=Object.entries(r.need).every(([k,v])=>(game.storage[k]||0)>=v);
+    const needTxt=Object.entries(r.need).map(([k,v])=>`${PRODUCTS[k].emoji}${v}`).join("＋");
+    h+=`<div class="item"><div class="ico">${r.emoji}</div><div class="info"><div class="nm">${r.name}</div>
+      <div class="sub">${needTxt} → 売値 ${PRODUCTS[r.out].sell}円</div></div>
+      <button class="act" data-cook="${r.key}" ${can?"":"disabled"}>作る</button></div>`; });
+  const items=Object.keys(game.storage).filter(k=>game.storage[k]>0);
+  h+=`<div class="sectionTtl">📦 倉庫から売る</div>`;
+  if(!items.length) h+=`<div class="saveNote">倉庫はからっぽ。動物のおとしものや加工品がここに貯まるよ</div>`;
+  else { items.forEach(k=>{ const pr=PRODUCTS[k]||{name:k,emoji:"📦"};
+      h+=`<div class="item"><div class="ico">${pr.emoji||"📦"}</div><div class="info"><div class="nm">${pr.name}</div>
+        <div class="sub">売値 ${prodInfo(k).sell}円</div><div class="own">在庫：${game.storage[k]}こ</div></div>
+        <button class="act" data-sell="${k}">売る</button></div>`; });
+    h+=`<button class="act buyx" data-sellall style="width:calc(100% - 8px);margin:6px 4px">ぜんぶ売る💰</button>`; }
+  h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
+function cookRecipe(key){ const r=RECIPES.find(x=>x.key===key); if(!r)return;
+  if(!Object.entries(r.need).every(([k,v])=>(game.storage[k]||0)>=v)){ toast("材料が足りないよ"); SFX.error(); return; }
+  Object.entries(r.need).forEach(([k,v])=>{ game.storage[k]-=v; if(game.storage[k]<=0)delete game.storage[k]; });
+  game.cooking.push({out:r.out,ready:game.day+1}); SFX.buy();
+  setSpeech(`${r.name}を仕込んだ！あした完成だよ${r.emoji}`,2200); openKitchen(); saveGame(); }
+function sellStorage(k){ if(!(game.storage[k]>0))return; const s=prodInfo(k).sell; game.money+=s; game.storage[k]--; if(game.storage[k]<=0)delete game.storage[k];
+  SFX.coin(); toast(`${prodInfo(k).name}を売った +${s}円`); openKitchen(); saveGame(); }
+function sellAllStorage(){ let total=0; Object.keys(game.storage).forEach(k=>{ total+=prodInfo(k).sell*game.storage[k]; });
+  if(total<=0)return; game.money+=total; game.storage={}; SFX.coin(); setSpeech(`まとめて出荷〜！💰 +${total.toLocaleString()}円`,2200); openKitchen(); saveGame(); }
 function openFairy(){ const a=game.fairy.affection, hearts=Math.round(a/20), r=a/100;
   let status; if(r<0.25)status="気まぐれ。たま〜にお水あげる程度…💤"; else if(r<0.6)status="ちょっと手伝ってくれる🌱";
   else if(r<1)status="けっこう頼れる！💧"; else status="毎朝ぜんぶ水やり！最高のパートナー✨";
@@ -575,15 +681,20 @@ function giveGift(key){ const g=GIFTS.find(x=>x.key===key); if(!g)return;
   openFairy(); saveGame(); }
 function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>drawIcon(cv,cv.dataset.icon));
   sheet.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>buy(b.dataset.buy));
-  sheet.querySelectorAll("[data-buychicken]").forEach(b=>b.onclick=buyChicken);
+  sheet.querySelectorAll("[data-buyanimal]").forEach(b=>b.onclick=()=>buyAnimal(b.dataset.buyanimal));
+  sheet.querySelectorAll("[data-buyfeed]").forEach(b=>b.onclick=()=>buyFeed(+b.dataset.buyfeed));
+  sheet.querySelectorAll("[data-cook]").forEach(b=>b.onclick=()=>cookRecipe(b.dataset.cook));
+  sheet.querySelectorAll("[data-sell]").forEach(b=>b.onclick=()=>sellStorage(b.dataset.sell));
+  sheet.querySelectorAll("[data-sellall]").forEach(b=>b.onclick=sellAllStorage);
   sheet.querySelectorAll("[data-gift]").forEach(b=>b.onclick=()=>giveGift(b.dataset.gift));
   sheet.querySelectorAll("[data-expand]").forEach(b=>b.onclick=()=>buyExpansion(+b.dataset.expand));
   sheet.querySelectorAll("[data-reset]").forEach(b=>b.onclick=resetGame);
   sheet.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeSheet); }
 overlay.addEventListener("click",e=>{ if(e.target===overlay)closeSheet(); });
 
-function showMorning(earn,sold){ document.getElementById("mDay").textContent="Day "+game.day; const e=document.getElementById("mEarn");
+function showMorning(earn,sold,dishes){ document.getElementById("mDay").textContent="Day "+game.day; const e=document.getElementById("mEarn");
   let html = earn>0 ? `出荷できたよ！<br>${Object.keys(sold).map(c=>`${prodInfo(c).name}×${sold[c]}`).join("・")}<br>💰 +${earn.toLocaleString()}円` : "今日はいい天気！";
+  if(dishes>0)html += `<br>🍳 加工品が${dishes}こ完成！`;
   e.innerHTML=html;
   if(earn>0){ SFX.coin(); setTimeout(()=>{ burst(innerWidth/2,innerHeight*0.42,["#ffd14d","#f4b740","#fff4c2"],14); floatText(innerWidth/2,innerHeight*0.42,`+${earn.toLocaleString()}円`,"#d4861a"); },220); }
   document.getElementById("morning").classList.add("show"); }
