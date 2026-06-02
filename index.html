@@ -40,6 +40,11 @@
   #calBtn{ position:absolute; top:8px; right:50px; z-index:6; width:36px; height:36px; border-radius:50%;
     border:2px solid var(--line); background:var(--panel); font-size:16px; cursor:pointer; box-shadow:0 3px 0 #c79a5b; }
   #calBtn:active{ transform:translateY(2px); box-shadow:0 1px 0 #c79a5b; }
+  #bagBtn{ position:absolute; top:8px; right:92px; z-index:6; width:36px; height:36px; border-radius:50%;
+    border:2px solid var(--line); background:var(--panel); font-size:16px; cursor:pointer; box-shadow:0 3px 0 #c79a5b; }
+  #bagBtn:active{ transform:translateY(2px); box-shadow:0 1px 0 #c79a5b; }
+  #bagCount{ position:absolute; top:-4px; right:-4px; min-width:16px; height:16px; padding:0 3px; border-radius:9px;
+    background:#e0559a; color:#fff; font-size:10px; font-weight:900; display:none; align-items:center; justify-content:center; box-shadow:0 1px 0 #a8336e; }
   #dayStat{ cursor:pointer; } #dayStat:active{ transform:translateY(1px); }
   #hpHud{ position:absolute; top:8px; left:8px; z-index:6; display:none; flex-direction:column; gap:3px;
     background:#1a1622dd; border:2px solid #6b4a2b; border-radius:11px; padding:5px 9px; box-shadow:0 3px 0 #120c1a; }
@@ -144,6 +149,7 @@
     <div id="speech"></div>
     <button id="muteBtn" aria-label="音">🔊</button>
     <button id="calBtn" aria-label="カレンダー">🗓</button>
+    <button id="bagBtn" aria-label="もちもの">🎒<span id="bagCount"></span></button>
     <div id="hpHud"><span id="hpTxt"></span><div id="hpBarWrap"><div id="hpBar"></div></div></div>
     <div id="potBtn"><span class="pe">🧪</span><span class="pl">のむ</span><span class="pn">0</span></div>
   </div>
@@ -237,6 +243,12 @@ const QUAL=[ {name:"ふつう",emoji:"🥉",mult:1.0}, {name:"銀",emoji:"🥈",
 function rollQuality(){ const lv=game.level||1, fa=(game.fairy&&game.fairy.affection)||0;
   const gold=Math.min(0.5, 0.04+lv*0.012+fa*0.0015), silver=Math.min(0.45, 0.22+lv*0.012);
   const r=Math.random(); if(r<gold)return 2; if(r<gold+silver)return 1; return 0; }
+// もちものバッグ（収穫した作物を品質ごとに保持。キーは "crop:q"）
+function bagAdd(crop,q,n){ const k=crop+":"+q; game.bag[k]=(game.bag[k]||0)+(n||1); }
+function bagRemove(crop,q,n){ const k=crop+":"+q; if(!game.bag[k])return false; game.bag[k]-=(n||1); if(game.bag[k]<=0)delete game.bag[k]; return true; }
+function bagTotal(){ let t=0; for(const k in game.bag)t+=game.bag[k]; return t; }
+function bagStacks(){ return Object.keys(game.bag).filter(k=>game.bag[k]>0).map(k=>{ const i=k.lastIndexOf(":"); return {crop:k.slice(0,i),q:+k.slice(i+1),n:game.bag[k]}; }); }
+function bagBest(){ let best=null; for(const s of bagStacks()){ const score=CROPS[s.crop].sell*QUAL[s.q].mult; if(!best||score>best.score)best={crop:s.crop,q:s.q,score}; } return best; }
 const EXPANSIONS=[ {cols:6,rows:4,cost:1000}, {cols:6,rows:6,cost:3000} ];
 const CHICKEN_COST=800, EGG_SELL=80, MAX_CHICKENS=6;
 const COW_COST=2500, MILK_SELL=150, MAX_COWS=4, FEED_COST=25;
@@ -404,7 +416,7 @@ function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
 function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,exp:0,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], drops:[],
   storage:{}, feed:0, cooking:[], seedmaking:[], fairy:{appeared:false,greeted:false,affection:0},
-  hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0, lastEventDay:0, bestCrop:null,
+  hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0, lastEventDay:0, bag:{},
   hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false}])) }; }
 let game=loadGame()||freshGame();
 let activeSeed=null;
@@ -415,7 +427,7 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   CROP_IDS.forEach(c=>{ if(g.seeds[c]==null)g.seeds[c]=0; }); if(!g.cols)g.cols=4; if(!g.rows)g.rows=4;
   if(g.level==null)g.level=1; if(g.exp==null)g.exp=0; g.maxStamina=14+g.level; if(g.stamina>g.maxStamina)g.stamina=g.maxStamina;
   if(!Array.isArray(g.tiles))g.tiles=Array.from({length:16},newTile); while(g.tiles.length<g.cols*g.rows)g.tiles.push(newTile());
-  if(!Array.isArray(g.shipping))g.shipping=[]; g.shipping=g.shipping.map(s=>typeof s==="string"?{crop:s,q:0}:s); if(g.bestCrop===undefined)g.bestCrop=null;
+  if(!Array.isArray(g.shipping))g.shipping=[]; g.shipping=g.shipping.map(s=>typeof s==="string"?{crop:s,q:0}:s); if(!g.bag||typeof g.bag!=="object")g.bag={}; delete g.bestCrop;
   if(!Array.isArray(g.animals))g.animals=[];
   if(!Array.isArray(g.drops))g.drops=Array.isArray(g.eggs)?g.eggs.map(e=>({tx:e.tx,ty:e.ty,kind:"egg"})):[]; delete g.eggs;
   g.animals.forEach(a=>{ if(!a.type)a.type="chicken"; if(a.fed==null)a.fed=false; });
@@ -1010,12 +1022,11 @@ function doAction(){ const c=getContext(); if(!c){ toast("近づいてからボ�
   else if(t.state==="tilled"){ ensureActiveSeed(); if(!activeSeed){ toast("ショップ(🛒)で種を買ってね"); SFX.error(); return; } plant(idx,activeSeed); }
   else if(t.state==="planted"){
     if(t.growth>=CROPS[t.crop].days){ if(!spend(COST.HARVEST)){SFX.error();return;}
-      const q=rollQuality(), crop=t.crop; game.shipping.push({crop,q});
-      const score=CROPS[crop].sell*QUAL[q].mult; if(!game.bestCrop||score>game.bestCrop.score)game.bestCrop={crop,q,score};
+      const q=rollQuality(), crop=t.crop; bagAdd(crop,q,1);
       Object.assign(t,newTile()); t.state="tilled"; SFX.harvest(); gainExp(4);
       GS.fxBurst(w.tx,w.ty,["#ffe14d","#ff8fc0","#67b23f","#ffffff"]); GS.fxFloat(w.tx,w.ty,"+1 "+QUAL[q].emoji,"#2f7d2f");
-      if(q>0)setSpeech(`${QUAL[q].emoji}${QUAL[q].name}品質の${CROPS[crop].name}！品評会に出せるかも🏅`,2500); else setSpeech(pick(LINES_HARVEST),2500);
-      GS.updatePlot(idx); saveGame(); }
+      if(q>0)setSpeech(`${QUAL[q].emoji}${QUAL[q].name}の${CROPS[crop].name}をゲット！バッグへ🎒`,2500); else setSpeech(pick(LINES_HARVEST),2500);
+      GS.updatePlot(idx); updateBagBtn(); saveGame(); }
     else if(!t.watered){ if(!spend(COST.WATER)){SFX.error();return;} t.watered=true; SFX.water(); gainExp(1);
       GS.fxBurst(w.tx,w.ty,["#9fd0ff","#5cb6e8","#cdeaff"]); GS.updatePlot(idx); saveGame(); }
     else toast("もう水やり済み。ねむると育つよ😴"); } }
@@ -1074,7 +1085,6 @@ function sleep(){ SFX.sleep(); let earn=0; const sold={}; const prevS=curSeason(
   const newS=curSeason().key; let withered=0, seasonMsg="";
   if(prevS!==newS){ const ns=SEASON_BY[newS];
     game.tiles.forEach(t=>{ if(t.state==="planted"&&!cropInSeason(t.crop,newS)){ Object.assign(t,newTile()); withered++; } });
-    game.bestCrop=null;   // 季節がかわったら品評会のエントリーをリセット
     seasonMsg=`${ns.emoji} ${ns.name}になった！（${yearOf(game.day)}年目）`;
     if(withered>0)seasonMsg+=`<br>🥀 季節外の作物が${withered}個 枯れた…`;
     if(GS)GS.applySeasonVisuals(); }
@@ -1124,20 +1134,42 @@ function openAnimalShop(){ const nc=game.animals.filter(a=>a.type!=="cow").lengt
     <button class="act buyx" data-buyfeed="10" ${game.money>=FEED_COST*10?"":"disabled"}>×10 ${FEED_COST*10}円</button></div>`;
   h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
 function openSeeder(){ let h=`<h2>🌱 種メーカー</h2>`;
-  h+=`<div class="saveNote">今日の出荷箱の作物を種にできるよ（翌朝に1〜3粒🌙）。売るか種にするか選んでね</div>`;
+  h+=`<div class="saveNote">バッグの作物を種にできるよ（翌朝に1〜3粒🌙／おうごんカブは1〜2粒）</div>`;
   if(game.seedmaking.length) h+=`<div class="saveNote">製作中：${game.seedmaking.map(s=>CROPS[s.crop].name).join("・")}（あした完成🌙）</div>`;
-  const cnt={}; game.shipping.forEach(s=>{ cnt[s.crop]=(cnt[s.crop]||0)+1; }); const crops=Object.keys(cnt);
-  h+=`<div class="sectionTtl">📦 今日の収穫（出荷箱）</div>`;
-  if(!crops.length) h+=`<div class="saveNote">出荷箱はからっぽ。先に作物を収穫してね🌾</div>`;
+  const cnt={}; bagStacks().forEach(s=>{ cnt[s.crop]=(cnt[s.crop]||0)+s.n; }); const crops=Object.keys(cnt);
+  h+=`<div class="sectionTtl">🎒 バッグの作物</div>`;
+  if(!crops.length) h+=`<div class="saveNote">バッグに作物が無いよ。畑で収穫してね🌾</div>`;
   else crops.forEach(c=>{ const yieldTxt=c==="golden"?"1〜2粒":"1〜3粒";
     h+=`<div class="item"><canvas width="44" height="44" data-icon="${c}"></canvas><div class="info"><div class="nm">${CROPS[c].name}</div>
       <div class="sub">${cnt[c]}こ ・ 種にすると翌朝${yieldTxt}</div></div>
       <button class="act" data-seed1="${c}">種に×1</button>
       <button class="act buyx" data-seedall="${c}">ぜんぶ(${cnt[c]})</button></div>`; });
   h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
-function seederMake(crop,all){ const has=game.shipping.some(s=>s.crop===crop); if(!has){ toast("その作物が無いよ"); SFX.error(); return; }
-  let n=0; for(let i=game.shipping.length-1;i>=0;i--){ if(game.shipping[i].crop===crop){ game.shipping.splice(i,1); game.seedmaking.push({crop,ready:game.day+1}); n++; if(!all)break; } }
-  SFX.buy(); setSpeech(`${CROPS[crop].name}を種メーカーにセット🌱 あした種になるよ`,2400); openSeeder(); saveGame(); }
+function seederMake(crop,all){ // 品質の低いものから種に（良いものはギフト/品評会用に温存）
+  const stacks=bagStacks().filter(s=>s.crop===crop).sort((a,b)=>a.q-b.q);
+  if(!stacks.reduce((t,s)=>t+s.n,0)){ toast("その作物が無いよ"); SFX.error(); return; }
+  let want=all?stacks.reduce((t,s)=>t+s.n,0):1;
+  for(const s of stacks){ while(s.n>0&&want>0){ bagRemove(crop,s.q,1); s.n--; game.seedmaking.push({crop,ready:game.day+1}); want--; } if(want<=0)break; }
+  SFX.buy(); setSpeech(`${CROPS[crop].name}を種メーカーにセット🌱 あした種に`,2400); updateBagBtn(); openSeeder(); saveGame(); }
+// ===== もちものバッグ（出荷・確認） =====
+function openBag(){ let h=`<h2>🎒 もちもの（作物）</h2>`; const stacks=bagStacks();
+  if(!stacks.length){ h+=`<div class="saveNote">バッグは空っぽ。畑で作物を収穫しよう🌾</div>`; }
+  else { h+=`<div class="saveNote">💰出荷＝翌朝お金／🌱種メーカー・🥕推しへ貢ぐ・🏅品評会にも使えるよ</div>`;
+    h+=`<button class="act buyx" data-shipall style="width:calc(100% - 8px);margin:6px 4px">💰 ぜんぶ出荷（${bagTotal()}こ）</button>`;
+    stacks.forEach(s=>{ const cf=CROPS[s.crop],qq=QUAL[s.q],val=Math.round(cf.sell*qq.mult);
+      h+=`<div class="item"><canvas width="44" height="44" data-icon="${s.crop}"></canvas><div class="info"><div class="nm">${cf.name} ${qq.emoji}${qq.name}</div>
+        <div class="sub">売値 ${val}円</div><div class="own">×${s.n}</div></div>
+        <button class="act" data-ship1="${s.crop}:${s.q}">出荷×1</button>
+        <button class="act" data-shipstack="${s.crop}:${s.q}">ぜんぶ</button></div>`; });
+  }
+  h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
+function shipCrop(id,all){ const i=id.lastIndexOf(":"),crop=id.slice(0,i),q=+id.slice(i+1); const n=all?(game.bag[id]||0):1;
+  for(let k=0;k<n;k++){ if(!bagRemove(crop,q,1))break; game.shipping.push({crop,q}); }
+  SFX.coin(); updateBagBtn(); openBag(); saveGame(); }
+function shipAll(){ if(!bagTotal()){ toast("出荷する作物が無いよ"); return; }
+  bagStacks().forEach(s=>{ for(let k=0;k<s.n;k++)game.shipping.push({crop:s.crop,q:s.q}); }); game.bag={};
+  SFX.coin(); setSpeech("ぜんぶ出荷箱へ！あした売上になるよ💰",2400); updateBagBtn(); openBag(); saveGame(); }
+function updateBagBtn(){ const b=document.getElementById("bagCount"); if(!b)return; const n=bagTotal(); b.textContent=n>0?(n>99?"99+":n):""; b.style.display=n>0?"flex":"none"; }
 function openKitchen(){ let h=`<h2>🍳 加工小屋</h2>`;
   if(game.cooking.length) h+=`<div class="saveNote">加工中：${game.cooking.map(c=>PRODUCTS[c.out].emoji).join(" ")}（あした完成🌙）</div>`;
   h+=`<div class="sectionTtl">🍳 つくる（あした完成）</div>`;
@@ -1215,7 +1247,26 @@ function openHostDetail(id){ curHost=id; const ho=HOSTById[id], st=game.hosts[id
     h+=`<div class="item"><div class="ico">${g.emoji}</div><div class="info"><div class="nm">${g.name}</div>
       <div class="sub">${g.cost.toLocaleString()}円</div></div>
       <button class="act" data-hostgift="${g.key}" ${ok?"":"disabled"}>貢ぐ</button></div>`; });
+  h+=`<div class="item" data-cropgiftopen style="cursor:pointer"><div class="ico">🥕</div><div class="info"><div class="nm">手づくり野菜を貢ぐ</div>
+    <div class="sub">育てた作物をプレゼント💝 品質が高いほど恋ごころUP（バッグ ${bagTotal()}こ）</div></div>
+    <button class="act" data-cropgiftopen>えらぶ</button></div>`;
   h+=`<button class="closeBtn" data-back>← ほかの子へ</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
+function cropLove(crop,q){ return Math.max(1, Math.round(CROPS[crop].sell*QUAL[q].mult/200)); }
+function openCropGift(){ const ho=HOSTById[curHost]; if(!ho)return; const stacks=bagStacks();
+  let h=`<h2>🥕 ${ho.name}に貢ぐ</h2><div class="saveNote">育てた野菜をプレゼント💝 金品質ほど恋ごころが大きく上がるよ</div>`;
+  if(!stacks.length)h+=`<div class="saveNote">バッグに作物が無いよ。畑で収穫してきてね🌾</div>`;
+  else stacks.forEach(s=>{ const cf=CROPS[s.crop],qq=QUAL[s.q];
+    h+=`<div class="item"><canvas width="44" height="44" data-icon="${s.crop}"></canvas><div class="info"><div class="nm">${cf.name} ${qq.emoji}${qq.name}</div>
+      <div class="sub">恋ごころ +${cropLove(s.crop,s.q)}</div><div class="own">×${s.n}</div></div>
+      <button class="act" data-cropgift="${s.crop}:${s.q}">貢ぐ</button></div>`; });
+  h+=`<button class="closeBtn" data-backhost>← もどる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
+function cropGift(id){ const i=id.lastIndexOf(":"),crop=id.slice(0,i),q=+id.slice(i+1); if(!bagRemove(crop,q,1)){ toast("その野菜が無いよ"); return; }
+  const ho=HOSTById[curHost], st=game.hosts[curHost], love=cropLove(crop,q);
+  const hit=(st.love<CONFESS_LOVE && st.love+love>=CONFESS_LOVE && !st.lover);
+  st.love=Math.min(100, st.love+love); SFX.coin(); updateBagBtn();
+  if(GS){ const p=playerTile(); GS.fxBurst(p.x,p.y,["#ff5fa2","#9be84d","#ffd84d","#fff"]); GS.fxFloat(p.x,p.y,"+"+love+"💕","#e0559a"); }
+  setSpeech(hit?`💗 ${ho.name}の恋ごころが満タン！告白できるよ！`:`${ho.name}「${CROPS[crop].name}…君の手づくり？うれしいよ♡」`,2800);
+  openCropGift(); saveGame(); }
 function hostGift(key){ const g=HOST_GIFTS.find(x=>x.key===key), id=curHost, ho=HOSTById[id]; if(!g||!ho)return; const st=game.hosts[id];
   if(game.money<g.cost){ toast("おかねが足りないよ💸"); SFX.error(); setSpeech("お金ためてからまた来てね？♡",2200); return; }
   const before=hostRank(st.spent); game.money-=g.cost; st.spent+=g.cost; SFX.coin();
@@ -1310,12 +1361,11 @@ function evIllumiPick(id){ const ho=HOSTById[id]; const hit=evLoveAdd(id,15); ga
   let body=`${ho.name}「君といる冬は、あったかいね…手、つないでいい？」<br><br>❤️ ${ho.name}の恋ごころ +15<br>⚡ たいりょく全回復`;
   if(hit)body+=`<br><br>💗 恋ごころが満タン！告白できるよ！`;
   douhanScene("🎄 イルミネーション", body, [{label:"どきどき…♡",on:evClose}]); }
-function evContest(){ SFX.morning();
-  if(!game.bestCrop){ douhanScene("🏅 作物品評会", "今シーズンはまだ作物を収穫してないみたい…🌱<br><br>旬の作物を育てて、来季は自慢の一品を出品しよう！",
+function evContest(){ SFX.morning(); const best=bagBest();
+  if(!best){ douhanScene("🏅 作物品評会", "バッグに出品できる作物が無いみたい…🌱<br><br>品評会の日まで、自慢の一品をバッグに持っておこう！（出荷すると無くなるよ）",
     [{label:"はーい",on:evClose}]); return; }
-  const cf=CROPS[game.bestCrop.crop], q=game.bestCrop.q, qq=QUAL[q];
-  const prize=Math.round(cf.sell*qq.mult*1.5)+200;
-  douhanScene("🏅 作物品評会", `自慢の一品をエントリー！<br><br>${cf.name}（${qq.emoji}${qq.name}品質）<br><br>審査の結果は…？`,
+  const cf=CROPS[best.crop], q=best.q, qq=QUAL[q]; const prize=Math.round(cf.sell*qq.mult*1.5)+200;
+  douhanScene("🏅 作物品評会", `バッグの自慢の一品をエントリー！<br><br>${cf.name}（${qq.emoji}${qq.name}品質）<br><br>審査の結果は…？`,
     [{label:"ドキドキ…",on:()=>{ game.money+=prize; SFX.expand(); burst(innerWidth/2,innerHeight*0.4,["#ffd84d","#f4b740","#9be84d","#fff"],24);
       const medal=q===2?"🏆 <b>金賞</b>を受賞！！さすが姫の畑✨":q===1?"🥈 <b>銀賞</b>を受賞！おみごと！":"🥉 健闘賞をゲット！次は金賞ねらお";
       douhanScene("🏅 作物品評会", `${medal}<br><br>🏅 賞金 +${prize.toLocaleString()}円`, [{label:"やった〜！🏅",on:evClose}]); }}]); }
@@ -1423,6 +1473,12 @@ function craftItemP(key){ const it=POTION_BY[key]; if(!it)return;
   game.items[key]=(game.items[key]||0)+1; SFX.buy();
   setSpeech(`${it.emoji} ${it.name}をつくった！ダンジョンで使えるよ`,2200); openDungeonGate(); saveGame(); }
 function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>drawIcon(cv,cv.dataset.icon));
+  sheet.querySelectorAll("[data-ship1]").forEach(b=>b.onclick=()=>shipCrop(b.dataset.ship1,false));
+  sheet.querySelectorAll("[data-shipstack]").forEach(b=>b.onclick=()=>shipCrop(b.dataset.shipstack,true));
+  sheet.querySelectorAll("[data-shipall]").forEach(b=>b.onclick=shipAll);
+  sheet.querySelectorAll("[data-cropgiftopen]").forEach(b=>b.onclick=openCropGift);
+  sheet.querySelectorAll("[data-cropgift]").forEach(b=>b.onclick=()=>cropGift(b.dataset.cropgift));
+  sheet.querySelectorAll("[data-backhost]").forEach(b=>b.onclick=()=>openHostDetail(curHost));
   sheet.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>buy(b.dataset.buy));
   sheet.querySelectorAll("[data-buyanimal]").forEach(b=>b.onclick=()=>buyAnimal(b.dataset.buyanimal));
   sheet.querySelectorAll("[data-buyfeed]").forEach(b=>b.onclick=()=>buyFeed(+b.dataset.buyfeed));
@@ -1470,7 +1526,7 @@ document.getElementById("mGo").onclick=()=>{ document.getElementById("morning").
   maybeTriggerEvent(); };
 
 /* ===================== HUD・種バー・トースト等 ===================== */
-function updateHUD(){ const s=curSeason();
+function updateHUD(){ const s=curSeason(); updateBagBtn();
   document.getElementById("dayLbl").textContent=s.emoji+s.name;
   document.getElementById("dayVal").textContent=dayInSeason(game.day);
   document.getElementById("moneyVal").textContent=game.money.toLocaleString();
@@ -1528,6 +1584,7 @@ document.getElementById("potBtn").addEventListener("click",e=>{ e.preventDefault
 function showCalendar(){ SFX.unlock(); calView=seasonIndex(game.day); openCalendar(); }
 document.getElementById("calBtn").addEventListener("click",e=>{ e.preventDefault(); showCalendar(); });
 document.getElementById("dayStat").addEventListener("click",e=>{ e.preventDefault(); showCalendar(); });
+document.getElementById("bagBtn").addEventListener("click",e=>{ e.preventDefault(); SFX.unlock(); openBag(); });
 const KM={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",w:"up",s:"down",a:"left",d:"right"};
 addEventListener("keydown",e=>{ if(KM[e.key])held[KM[e.key]]=true; if(e.key===" "||e.key==="Enter")doAction(); });
 addEventListener("keyup",e=>{ if(KM[e.key])held[KM[e.key]]=false; });
