@@ -889,10 +889,13 @@ class Farm extends Phaser.Scene{
     const sl=this.add.image(cx,cy,"slash").setOrigin(0.2,0.5).setRotation(ang).setDepth(this.player.y+1);
     this.tweens.add({targets:sl,alpha:0,scaleX:1.5,scaleY:1.5,duration:200,onComplete:()=>sl.destroy()});
     const atk=weaponAtk(); let hit=false;
-    for(const e of this.enemies){ const r=(ENEMIES[e.type].size||16)*0.5+8;
-      const inFront=Math.abs(e.x-cx)<r && Math.abs(e.y-cy)<r;            // 前方の振り
-      const pointBlank=Math.hypot(e.x-px,e.y-py)<r+3;                    // 重なってる敵も当たる
-      if(inFront||pointBlank){ hit=true; e.hp-=atk; e.hurtT=0.2; e.x+=o[0]*7; e.y+=o[1]*7; } }
+    for(const e of this.enemies){ const sz=(ENEMIES[e.type].size||16);
+      const dx=e.x-px, dy=e.y-py, dist=Math.hypot(dx,dy), reach=20+sz*0.5;
+      let inRange=false;
+      if(dist < sz*0.5+12) inRange=true;                                 // 至近（重なり）は全方位で当たる
+      else if(dist < reach){ const dot=(dx*o[0]+dy*o[1])/(dist||1); if(dot > -0.25) inRange=true; } // 向いてる側の扇形
+      if(inRange){ hit=true; e.hp-=atk; e.hurtT=0.2;
+        const kx=dist>1?dx/dist:o[0], ky=dist>1?dy/dist:o[1]; e.x+=kx*7; e.y+=ky*7; } }   // ノックバックは敵方向へ
     if(hit)SFX.hit();
     const dead=this.enemies.filter(e=>e.hp<=0); dead.forEach(e=>this.enemyDie(e));
     this.enemies=this.enemies.filter(e=>e.hp>0);
