@@ -50,6 +50,11 @@
   #bagBtn{ position:absolute; top:8px; right:92px; z-index:6; width:36px; height:36px; border-radius:50%;
     border:2px solid var(--line); background:var(--panel); font-size:16px; cursor:pointer; box-shadow:0 3px 0 #c79a5b; }
   #bagBtn:active{ transform:translateY(2px); box-shadow:0 1px 0 #c79a5b; }
+  #snsBtn{ position:absolute; top:8px; right:134px; z-index:6; width:36px; height:36px; border-radius:50%;
+    border:2px solid var(--line); background:var(--panel); font-size:16px; cursor:pointer; box-shadow:0 3px 0 #c79a5b; }
+  #snsBtn:active{ transform:translateY(2px); box-shadow:0 1px 0 #c79a5b; }
+  #snsDot{ position:absolute; top:-4px; right:-4px; min-width:16px; height:16px; padding:0 3px; border-radius:9px;
+    background:#3a8fce; color:#fff; font-size:10px; font-weight:900; display:none; align-items:center; justify-content:center; box-shadow:0 1px 0 #2a6fa0; }
   #bagCount{ position:absolute; top:-4px; right:-4px; min-width:16px; height:16px; padding:0 3px; border-radius:9px;
     background:#e0559a; color:#fff; font-size:10px; font-weight:900; display:none; align-items:center; justify-content:center; box-shadow:0 1px 0 #a8336e; }
   #dayStat{ cursor:pointer; } #dayStat:active{ transform:translateY(1px); }
@@ -158,6 +163,7 @@
     <button id="muteBtn" aria-label="音">🔊</button>
     <button id="calBtn" aria-label="カレンダー">🗓</button>
     <button id="bagBtn" aria-label="もちもの">🎒<span id="bagCount"></span></button>
+    <button id="snsBtn" aria-label="SNS">📱<span id="snsDot"></span></button>
     <div id="hpHud"><span id="hpTxt"></span><div id="hpBarWrap"><div id="hpBar"></div></div></div>
     <div id="potBtn"><span class="pe">🧪</span><span class="pl">のむ</span><span class="pn">0</span></div>
   </div>
@@ -342,6 +348,24 @@ const BDAY_LINES={
   shun:"…なんで俺の誕生日知ってんだよ。……でも、来てくれて、その、うれしい。ありがと…な",
   kai:"うぇっ!? 俺の誕生日おぼえてくれてたの!? 姫サイコー!!🎉 今日は一生分はしゃぐぞ〜!!",
 };
+// 推し活SNSの投稿
+const SNS_POSTS={
+  leo:["今日もお店で待ってるよ✨ #ホスト #指名待ち","新しいスーツおろした👔 似合うかな？","シャンパン入れてくれた姫、ありがとう🍾 #感謝","今夜も完売御礼🥂 よろしくね","コーヒー飲みながら出勤前☕️ 今日もがんばろ"],
+  shun:["…べつに、来たい奴だけ来ればいい","今日は気分がいい。理由は言わないけど","ふん、また指名一位らしい #どうでもいい","…たまには、ありがとな","出勤。…顔だけ見せに来い"],
+  kai:["今夜もパリピで優勝〜🎉🍾 #盛り上げ隊","タワーありがとう神✨🗼 #ぶち上げ","みんな大好き〜！はい優勝👑","店で一番うるさいのは俺です😆","今日も全力でいくぞ〜🔥🥂"],
+};
+const SNS_LOVER_POSTS={
+  leo:["彼女と過ごす休日は最高だ☕️ #のろけ","君がいるから毎日きらきらしてる✨","ずっと一緒だよ、俺の姫❤️"],
+  shun:["…さらっと好きとか言わせんな","#のろけ じゃねぇからな。…ちょっとだけだ","あいつの作る飯、うまい。…以上"],
+  kai:["彼女と農業デート最高だった〜🌽❤️","世界一かわいい彼女の自慢していい？😆","ずっと君を笑わせるって決めてる🎉"],
+};
+function buildSNSFeed(){ const posts=[]; let idc=0;
+  HOSTS.forEach(ho=>{ const st=game.hosts[ho.id]; const n=1+(Math.random()<0.5?1:0);
+    for(let i=0;i<n;i++){ const pool=(st.lover&&Math.random()<0.6)?SNS_LOVER_POSTS[ho.id]:SNS_POSTS[ho.id];
+      posts.push({id:"p"+(idc++),host:ho.id,text:pick(pool),liked:false}); } });
+  for(let i=posts.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=posts[i];posts[i]=posts[j];posts[j]=t; }
+  return posts; }
+function ensureSNS(){ if(!game.sns||game.sns.day!==game.day){ game.sns={day:game.day,posts:buildSNSFeed()}; saveGame(); } }
 // 誕生日・好物のヘルパー
 function isHostBday(id){ const ho=HOSTById[id]; return ho.bday.season===curSeason().key && ho.bday.day===dayInSeason(game.day); }
 function hostBdayToday(){ return HOSTS.find(ho=>isHostBday(ho.id))||null; }
@@ -491,7 +515,7 @@ function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
 function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,exp:0,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], drops:[],
   storage:{}, feed:0, cooking:[], seedmaking:[], weather:"sunny", fairy:{appeared:false,greeted:false,affection:0},
-  hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0, lastEventDay:0, bag:{}, partner:null,
+  hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0, lastEventDay:0, bag:{}, partner:null, sns:null,
   hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false,bday:0,rivals:freshRivals(h.id)}])) }; }
 let game=loadGame()||freshGame();
 let activeSeed=null;
@@ -512,7 +536,7 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   if(g.weapon==null||!WEAPON_BY[g.weapon])g.weapon="fist"; if(g.armor==null||!ARMOR_BY[g.armor])g.armor="cloth";
   if(g.accessory==null||!ACC_BY[g.accessory])g.accessory="none";
   if(!g.mats||typeof g.mats!=="object")g.mats={}; if(!g.items||typeof g.items!=="object")g.items={};
-  if(!g.crafted||typeof g.crafted!=="object")g.crafted={}; if(g.dungeonMax==null)g.dungeonMax=0; if(g.lastEventDay==null)g.lastEventDay=0; if(g.partner===undefined)g.partner=null;
+  if(!g.crafted||typeof g.crafted!=="object")g.crafted={}; if(g.dungeonMax==null)g.dungeonMax=0; if(g.lastEventDay==null)g.lastEventDay=0; if(g.partner===undefined)g.partner=null; if(g.sns===undefined)g.sns=null;
   g.maxHp=BASE_HP+ARMOR_BY[g.armor].hp+ACC_BY[g.accessory].hp; if(g.hp==null||g.hp>g.maxHp||g.hp<0)g.hp=g.maxHp;
   if(!g.hosts)g.hosts={};
   HOSTS.forEach(h=>{ if(!g.hosts[h.id])g.hosts[h.id]={spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false,bday:0};
@@ -1367,6 +1391,21 @@ function cookMeal(key){ const m=MEALS.find(x=>x.key===key); if(!m)return;
   setSpeech(`${m.name}いただきます！${m.emoji} 元気でた⚡`,2400);
   if(GS){ const p=playerTile(); GS.fxBurst(p.x,p.y,["#ffd84d","#ff8fc0","#9be84d","#ffffff"]); GS.fxFloat(p.x,p.y,"⚡+"+m.sta,"#2f7d2f"); }
   openCook(); saveGame(); }
+function openSNS(){ ensureSNS();
+  let h=`<h2>📱 推し活SNS</h2><div class="saveNote">推しの投稿に❤️いいね！（恋ごころ+1・1投稿1回まで）</div>`;
+  game.sns.posts.forEach(po=>{ const ho=HOSTById[po.host];
+    h+=`<div class="item"><canvas width="44" height="44" data-host="${po.host}" style="image-rendering:pixelated;border-radius:50%;background:#2a1d38;flex:none"></canvas>
+      <div class="info"><div class="nm">${ho.name} <span style="color:#9a8aa6;font-size:11px">@${po.host}_host</span></div>
+      <div class="sub" style="white-space:normal;line-height:1.4">${po.text}</div></div>
+      <button class="act" data-snslike="${po.id}" ${po.liked?"disabled":""} style="${po.liked?"background:#e0559a;box-shadow:0 3px 0 #b03a72":""}">${po.liked?"❤️":"🤍"}</button></div>`; });
+  h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
+function snsLike(pid){ if(!game.sns)return; const po=game.sns.posts.find(p=>p.id===pid); if(!po||po.liked)return; po.liked=true;
+  const st=game.hosts[po.host], ho=HOSTById[po.host]; const hit=(st.love<CONFESS_LOVE && st.love+1>=CONFESS_LOVE && !st.lover);
+  st.love=Math.min(100, st.love+1); SFX.coin(); updateSnsBtn();
+  toast(hit?`💗 ${ho.name}の恋ごころが満タン！`:`${ho.name}の投稿に❤️（恋ごころ+1）`); openSNS(); saveGame(); }
+function updateSnsBtn(){ const b=document.getElementById("snsDot"); if(!b)return;
+  const n=(!game.sns||game.sns.day!==game.day)?3:game.sns.posts.filter(p=>!p.liked).length;
+  b.textContent=n>0?(n>9?"9+":n):""; b.style.display=n>0?"flex":"none"; }
 function openHostClub(){ curHost=null;
   let h=`<h2>🍾 ホストクラブ</h2><div class="saveNote">推しに会いに行こ💖 「会う」で席につくよ</div>`;
   HOSTS.forEach(ho=>{ const st=game.hosts[ho.id], rank=hostRank(st.spent);
@@ -1375,6 +1414,7 @@ function openHostClub(){ curHost=null;
       <div class="info"><div class="nm">${ho.name} <span style="color:#9a8aa6;font-size:12px">${ho.title}</span> ${isTopCustomer(ho.id)?'<span style="color:#e0559a">👑本命</span>':`<span style="color:#c0392b">No.${rivalRank(ho.id)}</span>`}</div>
       <div class="sub">${st.lover?'<span style="color:#e0559a">❤️恋人</span>':`${rank.emoji}${rank.name}`}・貢ぎ ${st.spent.toLocaleString()}円${st.dates?`・同伴${st.dates}回`:""}</div></div>
       <button class="act" data-hostpick="${ho.id}">会う</button></div>`; });
+  h+=`<button class="act" data-opensns style="width:calc(100% - 8px);margin:6px 4px;background:linear-gradient(180deg,#5fb0ff,#3a8fce)">📱 推し活SNSを見る</button>`;
   h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
 function openHostDetail(id){ curHost=id; const ho=HOSTById[id], st=game.hosts[id];
   const pool = st.lover?LOVER_LINES:ho.lines;
@@ -1660,6 +1700,8 @@ function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>d
   sheet.querySelectorAll("[data-shipstack]").forEach(b=>b.onclick=()=>shipCrop(b.dataset.shipstack,true));
   sheet.querySelectorAll("[data-shipall]").forEach(b=>b.onclick=shipAll);
   sheet.querySelectorAll("[data-bagsort]").forEach(b=>b.onclick=()=>{ bagSort=BAG_SORTS[(BAG_SORTS.indexOf(bagSort)+1)%BAG_SORTS.length]; openBag(); });
+  sheet.querySelectorAll("[data-opensns]").forEach(b=>b.onclick=openSNS);
+  sheet.querySelectorAll("[data-snslike]").forEach(b=>b.onclick=()=>snsLike(b.dataset.snslike));
   sheet.querySelectorAll("[data-cropgiftopen]").forEach(b=>b.onclick=openCropGift);
   sheet.querySelectorAll("[data-cropgift]").forEach(b=>b.onclick=()=>cropGift(b.dataset.cropgift));
   sheet.querySelectorAll("[data-backhost]").forEach(b=>b.onclick=()=>openHostDetail(curHost));
@@ -1717,7 +1759,7 @@ document.getElementById("mGo").onclick=()=>{ document.getElementById("morning").
   applyWeatherFx(); maybeTriggerEvent(); };
 
 /* ===================== HUD・種バー・トースト等 ===================== */
-function updateHUD(){ const s=curSeason(); updateBagBtn();
+function updateHUD(){ const s=curSeason(); updateBagBtn(); updateSnsBtn();
   document.getElementById("dayLbl").textContent=s.emoji+s.name;
   document.getElementById("dayVal").textContent=dayInSeason(game.day);
   document.getElementById("moneyVal").textContent=game.money.toLocaleString();
@@ -1776,6 +1818,7 @@ function showCalendar(){ SFX.unlock(); calView=seasonIndex(game.day); openCalend
 document.getElementById("calBtn").addEventListener("click",e=>{ e.preventDefault(); showCalendar(); });
 document.getElementById("dayStat").addEventListener("click",e=>{ e.preventDefault(); showCalendar(); });
 document.getElementById("bagBtn").addEventListener("click",e=>{ e.preventDefault(); SFX.unlock(); openBag(); });
+document.getElementById("snsBtn").addEventListener("click",e=>{ e.preventDefault(); SFX.unlock(); openSNS(); });
 const KM={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",w:"up",s:"down",a:"left",d:"right"};
 addEventListener("keydown",e=>{ if(KM[e.key])held[KM[e.key]]=true; if(e.key===" "||e.key==="Enter")doAction(); });
 addEventListener("keyup",e=>{ if(KM[e.key])held[KM[e.key]]=false; });
