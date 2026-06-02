@@ -836,7 +836,7 @@ class Farm extends Phaser.Scene{
     this.add.particles(0,0,"spark",{emitting:false}); // 予熱
     this.applySeasonVisuals();
   }
-  applyZoom(){ const h=this.scale.gameSize.height||this.cameras.main.height; const z=Math.max(1.7,h/(10.5*TS)); this.cameras.main.setZoom(z); }
+  applyZoom(){ const h=this.scale.gameSize.height||this.cameras.main.height; const z=Math.max(1.5,h/(12.5*TS)); this.cameras.main.setZoom(z); }
   applySeasonVisuals(){ const sk=curSeason().key;
     (this.grassTiles||[]).forEach(g=>g.img.setTexture("grass_"+sk+"_"+(g.variant?"B":"A")));
     (this.treeSprs||[]).forEach(t=>t.setTexture("tree_"+sk));
