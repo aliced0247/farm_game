@@ -394,7 +394,7 @@ function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
 function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,exp:0,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], drops:[],
   storage:{}, feed:0, cooking:[], fairy:{appeared:false,greeted:false,affection:0},
-  hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0,
+  hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0, lastEventDay:0,
   hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false}])) }; }
 let game=loadGame()||freshGame();
 let activeSeed=null;
@@ -413,7 +413,7 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   if(g.weapon==null||!WEAPON_BY[g.weapon])g.weapon="fist"; if(g.armor==null||!ARMOR_BY[g.armor])g.armor="cloth";
   if(g.accessory==null||!ACC_BY[g.accessory])g.accessory="none";
   if(!g.mats||typeof g.mats!=="object")g.mats={}; if(!g.items||typeof g.items!=="object")g.items={};
-  if(!g.crafted||typeof g.crafted!=="object")g.crafted={}; if(g.dungeonMax==null)g.dungeonMax=0;
+  if(!g.crafted||typeof g.crafted!=="object")g.crafted={}; if(g.dungeonMax==null)g.dungeonMax=0; if(g.lastEventDay==null)g.lastEventDay=0;
   g.maxHp=BASE_HP+ARMOR_BY[g.armor].hp+ACC_BY[g.accessory].hp; if(g.hp==null||g.hp>g.maxHp||g.hp<0)g.hp=g.maxHp;
   if(!g.hosts)g.hosts={};
   HOSTS.forEach(h=>{ if(!g.hosts[h.id])g.hosts[h.id]={spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false};
@@ -1217,6 +1217,59 @@ function confessYes(id,ho,c){ const st=game.hosts[id]; st.lover=true; st.love=10
   setSpeech("やった……ちゃんと恋人になれた…！🥹❤️",3800); saveGame();
   douhanScene("🎉 ゴール達成！💗", `${ho.name}「${c.yes}」<br><br>❤️❤️❤️<br><b>${ho.name}と恋人になった！</b><br>（両想いパワーで最大たいりょく+2⚡）`,
     [{label:"しあわせ…♡",on:()=>openHostDetail(id)}]); }
+
+/* ===================== 季節イベント（おまつり） ===================== */
+// 恋ごころを足して、ちょうど満タンに達したらtrue（告白解禁の合図）
+function evLoveAdd(id,amt){ const st=game.hosts[id]; const was=st.love; st.love=Math.min(100,st.love+amt);
+  return (was<CONFESS_LOVE && st.love>=CONFESS_LOVE && !st.lover); }
+function evClose(){ closeSheet(); saveGame(); }
+function evHanami(){ SFX.morning();
+  douhanScene("🌸 お花見", "桜が満開🌸 ホストたちがレジャーシートで待ってる。<br><br>「姫〜！こっちで一緒に飲も♡」<br><br>だれのとなりに座る？",
+    HOSTS.map(ho=>({label:`${ho.name}のとなり💕`,on:()=>evHanamiPick(ho.id)}))); }
+function evHanamiPick(id){ const ho=HOSTById[id]; const hit=evLoveAdd(id,12); HOSTS.forEach(h=>{ if(h.id!==id)evLoveAdd(h.id,3); });
+  game.stamina=game.maxStamina; SFX.coin(); burst(innerWidth/2,innerHeight*0.4,["#ffd1e8","#ff8fc0","#fff0f6","#9be84d"],22);
+  let body=`${ho.name}「君と見る桜が、いちばんきれいだ🌸」<br><br>❤️ ${ho.name}の恋ごころ +12（ほかの子も +3）<br>⚡ たいりょく全回復！`;
+  if(hit)body+=`<br><br>💗 ${ho.name}の恋ごころが満タン！告白できるよ！`;
+  douhanScene("🌸 お花見", body, [{label:"しあわせ…♡",on:evClose}]); }
+function evNatsu(){ SFX.morning();
+  douhanScene("🎆 夏祭り", "夏祭り！屋台がいっぱい🏮 浴衣のホストと回ろう。<br><br>どの屋台で遊ぶ？",
+    [{label:"🎏 金魚すくい",on:()=>evNatsuPlay("kingyo")},{label:"🔫 しゃてき",on:()=>evNatsuPlay("shateki")},{label:"🍧 かき氷",on:()=>evNatsuPlay("kakigori")}]); }
+function evNatsuPlay(kind){ const ho=pick(HOSTS); let reward="";
+  if(kind==="kingyo"){ const m=300+Math.floor(Math.random()*900); game.money+=m; reward=`🎏 金魚すくい大成功！ +${m.toLocaleString()}円`; SFX.coin(); }
+  else if(kind==="shateki"){ const k=Math.random()<0.5?"crystal":"ore"; game.mats[k]=(game.mats[k]||0)+2; reward=`🔫 景品ゲット！ ${MATERIALS[k].emoji}${MATERIALS[k].name} ×2（ダンジョンのクラフトに使えるよ）`; SFX.buy(); }
+  else { game.stamina=game.maxStamina; game.money+=200; reward="🍧 かき氷でクールダウン⚡ たいりょく全回復＋200円"; SFX.water(); }
+  const hit=evLoveAdd(ho.id,8); burst(innerWidth/2,innerHeight*0.38,["#ff5fa2","#ffd84d","#5fd8ff","#fff"],26);
+  let body=`${reward}<br><br>🎆 ドーン！と花火が上がる。<br>浴衣の${ho.name}「きれいだね…でも君のほう見ちゃうな♡」<br>❤️ ${ho.name}の恋ごころ +8`;
+  if(hit)body+=`<br><br>💗 恋ごころが満タン！告白できるよ！`;
+  douhanScene("🎆 夏祭り", body, [{label:"さいこうの夏！🎆",on:evClose}]); }
+function evHarvest(){ SFX.morning();
+  douhanScene("🌾 収穫祭", "村の収穫祭🏆 自慢の牧場が審査されるよ！<br><br>今年の成果でコンテストに出品しよう。",
+    [{label:"出品する🌾",on:evHarvestResult}]); }
+function evHarvestResult(){ const prize=600+game.cols*game.rows*18+game.level*25; game.money+=prize; SFX.expand();
+  const inSeason=CROP_IDS.filter(c=>!CROPS[c].special&&cropInSeason(c,"autumn")); const seed=pick(inSeason); game.seeds[seed]=(game.seeds[seed]||0)+3;
+  burst(innerWidth/2,innerHeight*0.4,["#ffd84d","#f4b740","#9be84d","#fff"],24);
+  douhanScene("🏆 結果発表", `りっぱな牧場だと大評価✨<br>🏆 賞金 +${prize.toLocaleString()}円<br>🌱 おまけに「${CROPS[seed].name}」の種 ×3`,
+    [{label:"やった〜！🏆",on:()=>{ renderSeedBar(); evClose(); }}]); }
+function evIllumi(){ SFX.morning(); const lovers=HOSTS.filter(h=>game.hosts[h.id].lover);
+  if(lovers.length){ const ho=pick(lovers); game.stamina=game.maxStamina; burst(innerWidth/2,innerHeight*0.4,["#fff","#ffd84d","#5fd8ff","#ff8fc0"],24);
+    douhanScene("🎄 イルミネーション", `恋人の${ho.name}と、光きらめく街へ✨<br><br>${ho.name}「来年も、その先も…ずっと君と一緒だよ❤️」<br>⚡ しあわせでたいりょく全回復`,
+      [{label:"ずっと一緒♡",on:evClose}]); }
+  else { douhanScene("🎄 イルミネーション", "冬の街はイルミネーションで満点の星空みたい✨<br><br>ホストがエスコートしてくれるって。だれと過ごす？",
+    HOSTS.map(ho=>({label:`${ho.name}と✨`,on:()=>evIllumiPick(ho.id)}))); } }
+function evIllumiPick(id){ const ho=HOSTById[id]; const hit=evLoveAdd(id,15); game.stamina=game.maxStamina;
+  burst(innerWidth/2,innerHeight*0.4,["#fff","#ffd84d","#5fd8ff","#ff8fc0"],24); SFX.coin();
+  let body=`${ho.name}「君といる冬は、あったかいね…手、つないでいい？」<br><br>❤️ ${ho.name}の恋ごころ +15<br>⚡ たいりょく全回復`;
+  if(hit)body+=`<br><br>💗 恋ごころが満タン！告白できるよ！`;
+  douhanScene("🎄 イルミネーション", body, [{label:"どきどき…♡",on:evClose}]); }
+const EVENTS={
+  "spring:4":{name:"お花見",emoji:"🌸",fn:evHanami},
+  "summer:4":{name:"夏祭り",emoji:"🎆",fn:evNatsu},
+  "autumn:4":{name:"収穫祭",emoji:"🌾",fn:evHarvest},
+  "winter:4":{name:"イルミネーション",emoji:"🎄",fn:evIllumi},
+};
+function eventToday(){ return EVENTS[curSeason().key+":"+dayInSeason(game.day)]||null; }
+function maybeTriggerEvent(){ if(game.lastEventDay===game.day)return; const ev=eventToday(); if(!ev)return;
+  game.lastEventDay=game.day; saveGame(); setTimeout(ev.fn,1300); }
 function openFairy(){ const a=game.fairy.affection, hearts=Math.round(a/20), r=a/100;
   let status; if(r<0.25)status="気まぐれ。たま〜にお水あげる程度…💤"; else if(r<0.6)status="ちょっと手伝ってくれる🌱";
   else if(r<1)status="けっこう頼れる！💧"; else status="毎朝ぜんぶ水やり！最高のパートナー✨";
@@ -1316,13 +1369,16 @@ function showMorning(earn,sold,dishes,seasonMsg){ const s=curSeason();
   let html = earn>0 ? `出荷できたよ！<br>${Object.keys(sold).map(c=>`${prodInfo(c).name}×${sold[c]}`).join("・")}<br>💰 +${earn.toLocaleString()}円` : "今日はいい天気！";
   if(dishes>0)html += `<br>🍳 加工品が${dishes}こ完成！`;
   if(seasonMsg)html = `<b>${seasonMsg}</b><br>`+html;
+  const ev=(game.lastEventDay!==game.day)?eventToday():null;
+  if(ev)html += `<br><br>🎉 今日は <b>${ev.emoji}${ev.name}</b>！`;
   e.innerHTML=html;
   if(earn>0){ SFX.coin(); setTimeout(()=>{ burst(innerWidth/2,innerHeight*0.42,["#ffd14d","#f4b740","#fff4c2"],14); floatText(innerWidth/2,innerHeight*0.42,`+${earn.toLocaleString()}円`,"#d4861a"); },220); }
   document.getElementById("morning").classList.add("show"); }
 document.getElementById("mGo").onclick=()=>{ document.getElementById("morning").classList.remove("show"); SFX.morning();
   if(game.fairy.appeared && !game.fairy.greeted){ game.fairy.greeted=true; saveGame();
     setSpeech("水やりの妖精があらわれた✨ 左の広場にいるよ！プレゼントで仲良くなろ🎁",4500); }
-  else { setSpeech(pick(LINES_MORNING),2600); if(GS)GS.time.delayedCall(700,()=>GS.morningFairyWater()); } };
+  else { setSpeech(pick(LINES_MORNING),2600); if(GS)GS.time.delayedCall(700,()=>GS.morningFairyWater()); }
+  maybeTriggerEvent(); };
 
 /* ===================== HUD・種バー・トースト等 ===================== */
 function updateHUD(){ const s=curSeason();
