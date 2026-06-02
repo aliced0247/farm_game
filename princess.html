@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#ffb3d1" />
+<title>👑 甘やかされ姫ぐらし</title>
+<style>
+  :root{
+    --pink:#ff9ec4; --pink-dk:#e96aa0; --pink-lt:#ffe3ef;
+    --gold:#f4c84a; --gold-dk:#caa01e; --cream:#fff7f3; --ink:#6a4350;
+    --peach:#ffd9c2; --lav:#e7d6ff;
+    --shadow:0 4px 14px rgba(180,90,140,.22);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;
+    font-family:"Hiragino Maru Gothic ProN","Rounded Mplus 1c",system-ui,sans-serif;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:linear-gradient(165deg,#ffe0ee 0%,#ffe7d6 45%,#ece0ff 100%);
+    color:var(--ink); overflow:hidden; user-select:none; display:flex; justify-content:center;
+  }
+  #app{
+    width:100%; max-width:480px; height:100dvh; position:relative; display:flex; flex-direction:column;
+    background:radial-gradient(circle at 50% 30%, #fff7fb 0%, #ffeef6 55%, #f3e6ff 100%);
+    box-shadow:0 0 40px rgba(180,90,140,.25); overflow:hidden;
+  }
+
+  /* top */
+  #topbar{
+    display:flex; align-items:center; gap:7px; padding:9px 11px;
+    background:linear-gradient(90deg,#ffb3d1,#cdb4f6); color:#fff; font-weight:800;
+    box-shadow:0 2px 10px rgba(150,80,140,.3); z-index:6;
+  }
+  #title{flex:1; font-size:14px; text-shadow:0 1px 2px rgba(150,60,110,.4); letter-spacing:.3px;}
+  .iconbtn{background:rgba(255,255,255,.28); border:none; color:#fff; font-size:17px;
+    width:34px; height:34px; border-radius:50%; cursor:pointer;}
+  .iconbtn:active{transform:scale(.9);}
+
+  /* happiness bar */
+  #happywrap{padding:7px 12px 3px; z-index:5;}
+  #happytop{display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:800; color:var(--pink-dk);}
+  #happybar{height:13px; background:#ffd9ea; border-radius:8px; overflow:hidden; margin-top:3px; box-shadow:inset 0 1px 3px rgba(180,80,130,.25);}
+  #happybar>i{display:block; height:100%; width:0%;
+    background:linear-gradient(90deg,#ff9ec4,#ffd06b,#ff9ec4); background-size:200% 100%;
+    transition:width .5s; animation:shine 3s linear infinite;}
+  @keyframes shine{to{background-position:200% 0;}}
+
+  /* stage */
+  #stage{flex:1; position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:center;}
+  /* canopy bed */
+  #canopy{position:absolute; top:0; left:50%; transform:translateX(-50%); width:78%; max-width:330px; height:60px; z-index:1;}
+  #canopy:before{content:""; position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:34px; height:34px; background:var(--gold); border-radius:50%;
+    box-shadow:0 0 0 4px #fff,0 0 16px var(--gold);}
+  #canopy:after{content:""; position:absolute; top:16px; left:0; right:0; height:46px;
+    background:linear-gradient(180deg,#ffc2dd,#ffd9ea); clip-path:polygon(0 0,100% 0,90% 100%,50% 60%,10% 100%);
+    border-radius:0 0 30px 30px; opacity:.95;}
+
+  #princess{margin-top:70px; font-size:120px; line-height:1; z-index:2;
+    filter:drop-shadow(0 8px 8px rgba(180,90,140,.3)); transition:transform .2s; position:relative;}
+  #princess.bounce{animation:hop .55s;}
+  @keyframes hop{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-18px) rotate(-4deg)}60%{transform:translateY(-6px) rotate(3deg)}}
+  #acc{position:absolute; top:64px; right:30%; font-size:34px; animation:float 3s ease-in-out infinite; z-index:3;}
+  @keyframes float{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-10px) rotate(8deg)}}
+  #outfitlabel{font-size:12px; font-weight:800; color:var(--pink-dk); margin-top:2px; z-index:2;}
+
+  /* attendants */
+  #attendants{display:flex; gap:14px; margin-top:4px; z-index:2; font-size:30px;}
+  #attendants span{filter:drop-shadow(0 3px 3px rgba(150,90,130,.3)); animation:sway 4s ease-in-out infinite;}
+  #attendants span:nth-child(2){animation-delay:.6s}
+  #attendants span:nth-child(3){animation-delay:1.2s}
+  #attendants span:nth-child(4){animation-delay:1.8s}
+  #attendants span:nth-child(5){animation-delay:2.4s}
+  @keyframes sway{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+  /* speech */
+  #speech{margin:8px 14px 6px; background:#fff; border:2px solid var(--pink); border-radius:18px;
+    padding:11px 14px; font-size:14.5px; line-height:1.55; box-shadow:var(--shadow);
+    min-height:54px; max-width:94%; position:relative; z-index:2;}
+  #speech .who{font-size:11px; font-weight:800; color:var(--pink-dk); display:block; margin-bottom:2px;}
+  #speech.pop{animation:pop .28s;}
+  @keyframes pop{from{transform:scale(.92);opacity:.4}to{transform:scale(1);opacity:1}}
+
+  /* actions */
+  #actions{background:var(--pink-lt); border-top:3px solid var(--pink);
+    padding:8px 8px calc(8px + env(safe-area-inset-bottom));
+    display:grid; grid-template-columns:repeat(3,1fr); gap:7px; z-index:5;}
+  .act{background:#fff; border:2px solid var(--pink); border-radius:15px; padding:9px 4px; text-align:center;
+    cursor:pointer; box-shadow:0 3px 0 var(--pink-dk); transition:transform .07s;}
+  .act:active{transform:translateY(3px); box-shadow:none;}
+  .act .em{font-size:25px; display:block;}
+  .act .nm{font-size:12px; font-weight:800; margin-top:1px;}
+  .act.gold{border-color:var(--gold); box-shadow:0 3px 0 var(--gold-dk); background:#fffbe9;}
+
+  /* floating hearts & fly text */
+  .fly{position:absolute; font-weight:900; font-size:20px; pointer-events:none; z-index:30;
+    animation:fly 1.2s ease-out forwards; text-shadow:0 1px 3px #fff;}
+  @keyframes fly{0%{transform:translateY(0) scale(.8);opacity:1}100%{transform:translateY(-80px) scale(1.2);opacity:0}}
+  .amb{position:absolute; pointer-events:none; z-index:1; font-size:18px;
+    animation:amb 4s linear forwards; opacity:.85;}
+  @keyframes amb{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:.9}100%{transform:translateY(-340px) scale(1.1) rotate(20deg);opacity:0}}
+
+  /* overlay/modal */
+  #overlay{position:absolute; inset:0; background:rgba(120,50,90,.42); backdrop-filter:blur(2px);
+    display:none; align-items:center; justify-content:center; z-index:40; padding:18px;}
+  #overlay.show{display:flex;}
+  .modal{background:var(--cream); border-radius:22px; width:100%; max-width:380px; max-height:86dvh;
+    overflow-y:auto; border:3px solid var(--gold); box-shadow:0 12px 40px rgba(120,40,80,.4); animation:pop .25s;}
+  .modal h2{margin:0; padding:14px 16px; font-size:17px; text-align:center; color:#fff;
+    background:linear-gradient(90deg,#ff9ec4,#cdb4f6); position:sticky; top:0;}
+  .modal .body{padding:15px 16px;}
+  .modal p{font-size:14px; line-height:1.6; margin:0 0 10px;}
+  .center{text-align:center;}
+  .small{font-size:12px; color:#a06;}
+  .btn{background:linear-gradient(90deg,var(--pink),var(--pink-dk)); color:#fff; border:none; border-radius:14px;
+    padding:12px 14px; font-size:15px; font-weight:800; cursor:pointer; box-shadow:0 3px 0 var(--pink-dk); width:100%;}
+  .btn:active{transform:translateY(2px); box-shadow:none;}
+  .btn.gold{background:linear-gradient(90deg,var(--gold),var(--gold-dk)); box-shadow:0 3px 0 var(--gold-dk);}
+  .btn.ghost{background:#fff; color:var(--pink-dk); border:2px solid var(--pink); box-shadow:0 3px 0 var(--pink);}
+  .btn+.btn{margin-top:8px;}
+  .ofitem{display:flex; align-items:center; gap:10px; background:#fff; border:2px solid var(--pink-lt);
+    border-radius:14px; padding:9px 10px; margin-bottom:7px;}
+  .ofitem.worn{border-color:var(--gold); background:#fffbe9;}
+  .ofitem.locked{opacity:.5;}
+  .ofitem .em{font-size:28px;}
+  .ofitem .info{flex:1; font-weight:800; font-size:14px;}
+  .ofitem .info .s{font-size:11px; color:#a06; font-weight:600;}
+  .ofitem button{width:auto; flex:none; font-size:13px; padding:8px 12px;}
+  #confetti{position:absolute; inset:0; pointer-events:none; z-index:35; overflow:hidden;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <span id="title">👑 甘やかされ姫ぐらし</span>
+    <button class="iconbtn" id="btn-closet" title="おきがえ">👗</button>
+    <button class="iconbtn" id="btn-sound" title="おと">🔊</button>
+    <button class="iconbtn" id="btn-help" title="あそびかた">❓</button>
+  </div>
+
+  <div id="happywrap">
+    <div id="happytop"><span id="rankname">♡ おひめさま</span><span id="happynum">しあわせ 0</span></div>
+    <div id="happybar"><i></i></div>
+  </div>
+
+  <div id="stage">
+    <div id="canopy"></div>
+    <div id="princess">👸</div>
+    <div id="acc">🎀</div>
+    <div id="outfitlabel">ピンクのドレス</div>
+    <div id="attendants">
+      <span title="メイド・リリ">👧</span>
+      <span title="しつじ・セバス">🧑‍🦳</span>
+      <span title="騎士・レイ">🤴</span>
+      <span title="コック・ドルチェ">👨‍🍳</span>
+      <span title="ねこ・もふ">🐱</span>
+    </div>
+    <div id="speech"><span class="who">メイド・リリ</span>姫さま、おはようございます♡ きょうも な〜んにもしなくて大丈夫。ぜんぶ私たちにおまかせくださいね。</div>
+  </div>
+
+  <div id="actions"></div>
+  <div id="confetti"></div>
+</div>
+
+<div id="overlay"><div class="modal" id="modal"></div></div>
+
+<script>
+"use strict";
+(function(){
+const SAVE_KEY="pamperedprincess_v1";
+
+/* ===== characters ===== */
+const CHARS={
+  lili:{name:"メイド・リリ", em:"👧"},
+  sebas:{name:"しつじ・セバス", em:"🧑‍🦳"},
+  ray:{name:"騎士・レイ", em:"🤴"},
+  dolce:{name:"コック・ドルチェ", em:"👨‍🍳"},
+  mofu:{name:"ねこ・もふ", em:"🐱"},
+};
+
+/* ===== outfits (unlock by rank level) ===== */
+const OUTFITS=[
+  {name:"ピンクのドレス",     acc:"🎀", lv:0},
+  {name:"ふわふわパジャマ",   acc:"🧸", lv:1},
+  {name:"おひめさまドレス",   acc:"💎", lv:2},
+  {name:"ゆめかわドレス",     acc:"🦄", lv:3},
+  {name:"おうかんドレス",     acc:"👑", lv:4},
+  {name:"てんしのドレス",     acc:"😇", lv:5},
+  {name:"でんせつの姫ドレス", acc:"🌟", lv:6},
+];
+
+/* ===== ranks (titles) ===== */
+const RANKS=[
+  "おひめさま","あまえんぼ姫","ぐうたら姫","わがまま姫♡","だめにされ姫","とろけ姫","でんせつの甘やかされ姫"
+];
+// happiness needed to REACH level i (cumulative)
+function needFor(lv){ return lv<=0?0:30*lv*lv; } // 0,30,120,270,480,750,1080
+
+/* ===== doting lines per action ===== */
+const LINES={
+  sweets:[
+    ["dolce","ほっぺが落ちるケーキ、焼きあがりましたよ姫さま♡ あ〜ん、してください。"],
+    ["lili","いちごは私がぜんぶ取り分けますね。姫さまは食べるだけ♪"],
+    ["dolce","おかわりは無限です。カロリーは私が引き受けますので！"],
+    ["lili","お口についたクリーム、私がふきますね。んもう、かわいい…♡"],
+  ],
+  tea:[
+    ["sebas","とっておきの紅茶でございます。湯加減も茶葉も、姫さま好みに整えました。"],
+    ["lili","ふーふー冷ましておきましたよ。猫舌の姫さま、やけどしちゃうから♡"],
+    ["sebas","おかわりはいつでも。私はそのためにここにおりますので。"],
+  ],
+  massage:[
+    ["lili","かたこり、ぜんぶほぐしちゃいますね。んん〜、姫さますべすべ…♡"],
+    ["sebas","お疲れなど一切たまらぬよう、毎日でもおもみいたします。"],
+    ["mofu","にゃ〜ん（ひざの上でゴロゴロ。あたたかい…）"],
+  ],
+  bath:[
+    ["lili","お風呂にバラの花びらを浮かべました♡ さ、お背中ながしますね。"],
+    ["sebas","湯あがりのタオルもふかふかに温めてございます。"],
+    ["dolce","湯あがりのつめた〜いジュースもご用意しております！"],
+  ],
+  pet:[
+    ["mofu","ごろ〜ん（おなかを見せてあまえてくる）"],
+    ["mofu","にゃっ♡（姫さまの手にすりすり。もふもふ無限供給）"],
+    ["lili","もふは姫さまが大好きなんです。ずっとそばにいたいんですって♡"],
+  ],
+  gift:[
+    ["ray","姫さまに似合うと思い、宝石をお持ちしました。…受け取ってくれますか。"],
+    ["sebas","街じゅうから集めた贈り物でございます。お気に召すまで何でも。"],
+    ["ray","姫さまの笑顔のためなら、ドラゴンだって倒してきます。"],
+    ["lili","お花、お部屋いっぱいに飾りましたよ♡ いい香り〜。"],
+  ],
+  nap:[
+    ["lili","おふとん、あたためておきました。ね、おひるねしましょ?♡ 子守唄うたいますね。"],
+    ["mofu","にゃ〜（となりでまるくなる。いっしょにねんね）"],
+    ["sebas","お目覚めまで、誰にも邪魔はさせません。ごゆっくり。"],
+  ],
+  praise:[
+    ["ray","姫さまは…世界でいちばん、おうつくしいです。"],
+    ["lili","なにもできなくたって、姫さまはここにいるだけで百点満点です♡"],
+    ["sebas","あなたさまは生まれながらに尊い御方。胸を張ってよいのですよ。"],
+    ["dolce","姫さまの『おいしい』の一言で、私は一生がんばれます！"],
+    ["ray","しがらみも、めんどうごとも、ぜんぶ私が引き受けます。姫さまは笑っていてください。"],
+    ["mofu","にゃ〜ん♡（だいすき、ってかおをすりよせる）"],
+  ],
+};
+
+/* ===== spontaneous (idle) pampering ===== */
+const IDLE=[
+  ["dolce","姫さま、焼きたてのクッキーはいかがですか?♡"],
+  ["lili","ひざかけ、お持ちしましたよ。寒くないですか?"],
+  ["sebas","お飲み物のおかわりをそっと置いておきますね。"],
+  ["ray","…つい姫さまを見守ってしまいます。お気になさらず。"],
+  ["mofu","ご〜ろごろ…（あしもとでまったり）"],
+  ["lili","姫さま、ほっぺがぷにぷに…♡ さわってもいいですか?"],
+  ["dolce","新作スイーツ、いちばんに味見してくださいね!"],
+];
+
+let S;
+function fresh(){ return { happy:0, lv:0, outfit:0, muted:false, seen:false }; }
+function load(){ try{const r=localStorage.getItem(SAVE_KEY); if(r){S=Object.assign(fresh(),JSON.parse(r));return;}}catch(e){} S=fresh(); }
+function save(){ try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){} }
+
+/* ===== sound ===== */
+let actx=null;
+function beep(f,d,t){ if(S.muted)return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(),g=actx.createGain(); o.type=t||"sine"; o.frequency.value=f;
+  o.connect(g); g.connect(actx.destination); g.gain.setValueAtTime(.1,actx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d); o.start(); o.stop(actx.currentTime+d);}catch(e){} }
+const SFX={
+  pat:()=>{beep(740,.08,"sine"); setTimeout(()=>beep(990,.1,"sine"),70);},
+  chime:()=>{[660,880,1100].forEach((f,i)=>setTimeout(()=>beep(f,.12,"sine"),i*60));},
+  level:()=>{[523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>beep(f,.2,"sine"),i*120));},
+};
+
+const $=s=>document.querySelector(s);
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[rnd(0,a.length-1)];
+
+/* ===== render ===== */
+function render(){
+  const of=OUTFITS[S.outfit];
+  $("#acc").textContent=of.acc;
+  $("#outfitlabel").textContent=of.name;
+  $("#rankname").textContent="♡ "+RANKS[Math.min(S.lv,RANKS.length-1)];
+  $("#happynum").textContent="しあわせ "+S.happy;
+  const cur=needFor(S.lv), nxt=needFor(S.lv+1);
+  const pct = nxt>cur ? Math.min(100,(S.happy-cur)/(nxt-cur)*100) : 100;
+  $("#happybar>i").style.width=pct+"%";
+  $("#btn-sound").textContent=S.muted?"🔇":"🔊";
+}
+
+const ACTIONS=[
+  {id:"sweets",  em:"🍰", nm:"スイーツ", gain:3},
+  {id:"tea",     em:"🍵", nm:"こうちゃ", gain:3},
+  {id:"massage", em:"💆", nm:"マッサージ", gain:4},
+  {id:"bath",    em:"🛁", nm:"おふろ",   gain:4},
+  {id:"pet",     em:"🐱", nm:"もふもふ", gain:3},
+  {id:"gift",    em:"💐", nm:"プレゼント", gain:5},
+  {id:"nap",     em:"😴", nm:"おひるね", gain:4},
+  {id:"praise",  em:"👏", nm:"ほめて♡", gain:5, gold:true},
+];
+function renderActions(){
+  const w=$("#actions"); w.innerHTML="";
+  ACTIONS.forEach(a=>{
+    const d=document.createElement("div"); d.className="act"+(a.gold?" gold":"");
+    d.innerHTML=`<span class="em">${a.em}</span><span class="nm">${a.nm}</span>`;
+    d.onclick=()=>doAction(a);
+    w.appendChild(d);
+  });
+}
+
+function say(who,text){
+  const c=CHARS[who]||{name:"???"};
+  const el=$("#speech");
+  el.innerHTML=`<span class="who">${c.em||""} ${c.name}</span>${text}`;
+  el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
+}
+function bounce(){ const p=$("#princess"); p.classList.remove("bounce"); void p.offsetWidth; p.classList.add("bounce"); }
+
+function doAction(a){
+  SFX.pat();
+  const line=pick(LINES[a.id]);
+  say(line[0], line[1]);
+  S.happy += a.gain;
+  bounce(); flyHearts(a.gain);
+  checkLevel();
+  save(); render();
+}
+
+function flyHearts(n){
+  const st=$("#stage").getBoundingClientRect();
+  const ems=["💗","♡","✨","💞","🌸"];
+  const el=document.createElement("div"); el.className="fly"; el.textContent="+"+n+" ♡"; el.style.color="#e0367a";
+  el.style.left=(st.width/2-22+rnd(-20,20))+"px"; el.style.top="42%"; $("#stage").appendChild(el);
+  setTimeout(()=>el.remove(),1200);
+  for(let i=0;i<5;i++){ const s=document.createElement("div"); s.className="fly"; s.textContent=pick(ems);
+    s.style.left=(st.width/2-20+rnd(-60,60))+"px"; s.style.top=(38+rnd(-8,12))+"%";
+    s.style.animationDelay=(i*60)+"ms"; $("#stage").appendChild(s); setTimeout(()=>s.remove(),1300); }
+}
+
+/* ambient hearts even when idle */
+function ambient(){
+  const st=$("#stage").getBoundingClientRect();
+  const ems=["💗","♡","✨","🌸","💕"];
+  const e=document.createElement("div"); e.className="amb"; e.textContent=pick(ems);
+  e.style.left=rnd(8,92)+"%"; e.style.bottom="120px"; e.style.fontSize=rnd(14,24)+"px";
+  $("#stage").appendChild(e); setTimeout(()=>e.remove(),4000);
+}
+
+/* level up */
+function checkLevel(){
+  while(S.happy >= needFor(S.lv+1) && S.lv < RANKS.length-1){
+    S.lv++;
+    SFX.level(); confetti(26);
+    // auto unlock & wear the outfit for this level if any
+    const newOf = OUTFITS.findIndex(o=>o.lv===S.lv);
+    setTimeout(()=>{
+      let body=`<div class="center" style="font-size:60px">👑✨</div>
+        <p class="center">甘やかされ度がアップ！<br>あなたは今や…<br><b style="color:#e0367a;font-size:18px">「${RANKS[S.lv]}」</b></p>`;
+      if(newOf>=0){
+        S.outfit=newOf;
+        body+=`<p class="center">🎁 みんなから新しいドレスのプレゼント！<br><b>${OUTFITS[newOf].acc} ${OUTFITS[newOf].name}</b><br><span class="small">（👗ボタンでいつでもおきがえできるよ）</span></p>`;
+      }
+      body+=`<button class="btn gold" onclick="__close()">うれしい…♡</button>`;
+      modal("🎉 もっと甘やかされちゃった",body);
+      render();
+    }, 250);
+  }
+}
+
+/* closet */
+function closet(){
+  let html=`<p class="small">どのドレスでも、何度でもおきがえ自由♡ がんばらなくても新しいドレスはみんながくれるよ。</p>`;
+  OUTFITS.forEach((o,i)=>{
+    const unlocked = S.lv>=o.lv;
+    const worn = S.outfit===i;
+    let btn = worn?`<span class="small" style="color:#caa01e;font-weight:800">着用中♡</span>`
+      : unlocked?`<button class="btn ghost" onclick="__wear(${i})">きがえる</button>`
+      : `<span class="small">甘やかされ度 Lv${o.lv}で解放</span>`;
+    html+=`<div class="ofitem ${worn?'worn':''} ${unlocked?'':'locked'}">
+      <span class="em">${o.acc}</span>
+      <div class="info">${o.name}<div class="s">${unlocked?'もってる':'まだ'}</div></div>${btn}</div>`;
+  });
+  html+=`<button class="btn ghost" onclick="__close()" style="margin-top:8px">とじる</button>`;
+  modal("👗 おきがえ",html);
+}
+window.__wear=function(i){ S.outfit=i; SFX.pat(); save(); render(); closet(); };
+
+/* confetti */
+function confetti(n){
+  const wrap=$("#confetti"); const ems=["🎉","✨","💗","👑","🌸","💎","💕"];
+  for(let i=0;i<n;i++){ const e=document.createElement("div"); e.textContent=pick(ems);
+    e.style.cssText=`position:absolute;left:${rnd(0,100)}%;top:-30px;font-size:${rnd(16,28)}px;`;
+    wrap.appendChild(e); const dur=rnd(1500,2700);
+    e.animate([{transform:"translateY(0) rotate(0)",opacity:1},{transform:`translateY(${rnd(440,660)}px) rotate(${rnd(180,520)}deg)`,opacity:0}],{duration:dur,easing:"ease-in"});
+    setTimeout(()=>e.remove(),dur);
+  }
+}
+
+/* modal */
+function modal(t,b){ $("#modal").innerHTML=`<h2>${t}</h2><div class="body">${b}</div>`; $("#overlay").classList.add("show"); }
+window.__close=function(){ $("#overlay").classList.remove("show"); render(); };
+$("#overlay").addEventListener("click",e=>{ if(e.target.id==="overlay") __close(); });
+
+/* help / intro */
+function help(){
+  modal("❓ あそびかた",
+    `<p>あなたは生まれながらの <b>おひめさま👸</b>。<br>がんばらなくていいし、失敗もありません。</p>
+     <p>🔹 下のボタンをタップすると、メイドや執事や騎士たちが<b>とことん甘やかして</b>くれます。</p>
+     <p>🔹 甘やかされるほど <b>しあわせ度♡</b> が上がって、<b>新しいドレス</b>や<b>称号</b>がもらえます。</p>
+     <p>🔹 なにもしなくても、みんなが勝手にお世話しにきてくれるよ。</p>
+     <p class="center" style="color:#e0367a">さあ、思いっきりだらけて、甘やかされてね♡</p>
+     <button class="btn ghost" onclick="__close()">わかった♡</button>`);
+}
+function intro(){
+  if(S.seen) return; S.seen=true; save();
+  modal("👑 甘やかされ姫ぐらし",
+    `<div class="center" style="font-size:64px">👸💕</div>
+     <p class="center">むずかしいことは ぜ〜んぶ忘れて。<br>ここはあなたが主役の、やさしいお城。</p>
+     <p class="center">メイドも執事も騎士もねこも、<br>あなたを甘やかすことが生きがいです。</p>
+     <p class="center small">なにもしなくて大丈夫。ただ、甘やかされてね♡</p>
+     <button class="btn gold" onclick="__close()">ふにゃ〜♡（はじめる）</button>`);
+}
+
+/* buttons */
+$("#btn-closet").onclick=()=>{SFX.pat(); closet();};
+$("#btn-help").onclick=()=>{SFX.pat(); help();};
+$("#btn-sound").onclick=()=>{ S.muted=!S.muted; save(); render(); if(!S.muted) SFX.pat(); };
+
+/* boot */
+load(); renderActions(); render();
+intro();
+
+/* idle loops */
+setInterval(ambient, 1100);
+setInterval(()=>{
+  if($("#overlay").classList.contains("show")) return;
+  const l=pick(IDLE); say(l[0], l[1]); S.happy+=1; flyHearts(1); checkLevel(); save(); render();
+}, 7000);
+})();
+</script>
+</body>
+</html>
