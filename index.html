@@ -486,7 +486,7 @@ function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
 function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,exp:0,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], drops:[],
   storage:{}, feed:0, cooking:[], seedmaking:[], weather:"sunny", fairy:{appeared:false,greeted:false,affection:0},
-  hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0, lastEventDay:0, bag:{},
+  hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0, lastEventDay:0, bag:{}, partner:null,
   hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false,bday:0}])) }; }
 let game=loadGame()||freshGame();
 let activeSeed=null;
@@ -507,7 +507,7 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   if(g.weapon==null||!WEAPON_BY[g.weapon])g.weapon="fist"; if(g.armor==null||!ARMOR_BY[g.armor])g.armor="cloth";
   if(g.accessory==null||!ACC_BY[g.accessory])g.accessory="none";
   if(!g.mats||typeof g.mats!=="object")g.mats={}; if(!g.items||typeof g.items!=="object")g.items={};
-  if(!g.crafted||typeof g.crafted!=="object")g.crafted={}; if(g.dungeonMax==null)g.dungeonMax=0; if(g.lastEventDay==null)g.lastEventDay=0;
+  if(!g.crafted||typeof g.crafted!=="object")g.crafted={}; if(g.dungeonMax==null)g.dungeonMax=0; if(g.lastEventDay==null)g.lastEventDay=0; if(g.partner===undefined)g.partner=null;
   g.maxHp=BASE_HP+ARMOR_BY[g.armor].hp+ACC_BY[g.accessory].hp; if(g.hp==null||g.hp>g.maxHp||g.hp<0)g.hp=g.maxHp;
   if(!g.hosts)g.hosts={};
   HOSTS.forEach(h=>{ if(!g.hosts[h.id])g.hosts[h.id]={spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false,bday:0};
@@ -517,7 +517,7 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   return g; }catch(e){ return null; } }
 function resetGame(){ if(!confirm("本当に最初からはじめる？\nいまの畑・おかね・進行はすべて消えます。"))return;
   localStorage.removeItem(SAVE_KEY); game=freshGame(); activeSeed=null; closeSheet(); renderSeedBar();
-  if(GS){ GS.indoor=false; GS.inDungeon=false; GS.clearEnemies(); GS.clearChest(); GS.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS);
+  if(GS){ GS.indoor=false; GS.inDungeon=false; GS.clearEnemies(); GS.clearChest(); GS.clearPartner&&GS.clearPartner(); GS.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS);
     GS.player.setPosition(8*16+8,10*16+14); GS.facing="down"; GS.buildPlots(); GS.buildAnimals(); GS.buildFairy(); GS.applySeasonVisuals(); }
   setSpeech("よ〜し、心機一転！またイチからがんばろ🎀"); }
 
@@ -836,6 +836,7 @@ class Farm extends Phaser.Scene{
     add("fairy_0",16,16,x=>drawFairyC(x,0)); add("fairy_1",16,16,x=>drawFairyC(x,1));
     ["down","up","left","right"].forEach(d=>{ for(let f=0;f<2;f++) add("p_"+d+"_"+f,16,18,x=>drawPlayerC(x,d,f)); });
     add("spark",4,4,x=>{ x.fillStyle="#fff"; x.fillRect(0,0,4,4); });
+    HOSTS.forEach(h=>add("host_"+h.id,16,16,x=>drawHostC(x,h.col)));
   }
   buildPlots(){ this.plotLayer.removeAll(true); this.plots=[];
     for(let i=0;i<game.tiles.length;i++){ const w=plotWorld(i);
@@ -931,15 +932,38 @@ class Farm extends Phaser.Scene{
     game.dungeonMax=Math.max(game.dungeonMax||0,1);
     this.player.setPosition(DUNGEON_EXIT.x*TS+8,(DUNGEON_EXIT.y-1)*TS+14); this.facing="up";
     this.cameras.main.setBounds(DROOM.x0*TS,DROOM.y0*TS,DROOM.w*TS,DROOM.h*TS); this.cameras.main.setBackgroundColor("#1a1622");
-    this.cancelFishing(); applyWeatherFx(); this.spawnFloor(); setSpeech("ダンジョン 地下1階⚔ 敵を全滅させて階段をめざせ！",2800);
+    this.cancelFishing(); applyWeatherFx(); this.spawnFloor(); this.spawnPartner();
+    if(!this.partnerSpr)setSpeech("ダンジョン 地下1階⚔ 敵を全滅させて階段をめざせ！",2800);
     updateHpHud(); updatePotBtn(); saveGame(); }
+  // ===== 恋人の同行（いっしょに戦う）=====
+  spawnPartner(){ this.clearPartner(); const id=game.partner; if(!id||!game.hosts[id]||!game.hosts[id].lover)return;
+    const st=game.hosts[id]; this.partnerSpr=this.add.image(this.player.x-12,this.player.y,"host_"+id).setOrigin(0.5,0.85).setDepth(this.player.y);
+    this.partnerDmg=3+HOST_RANKS.indexOf(hostRank(st.spent)); this.partnerCD=1;
+    setSpeech(pick([`${HOSTById[id].name}「俺がそばにいる。いっしょに戦おう⚔️」`,`${HOSTById[id].name}「君を危ない目には遭わせないよ♡」`,`${HOSTById[id].name}「ふたりなら無敵だろ？いくぞ」`]),3000); }
+  clearPartner(){ if(this.partnerSpr){ this.partnerSpr.destroy(); this.partnerSpr=null; } }
+  updatePartner(time,dt){ if(!this.partnerSpr)return; const p=this.partnerSpr;
+    const bx0=(DROOM.x0+1)*TS+5,bx1=(DROOM.x0+DROOM.w-1)*TS-5,by0=(DROOM.y0+1)*TS+5,by1=(DROOM.y0+DROOM.h-1)*TS-5;
+    const dx=this.player.x-p.x, dy=this.player.y-p.y, dist=Math.hypot(dx,dy);
+    if(dist>20){ const sp=TS*4.7; p.x+=dx/dist*sp*dt; p.y+=dy/dist*sp*dt; }
+    p.x=Math.max(bx0,Math.min(bx1,p.x)); p.y=Math.max(by0,Math.min(by1,p.y)); p.setDepth(p.y);
+    p.setTexture("host_"+game.partner);
+    this.partnerCD-=dt;
+    if(this.partnerCD<=0 && this.enemies.length){ let near=null,nd=1e9; for(const e of this.enemies){ const d=Math.hypot(e.x-p.x,e.y-p.y); if(d<nd){nd=d;near=e;} }
+      if(near && nd<48){ this.partnerCD=0.85; this.partnerAttack(near); } }
+  }
+  partnerAttack(e){ e.hp-=(this.partnerDmg||4); e.hurtT=0.2; SFX.hit();
+    const o={x:e.x-this.partnerSpr.x,y:e.y-this.partnerSpr.y}, d=Math.hypot(o.x,o.y)||1; e.x+=o.x/d*5; e.y+=o.y/d*5;
+    const tx=Math.floor(e.x/TS),ty=Math.floor(e.y/TS); this.fxBurst(tx,ty,["#ff5fa2","#ffd1e8","#ffffff","#ffd84d"]); this.fxFloat(tx,ty,"💕","#e0559a");
+    if(e.hp<=0){ this.enemies=this.enemies.filter(x=>x!==e); this.enemyDie(e);
+      if(!this.enemies.length && !this.floorCleared){ this.floorCleared=true; this.onFloorCleared(); } } }
   nextFloor(){ this.floor++; game.dungeonMax=Math.max(game.dungeonMax||0,this.floor);
     game.hp=Math.min(game.maxHp, game.hp+Math.ceil(game.maxHp*0.2));      // 階移動で小回復
     this.player.setPosition(DUNGEON_EXIT.x*TS+8,(DUNGEON_EXIT.y-1)*TS+14); this.facing="up";
+    if(this.partnerSpr)this.partnerSpr.setPosition(this.player.x-12,this.player.y);
     SFX.morning(); this.spawnFloor();
     setSpeech(`地下${this.floor}階へおりた…${this.floor>=MAX_FLOOR?"つよい気配がする…👑":"⚔"}`,2800);
     updateHpHud(); saveGame(); }
-  exitDungeon(){ this.inDungeon=false; SFX.morning(); this.clearEnemies(); this.clearChest(); this.player.setAlpha(1);
+  exitDungeon(){ this.inDungeon=false; SFX.morning(); this.clearEnemies(); this.clearChest(); this.clearPartner(); this.player.setAlpha(1);
     if(this.stairSpr)this.stairSpr.setVisible(false); this.stairsActive=false;
     this.player.setPosition(DUNGEON.trig.x*TS+8,DUNGEON.trig.y*TS+14); this.facing="down";
     this.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); this.cameras.main.setBackgroundColor(farmBg()); applyWeatherFx();
@@ -1045,7 +1069,7 @@ class Farm extends Phaser.Scene{
         this.fairyX=fx; this.fairyY=fy; this.fairySpr.setPosition(fx,fy); }
       else { this.fairyX=this.fairySpr.x; this.fairyY=this.fairySpr.y; } }
     if(this.indoor){ const pt=playerTile(); if(pt.x===HOME_DOOR.x&&pt.y===HOME_DOOR.y)this.exitHouse(); }
-    if(this.inDungeon){ this.updateEnemies(time,dt); const pt=playerTile();
+    if(this.inDungeon){ this.updateEnemies(time,dt); this.updatePartner(time,dt); const pt=playerTile();
       if(pt.x===DUNGEON_EXIT.x&&pt.y===DUNGEON_EXIT.y)this.exitDungeon();
       else if(this.stairsActive&&pt.x===DUNGEON_STAIR.x&&pt.y===DUNGEON_STAIR.y)this.nextFloor(); }
     this.updateHighlight(); updateHUD(); updateHpHud();
@@ -1446,6 +1470,7 @@ function startConfess(){ const id=curHost, ho=HOSTById[id], st=game.hosts[id]; i
   douhanScene("💗 告白", `しずかな夜。お店じゃなくて、二人きり…<br><br>${ho.name}「${c.intro}」`,
     [{label:"わたしも…ずっと好きでした💗",on:()=>confessYes(id,ho,c)}]); }
 function confessYes(id,ho,c){ const st=game.hosts[id]; st.lover=true; st.love=100;
+  if(!game.partner)game.partner=id;   // はじめての恋人はダンジョン同行のパートナーに
   game.maxStamina=staminaCap(); game.stamina=game.maxStamina; SFX.expand();
   if(GS){ const p=playerTile(); GS.fxBurst(p.x,p.y,["#ff5fa2","#ffd84d","#ffffff","#ff8fd0"]); GS.fxFloat(p.x,p.y,"❤️ 恋人になった！","#e0559a"); }
   burst(innerWidth/2,innerHeight*0.4,["#ff5fa2","#ffd84d","#ffffff","#5fd8ff"],26);
@@ -1587,6 +1612,10 @@ function openDungeonGate(){ recalcHp();
   h+=`<div class="saveNote">いちばん深く もぐった階：地下${game.dungeonMax||0}階 / 全${MAX_FLOOR}階</div>`;
   const mk=Object.keys(MATERIALS).filter(k=>(game.mats[k]||0)>0);
   h+=`<div class="saveNote">${mk.length?("もちもの素材： "+mk.map(k=>`${MATERIALS[k].emoji}${game.mats[k]}`).join("　")):"素材はまだ無いよ。もぐって敵から集めよう！"}</div>`;
+  const lovers=HOSTS.filter(ho=>game.hosts[ho.id].lover);
+  if(lovers.length){ h+=`<div class="sectionTtl">🫶 いっしょに戦う恋人</div><div class="saveNote">恋人が隣で戦ってくれる（ランクが高いほど強い💪）</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin:2px 4px 8px">`;
+    lovers.forEach(ho=>{ const on=game.partner===ho.id; h+=`<button class="act${on?" buyx":""}" data-partner="${ho.id}">${on?"✅ ":""}${ho.name}</button>`; });
+    h+=`<button class="act${game.partner?"":" buyx"}" data-partner="">${game.partner?"":"✅ "}ひとりで</button></div>`; }
   h+=`<button class="act buyx" data-dive style="width:calc(100% - 8px);margin:8px 4px;font-size:17px;min-height:50px">⚔ もぐる！（HP全回復）</button>`;
   h+=`<div class="sectionTtl">🗡 ぶき（攻撃力）</div>`; WEAPONS.forEach(it=>h+=craftRow("w",it));
   h+=`<div class="sectionTtl">🛡 ぼうぐ（防御＆最大HP）</div>`; ARMORS.forEach(it=>h+=craftRow("a",it));
@@ -1636,6 +1665,7 @@ function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>d
   sheet.querySelectorAll("[data-hostgift]").forEach(b=>b.onclick=()=>hostGift(b.dataset.hostgift));
   sheet.querySelectorAll("[data-gift]").forEach(b=>b.onclick=()=>giveGift(b.dataset.gift));
   sheet.querySelectorAll("[data-dive]").forEach(b=>b.onclick=()=>{ closeSheet(); GS.enterDungeon(); });
+  sheet.querySelectorAll("[data-partner]").forEach(b=>b.onclick=()=>{ game.partner=b.dataset.partner||null; SFX.buy(); openDungeonGate(); saveGame(); });
   sheet.querySelectorAll("[data-craft]").forEach(b=>b.onclick=()=>craftItem(b.dataset.craft));
   sheet.querySelectorAll("[data-craftp]").forEach(b=>b.onclick=()=>craftItemP(b.dataset.craftp));
   sheet.querySelectorAll("[data-calprev]").forEach(b=>b.onclick=()=>{ calView=(calView+3)%4; openCalendar(); });
