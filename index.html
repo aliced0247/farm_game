@@ -143,6 +143,30 @@
   .particle{ position:fixed; width:7px; height:7px; border-radius:2px; transform:translate(-50%,-50%); pointer-events:none;
     z-index:49; animation:spark .66s ease-out forwards; }
   @keyframes spark{ 0%{opacity:1;transform:translate(-50%,-50%) scale(1);} 100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.3);} }
+
+  /* ===== 横画面レイアウト（端末を横にした時だけ。縦の見た目はそのまま）===== */
+  @media (orientation: landscape){
+    #app{ max-width:none; position:relative; }
+    #stage{ flex:1; }                                   /* ステージを全面に */
+    /* ステータスは上に小さくオーバーレイ（左寄せ） */
+    #topbar{ position:absolute; top:0; left:0; right:0; z-index:7; background:transparent; box-shadow:none;
+      padding:calc(4px + env(safe-area-inset-top)) 8px 0 calc(8px + env(safe-area-inset-left));
+      gap:5px; justify-content:flex-start; pointer-events:none; }
+    #topbar .stat{ flex:0 0 auto; min-width:60px; padding:3px 7px; pointer-events:auto; opacity:.96; }
+    #topbar .stat .val{ font-size:14px; }
+    /* HUD（HP/ポーション）はステータスの下へ逃がす */
+    #hpHud{ top:52px; } #potBtn{ top:104px; }
+    /* 種バーは下中央にオーバーレイ（十字キーと攻撃の間） */
+    #seedbar{ position:absolute; left:188px; right:198px; bottom:calc(16px + env(safe-area-inset-bottom));
+      height:58px; z-index:8; background:rgba(122,87,51,.85); border-radius:14px;
+      box-shadow:0 3px 8px rgba(0,0,0,.3); padding:6px 10px; }
+    /* 操作は下の左右隅にオーバーレイ（背景なし・隙間はタップが畑に通る） */
+    #controls{ position:absolute; left:0; right:0; bottom:0; z-index:8; background:transparent; box-shadow:none;
+      padding:0 calc(16px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+      align-items:flex-end; pointer-events:none; }
+    #dpad{ pointer-events:none; } #dpad .dbtn{ pointer-events:auto; } #actionBtn{ pointer-events:auto; }
+  }
+
 </style>
 </head>
 <body>
@@ -836,7 +860,9 @@ class Farm extends Phaser.Scene{
     this.add.particles(0,0,"spark",{emitting:false}); // 予熱
     this.applySeasonVisuals();
   }
-  applyZoom(){ const h=this.scale.gameSize.height||this.cameras.main.height; const z=Math.max(1.5,h/(12.5*TS)); this.cameras.main.setZoom(z); }
+  applyZoom(){ const g=this.scale.gameSize, w=g.width||this.cameras.main.width, h=g.height||this.cameras.main.height;
+    const tiles=(w>h)?9:12.5;                                   // 横画面は縦9タイル基準で広く見せる
+    this.cameras.main.setZoom(Math.max(1.5, h/(tiles*TS))); }
   applySeasonVisuals(){ const sk=curSeason().key;
     (this.grassTiles||[]).forEach(g=>g.img.setTexture("grass_"+sk+"_"+(g.variant?"B":"A")));
     (this.treeSprs||[]).forEach(t=>t.setTexture("tree_"+sk));
