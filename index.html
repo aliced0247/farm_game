@@ -293,6 +293,11 @@ const GIFTS=[ {key:"candy",name:"あめ",emoji:"🍬",cost:50,aff:3},
 const HOST_RANKS=[ {min:0,name:"初回",emoji:"🌱"}, {min:3000,name:"担当",emoji:"💕"},
   {min:15000,name:"本指名",emoji:"⭐"}, {min:50000,name:"姫",emoji:"👑"} ];
 function hostRank(s){ let r=HOST_RANKS[0]; for(const x of HOST_RANKS)if(s>=x.min)r=x; return r; }
+// ライバル太客（ホストごとに2人。貢ぎ額で順位を競う）
+const RIVAL_NAMES={ leo:["れな","さやか"], shun:["ほのか","まり"], kai:["えみ","りこ"] };
+function freshRivals(id){ return (RIVAL_NAMES[id]||["A","B"]).map(n=>({name:n,spent:500+Math.floor(Math.random()*1800)})); }
+function rivalRank(id){ const st=game.hosts[id]; if(!st||!st.rivals)return 1; return 1+st.rivals.filter(r=>r.spent>st.spent).length; }
+function isTopCustomer(id){ return rivalRank(id)===1; }
 const HOST_GIFTS=[ {key:"drink",name:"ドリンク",emoji:"🥃",cost:300},
   {key:"champ",name:"シャンパン",emoji:"🍾",cost:1000},
   {key:"tower",name:"シャンパンタワー",emoji:"🗼",cost:5000} ];
@@ -487,7 +492,7 @@ function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], drops:[],
   storage:{}, feed:0, cooking:[], seedmaking:[], weather:"sunny", fairy:{appeared:false,greeted:false,affection:0},
   hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0, lastEventDay:0, bag:{}, partner:null,
-  hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false,bday:0}])) }; }
+  hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false,bday:0,rivals:freshRivals(h.id)}])) }; }
 let game=loadGame()||freshGame();
 let activeSeed=null;
 let curHost=null;
@@ -511,7 +516,7 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   g.maxHp=BASE_HP+ARMOR_BY[g.armor].hp+ACC_BY[g.accessory].hp; if(g.hp==null||g.hp>g.maxHp||g.hp<0)g.hp=g.maxHp;
   if(!g.hosts)g.hosts={};
   HOSTS.forEach(h=>{ if(!g.hosts[h.id])g.hosts[h.id]={spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false,bday:0};
-    else { const s=g.hosts[h.id]; if(s.dates==null)s.dates=0; if(s.dateDay==null)s.dateDay=0; if(s.love==null)s.love=0; if(s.lover==null)s.lover=false; if(s.bday==null)s.bday=0; } });
+    else { const s=g.hosts[h.id]; if(s.dates==null)s.dates=0; if(s.dateDay==null)s.dateDay=0; if(s.love==null)s.love=0; if(s.lover==null)s.lover=false; if(s.bday==null)s.bday=0; if(!Array.isArray(s.rivals))s.rivals=freshRivals(h.id); } });
   if(g.host){ const l=g.hosts.leo; l.spent=g.host.spent||0; l.line=g.host.line||""; l.lineDay=g.host.lineDay||0; delete g.host; }
   const lc=HOSTS.filter(h=>g.hosts[h.id].lover).length; g.maxStamina=14+g.level+lc*2; if(g.stamina>g.maxStamina)g.stamina=g.maxStamina;
   return g; }catch(e){ return null; } }
@@ -1228,7 +1233,12 @@ function sleep(){ SFX.sleep(); let earn=0; const sold={}; const prevS=curSeason(
   // 天候：新しい日の天気を決める。雨なら畑が自動で水やり
   game.weather=rollWeather(game.day);
   if(isRaining()) game.tiles.forEach(t=>{ if(t.state==="planted")t.watered=true; });
-  if(GS){ GS.refreshAllPlots(); GS.refreshDrops(); } renderSeedBar(); saveGame(); showMorning(earn,sold,dishes,seasonMsg,madeSeeds); }
+  // ライバル太客が毎晩ガンガン貢ぐ。抜かれたら朝に警告
+  const rivalWarn=[]; HOSTS.forEach(ho=>{ const st=game.hosts[ho.id]; if(!st.rivals)return;
+    const wasTop=isTopCustomer(ho.id); st.rivals.forEach(r=>{ r.spent+=300+Math.floor(Math.random()*900); });
+    if(wasTop && !isTopCustomer(ho.id))rivalWarn.push(ho.name); });
+  const rivalMsg = rivalWarn.length ? `⚠️ ${rivalWarn.join("・")}が他の客に取られそう…！貢いで本命を守ろう💸` : "";
+  if(GS){ GS.refreshAllPlots(); GS.refreshDrops(); } renderSeedBar(); saveGame(); showMorning(earn,sold,dishes,seasonMsg,madeSeeds,rivalMsg); }
 function seedYield(crop){ if(crop==="golden")return Math.random()<0.4?2:1; const r=Math.random(); return r<0.2?3:(r<0.7?2:1); }
 
 /* ===================== シート（DOM UI） ===================== */
@@ -1362,7 +1372,7 @@ function openHostClub(){ curHost=null;
   HOSTS.forEach(ho=>{ const st=game.hosts[ho.id], rank=hostRank(st.spent);
     h+=`<div class="item" data-hostpick="${ho.id}" style="cursor:pointer">
       <canvas width="56" height="56" data-host="${ho.id}" style="image-rendering:pixelated;border-radius:10px;background:#2a1d38;flex:none"></canvas>
-      <div class="info"><div class="nm">${ho.name} <span style="color:#9a8aa6;font-size:12px">${ho.title}</span></div>
+      <div class="info"><div class="nm">${ho.name} <span style="color:#9a8aa6;font-size:12px">${ho.title}</span> ${isTopCustomer(ho.id)?'<span style="color:#e0559a">👑本命</span>':`<span style="color:#c0392b">No.${rivalRank(ho.id)}</span>`}</div>
       <div class="sub">${st.lover?'<span style="color:#e0559a">❤️恋人</span>':`${rank.emoji}${rank.name}`}・貢ぎ ${st.spent.toLocaleString()}円${st.dates?`・同伴${st.dates}回`:""}</div></div>
       <button class="act" data-hostpick="${ho.id}">会う</button></div>`; });
   h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
@@ -1389,6 +1399,12 @@ function openHostDetail(id){ curHost=id; const ho=HOSTById[id], st=game.hosts[id
   else h+=`<div class="item"><div class="ico">💞</div><div class="info"><div class="nm">${st.lover?"デート":"同伴デート"}</div>
     <div class="sub">${DOUHAN_FEE.toLocaleString()}円・1日1回・たいりょく全回復⚡・恋ごころ+${LOVE_DATE}</div></div>
     <button class="act" data-douhan ${(doneDate||game.money<DOUHAN_FEE)?"disabled":""}>${doneDate?"また明日♡":"さそう"}</button></div>`;
+  h+=`<div class="sectionTtl">👑 太客ランキング</div>`;
+  if(isTopCustomer(id))h+=`<div class="saveNote" style="background:#fff0c2;color:#a85f17">👑 あなたは ${ho.name} の<b>本命客</b>！この座を守ろう♡</div>`;
+  else h+=`<div class="saveNote" style="color:#c0392b">あなたは No.${rivalRank(id)}… 貢いで本命を奪い返そう💸</div>`;
+  const board=[{name:"あなた",spent:st.spent,me:true}].concat((st.rivals||[]).map(r=>({name:r.name,spent:r.spent}))).sort((a,b)=>b.spent-a.spent);
+  board.forEach((b,i)=>{ h+=`<div class="item" style="${b.me?"background:#fff0f6;border-color:#ff8fc0":""}"><div class="ico">${i===0?"👑":"#"+(i+1)}</div>
+    <div class="info"><div class="nm">${b.me?"<b>あなた</b>":b.name}${b.me&&i===0?' <span style="color:#e0559a">本命♡</span>':""}</div><div class="sub">貢ぎ ${b.spent.toLocaleString()}円</div></div></div>`; });
   h+=`<div class="sectionTtl">🥂 貢ぐ</div>`;
   HOST_GIFTS.forEach(g=>{ const ok=game.money>=g.cost;
     h+=`<div class="item"><div class="ico">${g.emoji}</div><div class="info"><div class="nm">${g.name}</div>
@@ -1428,12 +1444,13 @@ function celebrateBday(){ const id=curHost, ho=HOSTById[id], st=game.hosts[id]; 
   douhanScene(`🎂 ${ho.name} HAPPY BIRTHDAY`, body, [{label:"おめでとう🎂♡",on:()=>openHostDetail(id)}]); }
 function hostGift(key){ const g=HOST_GIFTS.find(x=>x.key===key), id=curHost, ho=HOSTById[id]; if(!g||!ho)return; const st=game.hosts[id];
   if(game.money<g.cost){ toast("おかねが足りないよ💸"); SFX.error(); setSpeech("お金ためてからまた来てね？♡",2200); return; }
-  const before=hostRank(st.spent); game.money-=g.cost; st.spent+=g.cost; SFX.coin();
+  const before=hostRank(st.spent), wasTop=isTopCustomer(id); game.money-=g.cost; st.spent+=g.cost; SFX.coin();
   const wasLove=st.love; st.love=Math.min(100, st.love+(LOVE_GIFT[key]||0));
-  const after=hostRank(st.spent), p=playerTile();
+  const after=hostRank(st.spent), p=playerTile(), reclaimed=(!wasTop && isTopCustomer(id));
   if(GS){ GS.fxBurst(p.x,p.y,["#ff5fa2","#ffd84d","#5fd8ff","#ffffff"]); GS.fxFloat(p.x,p.y,"-"+g.cost.toLocaleString()+"円","#ff5fa2"); }
   if(after!==before){ SFX.expand(); if(GS)GS.fxBurst(p.x,p.y,["#ffd84d","#ff5fa2","#ffffff","#5fd8ff"]);
     setSpeech(`${after.emoji} ${ho.name}のランクアップ！「${after.name}」🎉`,3200); }
+  else if(reclaimed){ SFX.expand(); setSpeech(`👑 本命の座を奪い返した！${ho.name}「やっぱ君が一番だよ♡」`,3200); }
   else if(wasLove<CONFESS_LOVE && st.love>=CONFESS_LOVE && !st.lover) setSpeech(`💗 恋ごころが満タン！${ho.name}に告白できるよ！`,3200);
   else setSpeech(pick(ho.react[key]),2400);
   openHostDetail(id); saveGame(); }
@@ -1676,7 +1693,7 @@ function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>d
   sheet.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeSheet); }
 overlay.addEventListener("click",e=>{ if(e.target===overlay)closeSheet(); });
 
-function showMorning(earn,sold,dishes,seasonMsg,madeSeeds){ const s=curSeason();
+function showMorning(earn,sold,dishes,seasonMsg,madeSeeds,rivalMsg){ const s=curSeason();
   document.getElementById("mDay").textContent=`${s.emoji}${s.name} ${dayInSeason(game.day)}日目`;
   const e=document.getElementById("mEarn");
   let html = earn>0 ? `出荷できたよ！<br>${Object.keys(sold).map(c=>`${prodInfo(c).name}×${sold[c]}`).join("・")}<br>💰 +${earn.toLocaleString()}円` : "今日はいい天気！";
@@ -1686,6 +1703,7 @@ function showMorning(earn,sold,dishes,seasonMsg,madeSeeds){ const s=curSeason();
   const wx=WEATHER[game.weather]; html = `<b>${wx.emoji} ${wx.name}</b>${isRaining()?"（畑は自動で水やり🌧）":(game.weather==="snow"?"（しんしん…❄️）":"")}<br>`+html;
   const ev=(game.lastEventDay!==game.day)?eventToday():null;
   if(ev)html += `<br><br>🎉 今日は <b>${ev.emoji}${ev.name}</b>！`;
+  if(rivalMsg)html += `<br><br><span style="color:#c0392b">${rivalMsg}</span>`;
   e.innerHTML=html;
   if(earn>0){ SFX.coin(); setTimeout(()=>{ burst(innerWidth/2,innerHeight*0.42,["#ffd14d","#f4b740","#fff4c2"],14); floatText(innerWidth/2,innerHeight*0.42,`+${earn.toLocaleString()}円`,"#d4861a"); },220); }
   document.getElementById("morning").classList.add("show"); }
