@@ -37,6 +37,11 @@
   #muteBtn{ position:absolute; top:8px; right:8px; z-index:6; width:36px; height:36px; border-radius:50%;
     border:2px solid var(--line); background:var(--panel); font-size:17px; cursor:pointer; box-shadow:0 3px 0 #c79a5b; }
   #muteBtn:active{ transform:translateY(2px); box-shadow:0 1px 0 #c79a5b; }
+  #hpHud{ position:absolute; top:8px; left:8px; z-index:6; display:none; flex-direction:column; gap:3px;
+    background:#1a1622dd; border:2px solid #6b4a2b; border-radius:11px; padding:5px 9px; box-shadow:0 3px 0 #120c1a; }
+  #hpHud #hpTxt{ font-size:12px; font-weight:800; color:#ffd9df; line-height:1; }
+  #hpHud #hpBarWrap{ width:100px; height:6px; background:#3a2030; border-radius:4px; overflow:hidden; }
+  #hpHud #hpBar{ height:100%; width:100%; background:linear-gradient(90deg,#ff5b6e,#ff9eb0); transition:width .2s; }
 
   #seedbar{ display:flex; align-items:center; gap:8px; overflow-x:auto; padding:8px 10px; background:#7a5733;
     box-shadow:inset 0 3px 6px rgba(0,0,0,.22); -webkit-overflow-scrolling:touch; height:86px; box-sizing:border-box; flex:none; }
@@ -129,6 +134,7 @@
     <div id="loadMsg">🌱 牧場を読み込み中…</div>
     <div id="speech"></div>
     <button id="muteBtn" aria-label="音">🔊</button>
+    <div id="hpHud"><span id="hpTxt"></span><div id="hpBarWrap"><div id="hpBar"></div></div></div>
   </div>
 
   <div id="seedbar"></div>
@@ -179,7 +185,11 @@ const SFX=(function(){
     buy(){tone(740,0.08,"square",0.13,0);tone(988,0.1,"square",0.12,0.06);},
     expand(){arp([392,523,659,784,1047],0.07,"triangle",0.16);},
     sleep(){tone(330,0.6,"sine",0.16,0,150);}, morning(){arp([659,784,988,1319],0.12,"triangle",0.16);},
-    step(){tone(180,0.05,"square",0.04);}, error(){tone(200,0.18,"square",0.11,0,140);} };
+    step(){tone(180,0.05,"square",0.04);}, error(){tone(200,0.18,"square",0.11,0,140);},
+    swing(){ noise(0.09,0.10,0,1400); tone(760,0.07,"triangle",0.08,0,300); },
+    hit(){ tone(320,0.07,"square",0.15,0,150); noise(0.06,0.08,0,800); },
+    slay(){ arp([523,392,330,247],0.05,"square",0.13); },
+    hurt(){ tone(230,0.2,"sawtooth",0.16,0,110); noise(0.08,0.09,0); } };
 })();
 window.addEventListener("pointerdown",()=>SFX.unlock(),{once:true});
 
@@ -266,6 +276,39 @@ const MEALS=[
   {key:"omelet2",name:"チーズオムレツ",emoji:"🍳",need:{egg:2,cheese:1},sta:18},
   {key:"cakeplate",name:"ごほうびケーキ",emoji:"🍰",need:{cake:1},sta:25},
 ];
+// ===== ダンジョン＆戦闘 =====
+const BASE_HP=12;
+// 敵から落ちる素材（クラフト専用・倉庫とは別の game.mats に貯まる）
+const MATERIALS={
+  slimejelly:{name:"スライムゼリー",emoji:"🟢"},
+  ore:{name:"こうせき",emoji:"🪨"},
+  crystal:{name:"クリスタル",emoji:"🔮"},
+};
+// 武器（攻撃力）・防具（防御＆最大HP）。fist/cloth は最初から装備
+const WEAPONS=[
+  {key:"fist",   name:"すで",            emoji:"👊", atk:1, need:null},
+  {key:"copper", name:"どうのつるぎ",     emoji:"🗡", atk:3, need:{slimejelly:5}},
+  {key:"iron",   name:"はがねのつるぎ",   emoji:"⚔",  atk:5, need:{ore:4,slimejelly:3}},
+  {key:"crystal",name:"クリスタルソード", emoji:"🌟", atk:8, need:{crystal:3,ore:5}},
+];
+const ARMORS=[
+  {key:"cloth",  name:"ぬののふく",       emoji:"👕", def:0, hp:0,  need:null},
+  {key:"jelly",  name:"ゼリーアーマー",   emoji:"🦺", def:1, hp:6,  need:{slimejelly:6}},
+  {key:"iron",   name:"はがねのよろい",   emoji:"🛡", def:3, hp:10, need:{ore:6,slimejelly:4}},
+  {key:"crystal",name:"クリスタルメイル", emoji:"💠", def:5, hp:18, need:{crystal:4,ore:6}},
+];
+const WEAPON_BY=Object.fromEntries(WEAPONS.map(w=>[w.key,w]));
+const ARMOR_BY=Object.fromEntries(ARMORS.map(a=>[a.key,a]));
+// スライムの強さ
+const SLIME_HP=4, SLIME_ATK=2, SLIME_SIGHT=46, SLIME_CHASE=26, SLIME_WANDER=12, DUNGEON_SLIMES=5;
+function weaponAtk(){ return (WEAPON_BY[game.weapon]||WEAPON_BY.fist).atk; }
+function armorDef(){ return (ARMOR_BY[game.armor]||ARMOR_BY.cloth).def; }
+function recalcHp(){ game.maxHp=BASE_HP+((ARMOR_BY[game.armor]||ARMOR_BY.cloth).hp);
+  if(game.hp==null||game.hp>game.maxHp)game.hp=game.maxHp; }
+// 敵を倒したときのドロップ抽選
+function rollDrop(){ const g={ slimejelly: 1+(Math.random()<0.4?1:0) };
+  if(Math.random()<0.28)g.ore=1; if(Math.random()<0.06)g.crystal=1; return g; }
+
 function prodInfo(id){ if(CROPS[id])return {name:CROPS[id].name,sell:CROPS[id].sell};
   if(PRODUCTS[id])return {name:PRODUCTS[id].name,sell:PRODUCTS[id].sell}; return {name:id,sell:0}; }
 const LINES_MORNING=["おはよ〜！今日もキラキラいくよ🎀","ふぁ〜あ…よく寝た♪ さ、かせぐわよ💖","今日もせっせと働いて、夜は推しに会いに行くの✨"];
@@ -276,6 +319,7 @@ function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
 function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,exp:0,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], drops:[],
   storage:{}, feed:0, cooking:[], fairy:{appeared:false,greeted:false,affection:0},
+  hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", mats:{}, crafted:{},
   hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false}])) }; }
 let game=loadGame()||freshGame();
 let activeSeed=null;
@@ -291,6 +335,9 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   g.animals.forEach(a=>{ if(!a.type)a.type="chicken"; if(a.fed==null)a.fed=false; });
   if(!g.storage||typeof g.storage!=="object")g.storage={}; if(g.feed==null)g.feed=0; if(!Array.isArray(g.cooking))g.cooking=[];
   if(!g.fairy)g.fairy={appeared:false,greeted:false,affection:0};
+  if(g.weapon==null||!WEAPON_BY[g.weapon])g.weapon="fist"; if(g.armor==null||!ARMOR_BY[g.armor])g.armor="cloth";
+  if(!g.mats||typeof g.mats!=="object")g.mats={}; if(!g.crafted||typeof g.crafted!=="object")g.crafted={};
+  g.maxHp=BASE_HP+(ARMOR_BY[g.armor].hp); if(g.hp==null||g.hp>g.maxHp||g.hp<0)g.hp=g.maxHp;
   if(!g.hosts)g.hosts={};
   HOSTS.forEach(h=>{ if(!g.hosts[h.id])g.hosts[h.id]={spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false};
     else { const s=g.hosts[h.id]; if(s.dates==null)s.dates=0; if(s.dateDay==null)s.dateDay=0; if(s.love==null)s.love=0; if(s.lover==null)s.lover=false; } });
@@ -299,7 +346,7 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   return g; }catch(e){ return null; } }
 function resetGame(){ if(!confirm("本当に最初からはじめる？\nいまの畑・おかね・進行はすべて消えます。"))return;
   localStorage.removeItem(SAVE_KEY); game=freshGame(); activeSeed=null; closeSheet(); renderSeedBar();
-  if(GS){ GS.indoor=false; GS.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); GS.cameras.main.setBackgroundColor("#6ea83f");
+  if(GS){ GS.indoor=false; GS.inDungeon=false; GS.clearEnemies(); GS.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); GS.cameras.main.setBackgroundColor("#6ea83f");
     GS.player.setPosition(8*16+8,10*16+14); GS.facing="down"; GS.buildPlots(); GS.buildAnimals(); GS.buildFairy(); }
   setSpeech("よ〜し、心機一転！またイチからがんばろ🎀"); }
 
@@ -310,15 +357,19 @@ const SHOP ={x:13,y:2,w:3,h:2,trig:{x:14,y:4}};
 const ANIMAL_SHOP={x:13,y:10,w:3,h:2,trig:{x:14,y:9}};
 const KITCHEN={x:7,y:2,w:3,h:2,trig:{x:8,y:4}};      // 加工小屋
 const HOST_CLUB={x:10,y:2,w:3,h:2,trig:{x:11,y:4}};  // ホストクラブ（夜の街への入口）
+const DUNGEON={x:5,y:2,w:2,h:2,trig:{x:6,y:4}};      // ダンジョンの入口（洞窟）
 // 自宅の中（マップ外の領域に部屋を作って、入ったらカメラをそこへ移す）
 const ROOM={x0:20,y0:2,w:9,h:8};
 const HOME_DOOR={x:ROOM.x0+4,y:ROOM.y0+ROOM.h-1};
 const HOME_BED=[[ROOM.x0+1,ROOM.y0+1],[ROOM.x0+2,ROOM.y0+1]];
 const HOME_STOVE=[[ROOM.x0+ROOM.w-3,ROOM.y0+1],[ROOM.x0+ROOM.w-2,ROOM.y0+1]];
+// ダンジョンの戦闘エリア（家と同じくマップ外の領域に作る）
+const DROOM={x0:20,y0:14,w:11,h:9};
+const DUNGEON_EXIT={x:DROOM.x0+5,y:DROOM.y0+DROOM.h-1};
 const PASTURE={x0:12,y0:6,x1:16,y1:8};               // ニワトリの放牧エリア（タイル範囲）
 function inPasture(tx,ty){ return tx>=PASTURE.x0&&tx<=PASTURE.x1&&ty>=PASTURE.y0&&ty<=PASTURE.y1; }
 const POND=[[2,9],[3,9],[2,10],[3,10]];
-const TREES=[[5,3],[16,2],[2,7],[3,8]];
+const TREES=[[16,2],[2,7],[3,8]];
 const PATH=new Set(); for(let x=3;x<=14;x++)PATH.add(x+",5"); PATH.add("3,4"); PATH.add("14,4");
 function isSolidTile(tx,ty){ if(tx<0||ty<0||tx>=MAP_W||ty>=MAP_H)return true;
   if(tx===0||ty===0||tx===MAP_W-1||ty===MAP_H-1)return true;
@@ -327,6 +378,7 @@ function isSolidTile(tx,ty){ if(tx<0||ty<0||tx>=MAP_W||ty>=MAP_H)return true;
   if(tx>=ANIMAL_SHOP.x&&tx<ANIMAL_SHOP.x+ANIMAL_SHOP.w&&ty>=ANIMAL_SHOP.y&&ty<ANIMAL_SHOP.y+ANIMAL_SHOP.h)return true;
   if(tx>=KITCHEN.x&&tx<KITCHEN.x+KITCHEN.w&&ty>=KITCHEN.y&&ty<KITCHEN.y+KITCHEN.h)return true;
   if(tx>=HOST_CLUB.x&&tx<HOST_CLUB.x+HOST_CLUB.w&&ty>=HOST_CLUB.y&&ty<HOST_CLUB.y+HOST_CLUB.h)return true;
+  if(tx>=DUNGEON.x&&tx<DUNGEON.x+DUNGEON.w&&ty>=DUNGEON.y&&ty<DUNGEON.y+DUNGEON.h)return true;
   if(POND.some(([x,y])=>x===tx&&y===ty))return true;
   if(TREES.some(([x,y])=>x===tx&&y===ty))return true; return false; }
 function plotIndex(tx,ty){ if(tx>=FARM_X&&tx<FARM_X+game.cols&&ty>=FARM_Y&&ty<FARM_Y+game.rows)return (ty-FARM_Y)*game.cols+(tx-FARM_X); return -1; }
@@ -445,6 +497,23 @@ function drawFairyC(x,frame){ const SKIN="#ffe1c6",HAIR="#b58cff",DRESS="#ff9ed6
   rc(x,6,5,4,4,SKIN); rc(x,5,4,6,2,HAIR); rc(x,6,4,4,1,HAIR);
   rc(x,7,7,1,1,"#5a3a6a"); rc(x,9,7,1,1,"#5a3a6a"); rc(x,6,8,1,1,"#ff9ecb"); rc(x,9,8,1,1,"#ff9ecb");
   rc(x,6,13,1,2,SKIN); rc(x,9,13,1,2,SKIN); rc(x,12,10,1,1,GLOW); }
+function drawCaveC(x){ // 32x40：岩の洞窟の入口
+  rc(x,2,8,28,8,"#5a5a62"); rc(x,0,14,32,26,"#6b6b73"); rc(x,0,14,32,4,"#82828c"); // 岩の体
+  rc(x,9,20,14,20,"#15121a"); rc(x,11,18,10,4,"#241f2e");                          // 暗い穴
+  rc(x,3,24,4,4,"#7a7a82"); rc(x,25,26,4,5,"#7a7a82"); rc(x,6,30,3,3,"#56565e");   // でこぼこ
+  x.font="9px serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("⚔",16,9); }
+function drawDFloorC(x){ rc(x,0,0,16,16,"#3a3340"); rc(x,0,0,16,1,"#473e50");
+  rc(x,4,5,2,1,"#332c3a"); rc(x,11,10,2,1,"#332c3a"); rc(x,8,3,1,1,"#46404f"); }
+function drawDWallC(x){ rc(x,0,0,16,16,"#6b6470"); rc(x,0,10,16,6,"#564f5c"); rc(x,0,9,16,1,"#7d7585");
+  rc(x,5,2,1,7,"#564f5c"); rc(x,11,11,1,4,"#46404c"); rc(x,2,1,4,2,"#7d7585"); }
+function drawSlimeC(x,frame){ const G="#5fd06a",Gd="#3fa850",Gl="#bff5b8",K="#214a26";
+  const t=frame?6:4, h=14-t;
+  rc(x,2,t,12,h,G); rc(x,2,t,12,2,Gl); rc(x,2,12,12,2,Gd); rc(x,2,t,2,h,Gd); rc(x,12,t,2,h,Gd);
+  rc(x,5,t+3,2,2,K); rc(x,9,t+3,2,2,K); rc(x,5,t+3,1,1,"#fff"); rc(x,9,t+3,1,1,"#fff");
+  rc(x,6,t+6,4,1,K); }
+function drawSlashC(x){ x.clearRect(0,0,18,18); x.strokeStyle="#ffffff"; x.lineWidth=3; x.lineCap="round";
+  x.beginPath(); x.arc(3,9,10,-0.95,0.95); x.stroke();
+  x.strokeStyle="#bfe9ff"; x.lineWidth=1.2; x.beginPath(); x.arc(3,9,10,-0.95,0.95); x.stroke(); }
 function mkCanvas(w,h,fn){ const c=document.createElement("canvas"); c.width=w; c.height=h; fn(c.getContext("2d")); return c; }
 
 /* ===================== Phaser シーン ===================== */
@@ -477,6 +546,7 @@ class Farm extends Phaser.Scene{
     this.add.image(ANIMAL_SHOP.x*TS,ANIMAL_SHOP.y*TS-2,"animalshop").setOrigin(0,0).setDepth((ANIMAL_SHOP.y+ANIMAL_SHOP.h)*TS);
     this.add.image(KITCHEN.x*TS,KITCHEN.y*TS-2,"kitchen").setOrigin(0,0).setDepth((KITCHEN.y+KITCHEN.h)*TS);
     this.add.image(HOST_CLUB.x*TS,HOST_CLUB.y*TS-2,"hostclub").setOrigin(0,0).setDepth((HOST_CLUB.y+HOST_CLUB.h)*TS);
+    this.add.image(DUNGEON.x*TS,DUNGEON.y*TS-2,"cave").setOrigin(0,0).setDepth((DUNGEON.y+DUNGEON.h)*TS);
     // 木
     TREES.forEach(([x,y])=>this.add.image(x*TS,y*TS-TS,"tree").setOrigin(0,0).setDepth((y+1)*TS));
     // 当たり判定（静的）
@@ -485,6 +555,8 @@ class Farm extends Phaser.Scene{
       const r=this.add.rectangle(tx*TS+TS/2,ty*TS+TS/2,TS,TS,0x000000,0); this.solids.add(r); } }
     // 家の中（マップ外に部屋を作る）
     this.indoor=false; this.buildHome();
+    // ダンジョン（マップ外に戦闘エリアを作る）
+    this.inDungeon=false; this.enemies=[]; this.buildDungeon();
     // プレイヤー
     this.player=this.physics.add.sprite(8*TS+8,10*TS+14,"p_down_0").setOrigin(0.5,0.9);
     this.player.body.setSize(8,5).setOffset(4,12);
@@ -509,7 +581,9 @@ class Farm extends Phaser.Scene{
     add("tree",16,32,drawTreeC); add("pond",16,16,drawPondC); add("fence",16,16,drawFenceC);
     add("house",48,40,drawHouseC); add("shop",48,40,drawShopC); add("animalshop",48,40,drawAnimalShopC);
     add("coop",16,16,drawCoopGroundC); add("egg",16,16,drawEggC); add("milk",16,16,drawMilkC);
-    add("kitchen",48,40,drawKitchenC); add("hostclub",48,40,drawHostClubC);
+    add("kitchen",48,40,drawKitchenC); add("hostclub",48,40,drawHostClubC); add("cave",32,40,drawCaveC);
+    add("dfloor",16,16,drawDFloorC); add("dwall",16,16,drawDWallC); add("slash",18,18,drawSlashC);
+    add("slime_0",16,16,x=>drawSlimeC(x,0)); add("slime_1",16,16,x=>drawSlimeC(x,1));
     add("homefloor",16,16,drawHomeFloorC); add("homewall",16,16,drawHomeWallC); add("homedoor",16,16,drawHomeDoorC);
     add("bed",32,20,drawBedC); add("stove",32,18,drawStoveC);
     add("chicken_0",16,16,x=>drawChickenC(x,0)); add("chicken_1",16,16,x=>drawChickenC(x,1));
@@ -553,6 +627,70 @@ class Farm extends Phaser.Scene{
   exitHouse(){ this.indoor=false; SFX.morning();
     this.player.setPosition(HOUSE.trig.x*TS+8,HOUSE.trig.y*TS+14); this.facing="down";
     this.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); this.cameras.main.setBackgroundColor("#6ea83f"); }
+  // ===== ダンジョン =====
+  buildDungeon(){ const sx=DROOM.x0,sy=DROOM.y0,ex=DROOM.x0+DROOM.w-1,ey=DROOM.y0+DROOM.h-1;
+    for(let ty=sy;ty<=ey;ty++)for(let tx=sx;tx<=ex;tx++){
+      const wall=(tx===sx||tx===ex||ty===sy||ty===ey), door=(tx===DUNGEON_EXIT.x&&ty===DUNGEON_EXIT.y);
+      if(door){ this.add.image(tx*TS,ty*TS,"homedoor").setOrigin(0).setDepth(1); }
+      else if(wall){ this.add.image(tx*TS,ty*TS,"dwall").setOrigin(0).setDepth(ty*TS+8);
+        this.solids.add(this.add.rectangle(tx*TS+8,ty*TS+8,TS,TS,0,0)); }
+      else this.add.image(tx*TS,ty*TS,"dfloor").setOrigin(0).setDepth(0); }
+    this.enemies=[]; }
+  clearEnemies(){ (this.enemies||[]).forEach(e=>e.spr.destroy()); this.enemies=[]; }
+  spawnEnemies(n){ this.clearEnemies();
+    const ix0=(DROOM.x0+2)*TS, ix1=(DROOM.x0+DROOM.w-2)*TS, iy0=(DROOM.y0+2)*TS, iy1=(DROOM.y0+DROOM.h-3)*TS;
+    for(let i=0;i<n;i++){ const x=ix0+Math.random()*(ix1-ix0), y=iy0+Math.random()*(iy1-iy0);
+      const spr=this.add.image(x,y,"slime_0").setOrigin(0.5,0.8).setDepth(y);
+      this.enemies.push({spr,x,y,vx:0,vy:0,t:Math.random()*2,hp:SLIME_HP,hurtT:0}); } }
+  enterDungeon(){ this.inDungeon=true; SFX.buy(); recalcHp(); game.hp=game.maxHp; this.playerInvuln=0; this.dungeonCleared=false;
+    this.player.setPosition(DUNGEON_EXIT.x*TS+8,(DUNGEON_EXIT.y-1)*TS+14); this.facing="up";
+    this.cameras.main.setBounds(DROOM.x0*TS,DROOM.y0*TS,DROOM.w*TS,DROOM.h*TS); this.cameras.main.setBackgroundColor("#1a1622");
+    this.spawnEnemies(DUNGEON_SLIMES); setSpeech("ダンジョン探索！⚔ 敵をたおして素材をあつめよう",2800);
+    updateHpHud(); saveGame(); }
+  exitDungeon(){ this.inDungeon=false; SFX.morning(); this.clearEnemies(); this.player.setAlpha(1);
+    this.player.setPosition(DUNGEON.trig.x*TS+8,DUNGEON.trig.y*TS+14); this.facing="down";
+    this.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); this.cameras.main.setBackgroundColor("#6ea83f");
+    updateHpHud(); saveGame(); }
+  updateEnemies(time,dt){ const bx0=(DROOM.x0+1)*TS+5,bx1=(DROOM.x0+DROOM.w-1)*TS-5,by0=(DROOM.y0+1)*TS+5,by1=(DROOM.y0+DROOM.h-1)*TS-5;
+    const px=this.player.x,py=this.player.y; this.playerInvuln=Math.max(0,(this.playerInvuln||0)-dt);
+    this.enemies.forEach(e=>{ e.hurtT=Math.max(0,e.hurtT-dt);
+      const dx=px-e.x, dy=py-e.y, dist=Math.hypot(dx,dy)||1;
+      if(dist<SLIME_SIGHT){ e.vx=dx/dist*SLIME_CHASE; e.vy=dy/dist*SLIME_CHASE; }
+      else { e.t-=dt; if(e.t<=0){ e.t=0.8+Math.random()*1.5;
+        if(Math.random()<0.4){ e.vx=0; e.vy=0; } else { const a=Math.random()*6.283; e.vx=Math.cos(a)*SLIME_WANDER; e.vy=Math.sin(a)*SLIME_WANDER; } } }
+      let nx=e.x+e.vx*dt, ny=e.y+e.vy*dt;
+      if(nx<bx0||nx>bx1)e.vx*=-1; if(ny<by0||ny>by1)e.vy*=-1;
+      e.x=Math.max(bx0,Math.min(bx1,nx)); e.y=Math.max(by0,Math.min(by1,ny));
+      e.spr.setTexture("slime_"+(Math.floor(time/220)%2)).setPosition(e.x,e.y).setDepth(e.y);
+      if(e.hurtT>0)e.spr.setTint(0xff8080); else e.spr.clearTint();
+      if(dist<11 && this.playerInvuln<=0)this.playerHurt(SLIME_ATK); }); }
+  attack(){ const now=performance.now(); if(now-(this.atkCD||0)<260)return; this.atkCD=now; SFX.swing();
+    const o={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[this.facing];
+    const cx=this.player.x+o[0]*14, cy=this.player.y-6+o[1]*14;
+    const ang={up:-1.57,down:1.57,left:3.14,right:0}[this.facing];
+    const sl=this.add.image(cx,cy,"slash").setOrigin(0.2,0.5).setRotation(ang).setDepth(this.player.y+1);
+    this.tweens.add({targets:sl,alpha:0,scaleX:1.5,scaleY:1.5,duration:200,onComplete:()=>sl.destroy()});
+    const atk=weaponAtk(); let hit=false;
+    for(const e of this.enemies){ if(Math.abs(e.x-cx)<15 && Math.abs(e.y-cy)<15){ hit=true;
+      e.hp-=atk; e.hurtT=0.2; e.x+=o[0]*7; e.y+=o[1]*7; } }
+    if(hit)SFX.hit();
+    const dead=this.enemies.filter(e=>e.hp<=0); dead.forEach(e=>this.enemyDie(e));
+    this.enemies=this.enemies.filter(e=>e.hp>0);
+    if(!this.enemies.length && !this.dungeonCleared){ this.dungeonCleared=true; SFX.expand();
+      setSpeech("ぜんぶ倒した！🎉 入口の扉から地上にもどれるよ",3000); } }
+  enemyDie(e){ SFX.slay(); const tx=Math.floor(e.x/TS),ty=Math.floor(e.y/TS);
+    this.fxBurst(tx,ty,["#5fd06a","#bff5b8","#3fa850","#ffffff"]);
+    const got=rollDrop(); Object.entries(got).forEach(([k,v])=>{ game.mats[k]=(game.mats[k]||0)+v; });
+    this.fxFloat(tx,ty,Object.entries(got).map(([k,v])=>MATERIALS[k].emoji+"+"+v).join(" "),"#bff5b8");
+    e.spr.destroy(); saveGame(); }
+  playerHurt(dmg){ const d=Math.max(1, dmg-armorDef()); game.hp-=d; this.playerInvuln=0.9; SFX.hurt();
+    this.cameras.main.shake(120,0.006);
+    this.tweens.add({targets:this.player,alpha:0.3,duration:90,yoyo:true,repeat:3,onComplete:()=>this.player.setAlpha(1)});
+    this.fxFloat(Math.floor(this.player.x/TS),Math.floor(this.player.y/TS),"-"+d,"#ff5b6e"); updateHpHud();
+    if(game.hp<=0)this.faint(); else saveGame(); }
+  faint(){ game.hp=0; updateHpHud(); setSpeech("いた…！ちからつきた…💦",2600); SFX.error();
+    this.time.delayedCall(1000,()=>{ recalcHp(); game.hp=game.maxHp; this.exitDungeon();
+      setSpeech("なんとか地上にもどれた…ふぅ💦 装備をつよくしてリベンジ！",3400); }); }
   buildFairy(){ if(this.fairySpr){ this.fairySpr.destroy(); this.fairySpr=null; this.fairyX=this.fairyY=null; }
     this.fairyBusy=false;
     if(game.fairy&&game.fairy.appeared){ this.fairySpr=this.add.image(FAIRY_HOME.x,FAIRY_HOME.y,"fairy_0").setOrigin(0.5,0.7).setDepth(99990); } }
@@ -603,7 +741,9 @@ class Farm extends Phaser.Scene{
         this.fairyX=fx; this.fairyY=fy; this.fairySpr.setPosition(fx,fy); }
       else { this.fairyX=this.fairySpr.x; this.fairyY=this.fairySpr.y; } }
     if(this.indoor){ const pt=playerTile(); if(pt.x===HOME_DOOR.x&&pt.y===HOME_DOOR.y)this.exitHouse(); }
-    this.updateHighlight(); updateHUD();
+    if(this.inDungeon){ this.updateEnemies(time,dt); const pt=playerTile();
+      if(pt.x===DUNGEON_EXIT.x&&pt.y===DUNGEON_EXIT.y)this.exitDungeon(); }
+    this.updateHighlight(); updateHUD(); updateHpHud();
   }
   updateHighlight(){ this.hl.clear(); const c=getContext(); if(!c)return;
     if(c.type==="farm"){ const w=plotWorld(c.idx); this.hl.lineStyle(1.4,c.none?0xffffff:0xffe14d,c.none?0.5:1);
@@ -621,11 +761,14 @@ function getContext(){ const p=playerTile();
     if(HOME_BED.some(([x,y])=>x===f.x&&y===f.y))return {type:"sleepbed",ico:"🛏",label:"ねる",mark:{x:HOME_BED[0][0],y:HOME_BED[0][1]}};
     if(HOME_STOVE.some(([x,y])=>x===f.x&&y===f.y))return {type:"cook",ico:"🍳",label:"料理する",mark:{x:HOME_STOVE[0][0],y:HOME_STOVE[0][1]}};
     return null; }
+  if(GS&&GS.inDungeon){ if(p.x===DUNGEON_EXIT.x&&p.y===DUNGEON_EXIT.y)return {type:"dexit",ico:"🚪",label:"地上にもどる"};
+    return {type:"attack",ico:"⚔",label:"こうげき"}; }
   if(p.x===HOUSE.trig.x&&p.y===HOUSE.trig.y)return {type:"enter",ico:"🚪",label:"いえに入る",trig:HOUSE.trig};
   if(p.x===SHOP.trig.x&&p.y===SHOP.trig.y)return {type:"shop",ico:"🛒",label:"ショップ",trig:SHOP.trig};
   if(p.x===ANIMAL_SHOP.trig.x&&p.y===ANIMAL_SHOP.trig.y)return {type:"animalshop",ico:"🐔",label:"どうぶつ屋",trig:ANIMAL_SHOP.trig};
   if(p.x===KITCHEN.trig.x&&p.y===KITCHEN.trig.y)return {type:"kitchen",ico:"🍳",label:"加工小屋",trig:KITCHEN.trig};
   if(p.x===HOST_CLUB.trig.x&&p.y===HOST_CLUB.trig.y)return {type:"host",ico:"🍾",label:"ホストクラブ",trig:HOST_CLUB.trig};
+  if(p.x===DUNGEON.trig.x&&p.y===DUNGEON.trig.y)return {type:"dungeon",ico:"⚔",label:"ダンジョン",trig:DUNGEON.trig};
   if(GS&&game.fairy&&game.fairy.appeared&&GS.fairyX!=null){ const dx=GS.player.x-GS.fairyX, dy=GS.player.y-GS.fairyY;
     if(dx*dx+dy*dy < (1.6*TS)*(1.6*TS))return {type:"fairy",ico:"🧚",label:"プレゼント"}; }
   const f=frontTile();
@@ -650,6 +793,9 @@ function doAction(){ const c=getContext(); if(!c){ toast("近づいてからボ�
   if(c.type==="animalshop"){ SFX.buy(); openAnimalShop(); return; }
   if(c.type==="kitchen"){ SFX.buy(); openKitchen(); return; }
   if(c.type==="host"){ SFX.buy(); openHostClub(); return; }
+  if(c.type==="dungeon"){ SFX.buy(); openDungeonGate(); return; }
+  if(c.type==="attack"){ GS.attack(); return; }
+  if(c.type==="dexit"){ GS.exitDungeon(); return; }
   if(c.type==="feed"){ feedAnimals(); return; }
   if(c.type==="fairy"){ SFX.plant(); openFairy(); return; }
   if(c.type==="enter"){ GS.enterHouse(); return; }
@@ -718,7 +864,7 @@ function sleep(){ SFX.sleep(); let earn=0; const sold={};
   // おとしもの（えさをあげた動物だけ産む）
   game.animals.forEach(a=>{ if(!a.fed)return; const tx=Math.floor(a.x/TS),ty=Math.floor(a.y/TS), kind=a.type==="cow"?"milk":"egg";
     if(!game.drops.some(d=>d.tx===tx&&d.ty===ty))game.drops.push({tx,ty,kind}); a.fed=false; });
-  game.day++; game.stamina=game.maxStamina;
+  game.day++; game.stamina=game.maxStamina; recalcHp(); game.hp=game.maxHp;
   // 加工小屋：完成した加工品を倉庫へ
   let dishes=0; game.cooking=game.cooking.filter(c=>{ if(c.ready<=game.day){ game.storage[c.out]=(game.storage[c.out]||0)+1; dishes++; return false; } return true; });
   if(!game.fairy.appeared && game.day>=FAIRY_DAY){ game.fairy.appeared=true; if(GS)GS.buildFairy(); }
@@ -903,6 +1049,40 @@ function giveGift(key){ const g=GIFTS.find(x=>x.key===key); if(!g)return;
     GS.fxBurst(tx,ty,["#ff9ed6","#fff6b0","#bfeaff","#ffffff"]); GS.fxFloat(tx,ty,"+"+g.aff+" 💕","#e0559a"); }
   setSpeech(pick(["わ〜ありがと💕 もっとお手伝いするね！","えへへ、うれしい✨","だいすき！お水やりがんばる🌱"]),2200);
   openFairy(); saveGame(); }
+function craftRow(kind,it){ const id=kind+":"+it.key;
+  const equipped=(kind==="w"?game.weapon:game.armor)===it.key;
+  const owned=!it.need||(game.crafted&&game.crafted[id]);
+  const stat=kind==="w"?`攻撃 ${it.atk}`:`防御 ${it.def}・最大HP+${it.hp}`;
+  let btn;
+  if(equipped) btn=`<button class="act" disabled>そうび中✅</button>`;
+  else if(owned) btn=`<button class="act" data-equip="${id}">そうび</button>`;
+  else { const can=Object.entries(it.need).every(([k,v])=>(game.mats[k]||0)>=v);
+    btn=`<button class="act buyx" data-craft="${id}" ${can?"":"disabled"}>つくる</button>`; }
+  const needTxt=it.need?("素材 "+Object.entries(it.need).map(([k,v])=>`${MATERIALS[k].emoji}${v}`).join(" ")):"さいしょから";
+  return `<div class="item"><div class="ico">${it.emoji}</div><div class="info"><div class="nm">${it.name}</div>
+    <div class="sub">${stat}</div><div class="own">${needTxt}</div></div>${btn}</div>`; }
+function openDungeonGate(){ recalcHp();
+  const w=WEAPON_BY[game.weapon]||WEAPON_BY.fist, a=ARMOR_BY[game.armor]||ARMOR_BY.cloth;
+  let h=`<h2>⚔ ダンジョン</h2>`;
+  h+=`<div class="item"><div class="ico">🗺</div><div class="info"><div class="nm">いまの装備</div>
+    <div class="sub">${w.emoji} ${w.name}（攻撃${w.atk}）／ ${a.emoji} ${a.name}（防御${a.def}）</div>
+    <div class="own">❤️ さいだいHP ${game.maxHp}</div></div></div>`;
+  const mk=Object.keys(MATERIALS).filter(k=>(game.mats[k]||0)>0);
+  h+=`<div class="saveNote">${mk.length?("もちもの素材： "+mk.map(k=>`${MATERIALS[k].emoji}${game.mats[k]}`).join("　")):"素材はまだ無いよ。もぐって敵から集めよう！"}</div>`;
+  h+=`<button class="act buyx" data-dive style="width:calc(100% - 8px);margin:8px 4px;font-size:17px;min-height:50px">⚔ もぐる！（HP全回復）</button>`;
+  h+=`<div class="sectionTtl">🗡 ぶき（攻撃力）</div>`; WEAPONS.forEach(it=>h+=craftRow("w",it));
+  h+=`<div class="sectionTtl">🛡 ぼうぐ（防御＆最大HP）</div>`; ARMORS.forEach(it=>h+=craftRow("a",it));
+  h+=`<div class="saveNote">敵を倒すと素材💧 集めた素材で装備をつくって強くなろう⚔</div>`;
+  h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
+function equipItem(id,silent){ const [kind,key]=id.split(":");
+  if(kind==="w")game.weapon=key; else { game.armor=key; recalcHp(); game.hp=game.maxHp; }
+  if(!silent)SFX.buy(); openDungeonGate(); saveGame(); }
+function craftItem(id){ const [kind,key]=id.split(":"); const it=(kind==="w"?WEAPON_BY:ARMOR_BY)[key];
+  if(!it||!it.need)return;
+  if(!Object.entries(it.need).every(([k,v])=>(game.mats[k]||0)>=v)){ toast("素材が足りないよ"); SFX.error(); return; }
+  Object.entries(it.need).forEach(([k,v])=>{ game.mats[k]-=v; if(game.mats[k]<=0)delete game.mats[k]; });
+  game.crafted[id]=true; SFX.expand(); if(GS){ const p=playerTile(); GS.fxBurst(p.x,p.y,["#ffd84d","#bff5b8","#5fd8ff","#ffffff"]); }
+  setSpeech(`${it.emoji} ${it.name}が完成！そうびしたよ✨`,2600); equipItem(id,true); }
 function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>drawIcon(cv,cv.dataset.icon));
   sheet.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>buy(b.dataset.buy));
   sheet.querySelectorAll("[data-buyanimal]").forEach(b=>b.onclick=()=>buyAnimal(b.dataset.buyanimal));
@@ -919,6 +1099,9 @@ function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>d
   sheet.querySelectorAll("[data-confess]").forEach(b=>b.onclick=startConfess);
   sheet.querySelectorAll("[data-hostgift]").forEach(b=>b.onclick=()=>hostGift(b.dataset.hostgift));
   sheet.querySelectorAll("[data-gift]").forEach(b=>b.onclick=()=>giveGift(b.dataset.gift));
+  sheet.querySelectorAll("[data-dive]").forEach(b=>b.onclick=()=>{ closeSheet(); GS.enterDungeon(); });
+  sheet.querySelectorAll("[data-craft]").forEach(b=>b.onclick=()=>craftItem(b.dataset.craft));
+  sheet.querySelectorAll("[data-equip]").forEach(b=>b.onclick=()=>equipItem(b.dataset.equip));
   sheet.querySelectorAll("[data-expand]").forEach(b=>b.onclick=()=>buyExpansion(+b.dataset.expand));
   sheet.querySelectorAll("[data-reset]").forEach(b=>b.onclick=resetGame);
   sheet.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeSheet); }
@@ -945,6 +1128,10 @@ function updateHUD(){ document.getElementById("dayVal").textContent=game.day;
   const c=getContext(); const btn=document.getElementById("actionBtn");
   btn.querySelector(".ico").textContent=c?c.ico:"✋"; btn.querySelector(".lbl").textContent=c?c.label:"—";
   btn.classList.toggle("dim",!c||!!(c&&c.none)); }
+function updateHpHud(){ const hud=document.getElementById("hpHud"); if(!hud)return;
+  const show=!!(GS&&GS.inDungeon); hud.style.display=show?"flex":"none"; if(!show)return;
+  document.getElementById("hpTxt").textContent="❤️ "+Math.max(0,game.hp)+" / "+game.maxHp;
+  document.getElementById("hpBar").style.width=Math.max(0,game.hp/game.maxHp*100)+"%"; }
 function renderSeedBar(){ const bar=document.getElementById("seedbar"); const owned=CROP_IDS.filter(c=>game.seeds[c]>0);
   if(owned.length===0){ bar.innerHTML=`<div class="seedbar-empty">🌱 種を持ってないよ。ショップ(🛒)で買おう！</div>`; return; }
   ensureActiveSeed();
