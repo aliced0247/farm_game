@@ -214,14 +214,14 @@ window.addEventListener("pointerdown",()=>SFX.unlock(),{once:true});
 const SAVE_KEY="farmgame_save_v3";
 const COST={ TILL:2, PLANT:1, WATER:1, HARVEST:1 };
 const CROPS={
-  turnip:{name:"カブ",seed:50,days:2,sell:120,leaf:"#5fbf4f",fruit:"#f3f1ea",fruit2:"#bb74e0",seasons:["spring"]},
-  potato:{name:"じゃがいも",seed:70,days:3,sell:180,leaf:"#4f9a3a",fruit:"#c08a4a",fruit2:"#e0b878",seasons:["spring","autumn"]},
-  tomato:{name:"トマト",seed:80,days:3,sell:200,leaf:"#4fa83a",fruit:"#e8473f",fruit2:"#ff7a6e",seasons:["summer"]},
-  strawberry:{name:"いちご",seed:150,days:4,sell:360,leaf:"#4f9a3a",fruit:"#e8473f",fruit2:"#ffffff",seasons:["spring"]},
-  corn:{name:"トウモロコシ",seed:120,days:5,sell:400,leaf:"#6cbf3a",fruit:"#f5d23b",fruit2:"#e8a92b",seasons:["summer","autumn"]},
-  watermelon:{name:"すいか",seed:300,days:6,sell:780,leaf:"#5aa83a",fruit:"#46b85a",fruit2:"#2f7d3c",seasons:["summer"]},
+  turnip:{name:"カブ",emoji:"🥬",seed:50,days:2,sell:120,leaf:"#5fbf4f",fruit:"#f3f1ea",fruit2:"#bb74e0",seasons:["spring"]},
+  potato:{name:"じゃがいも",emoji:"🥔",seed:70,days:3,sell:180,leaf:"#4f9a3a",fruit:"#c08a4a",fruit2:"#e0b878",seasons:["spring","autumn"]},
+  tomato:{name:"トマト",emoji:"🍅",seed:80,days:3,sell:200,leaf:"#4fa83a",fruit:"#e8473f",fruit2:"#ff7a6e",seasons:["summer"]},
+  strawberry:{name:"いちご",emoji:"🍓",seed:150,days:4,sell:360,leaf:"#4f9a3a",fruit:"#e8473f",fruit2:"#ffffff",seasons:["spring"]},
+  corn:{name:"トウモロコシ",emoji:"🌽",seed:120,days:5,sell:400,leaf:"#6cbf3a",fruit:"#f5d23b",fruit2:"#e8a92b",seasons:["summer","autumn"]},
+  watermelon:{name:"すいか",emoji:"🍉",seed:300,days:6,sell:780,leaf:"#5aa83a",fruit:"#46b85a",fruit2:"#2f7d3c",seasons:["summer"]},
   // 黄金作物：ショップでは買えず、ダンジョン10階ボスの宝箱からのみ。全季節で育つ
-  golden:{name:"おうごんカブ",seed:0,days:5,sell:1800,leaf:"#5fbf4f",fruit:"#ffd84d",fruit2:"#fff6b0",special:true,seasons:["spring","summer","autumn","winter"]},
+  golden:{name:"おうごんカブ",emoji:"🌟",seed:0,days:5,sell:1800,leaf:"#5fbf4f",fruit:"#ffd84d",fruit2:"#fff6b0",special:true,seasons:["spring","summer","autumn","winter"]},
 };
 const CROP_IDS=["turnip","potato","tomato","strawberry","corn","watermelon","golden"];
 const GOLDEN_SEED_REWARD=3;   // ボスの宝箱でもらえる黄金の種の数
@@ -249,6 +249,15 @@ function bagRemove(crop,q,n){ const k=crop+":"+q; if(!game.bag[k])return false; 
 function bagTotal(){ let t=0; for(const k in game.bag)t+=game.bag[k]; return t; }
 function bagStacks(){ return Object.keys(game.bag).filter(k=>game.bag[k]>0).map(k=>{ const i=k.lastIndexOf(":"); return {crop:k.slice(0,i),q:+k.slice(i+1),n:game.bag[k]}; }); }
 function bagBest(){ let best=null; for(const s of bagStacks()){ const score=CROPS[s.crop].sell*QUAL[s.q].mult; if(!best||score>best.score)best={crop:s.crop,q:s.q,score}; } return best; }
+function cropCountAny(crop){ let n=0; for(const k in game.bag){ const i=k.lastIndexOf(":"); if(k.slice(0,i)===crop)n+=game.bag[k]; } return n; }
+function removeCropsAny(crop,n){ const stacks=bagStacks().filter(s=>s.crop===crop).sort((a,b)=>a.q-b.q); let want=n;
+  for(const s of stacks){ while(s.n>0&&want>0){ bagRemove(crop,s.q,1); s.n--; want--; } if(want<=0)break; } return want<=0; }
+// 料理の材料：作物はバッグ、加工品/おとしものは倉庫から
+function isCropKey(k){ return !!CROPS[k]; }
+function ingHave(k){ return isCropKey(k)?cropCountAny(k):(game.storage[k]||0); }
+function ingLabel(k,v){ return isCropKey(k)?(CROPS[k].emoji+v):((PRODUCTS[k]||{emoji:"📦"}).emoji+v); }
+function mealCanMake(m){ return Object.entries(m.need).every(([k,v])=>ingHave(k)>=v); }
+function mealConsume(m){ Object.entries(m.need).forEach(([k,v])=>{ if(isCropKey(k))removeCropsAny(k,v); else { game.storage[k]-=v; if(game.storage[k]<=0)delete game.storage[k]; } }); }
 const EXPANSIONS=[ {cols:6,rows:4,cost:1000}, {cols:6,rows:6,cost:3000} ];
 const CHICKEN_COST=800, EGG_SELL=80, MAX_CHICKENS=6;
 const COW_COST=2500, MILK_SELL=150, MAX_COWS=4, FEED_COST=25;
@@ -319,6 +328,13 @@ const MEALS=[
   {key:"pancake",name:"パンケーキ",emoji:"🥞",need:{egg:1,milk:1},sta:12},
   {key:"omelet2",name:"チーズオムレツ",emoji:"🍳",need:{egg:2,cheese:1},sta:18},
   {key:"cakeplate",name:"ごほうびケーキ",emoji:"🍰",need:{cake:1},sta:25},
+  // 作物の料理（材料はバッグの野菜。品質は問わない）
+  {key:"salad",name:"やさいサラダ",emoji:"🥗",need:{tomato:1,turnip:1},sta:10},
+  {key:"soup",name:"やさいスープ",emoji:"🍲",need:{potato:1,turnip:1},sta:13},
+  {key:"cornsoup",name:"コーンスープ",emoji:"🌽",need:{corn:1,milk:1},sta:16},
+  {key:"frenchfry",name:"フライドポテト",emoji:"🍟",need:{potato:2},sta:14},
+  {key:"parfait",name:"いちごパフェ",emoji:"🍧",need:{strawberry:2,milk:1},sta:22},
+  {key:"melonbowl",name:"すいかボウル",emoji:"🍉",need:{watermelon:1},sta:18},
 ];
 // ===== ダンジョン＆戦闘 =====
 const BASE_HP=12, MAX_FLOOR=10;
@@ -1151,11 +1167,21 @@ function seederMake(crop,all){ // 品質の低いものから種に（良いも�
   let want=all?stacks.reduce((t,s)=>t+s.n,0):1;
   for(const s of stacks){ while(s.n>0&&want>0){ bagRemove(crop,s.q,1); s.n--; game.seedmaking.push({crop,ready:game.day+1}); want--; } if(want<=0)break; }
   SFX.buy(); setSpeech(`${CROPS[crop].name}を種メーカーにセット🌱 あした種に`,2400); updateBagBtn(); openSeeder(); saveGame(); }
-// ===== もちものバッグ（出荷・確認） =====
-function openBag(){ let h=`<h2>🎒 もちもの（作物）</h2>`; const stacks=bagStacks();
+// ===== もちものバッグ（出荷・整理） =====
+let bagSort="type";
+const BAG_SORTS=["type","quality","value"], BAG_SORT_NAME={type:"種類順",quality:"品質順",value:"高い順"};
+function bagStacksSorted(){ const arr=bagStacks();
+  if(bagSort==="quality") arr.sort((a,b)=> b.q-a.q || CROP_IDS.indexOf(a.crop)-CROP_IDS.indexOf(b.crop));
+  else if(bagSort==="value") arr.sort((a,b)=> (CROPS[b.crop].sell*QUAL[b.q].mult)-(CROPS[a.crop].sell*QUAL[a.q].mult));
+  else arr.sort((a,b)=> (CROP_IDS.indexOf(a.crop)-CROP_IDS.indexOf(b.crop)) || b.q-a.q);
+  return arr; }
+function bagValue(){ let v=0; for(const s of bagStacks())v+=Math.round(CROPS[s.crop].sell*QUAL[s.q].mult)*s.n; return v; }
+function openBag(){ let h=`<h2>🎒 もちもの（作物）</h2>`; const stacks=bagStacksSorted();
   if(!stacks.length){ h+=`<div class="saveNote">バッグは空っぽ。畑で作物を収穫しよう🌾</div>`; }
-  else { h+=`<div class="saveNote">💰出荷＝翌朝お金／🌱種メーカー・🥕推しへ貢ぐ・🏅品評会にも使えるよ</div>`;
-    h+=`<button class="act buyx" data-shipall style="width:calc(100% - 8px);margin:6px 4px">💰 ぜんぶ出荷（${bagTotal()}こ）</button>`;
+  else { h+=`<div class="saveNote">💰出荷＝翌朝お金／🌱種メーカー・🥕推しへ貢ぐ・🍳料理・🏅品評会にも使えるよ</div>`;
+    h+=`<div style="display:flex;gap:6px;margin:2px 4px 8px">
+      <button class="act" data-bagsort style="flex:none">↕ ${BAG_SORT_NAME[bagSort]}</button>
+      <button class="act buyx" data-shipall style="flex:1">💰 ぜんぶ出荷（${bagTotal()}こ・¥${bagValue().toLocaleString()}）</button></div>`;
     stacks.forEach(s=>{ const cf=CROPS[s.crop],qq=QUAL[s.q],val=Math.round(cf.sell*qq.mult);
       h+=`<div class="item"><canvas width="44" height="44" data-icon="${s.crop}"></canvas><div class="info"><div class="nm">${cf.name} ${qq.emoji}${qq.name}</div>
         <div class="sub">売値 ${val}円</div><div class="own">×${s.n}</div></div>
@@ -1197,18 +1223,18 @@ function sellStorage(k){ if(!(game.storage[k]>0))return; const s=prodInfo(k).sel
 function sellAllStorage(){ let total=0; Object.keys(game.storage).forEach(k=>{ total+=prodInfo(k).sell*game.storage[k]; });
   if(total<=0)return; game.money+=total; game.storage={}; SFX.coin(); setSpeech(`まとめて出荷〜！💰 +${total.toLocaleString()}円`,2200); openKitchen(); saveGame(); }
 function openCook(){ let h=`<h2>🍳 おうちで料理</h2>`;
-  h+=`<div class="saveNote">材料は倉庫（動物のおとしもの・加工品）から。食べると⚡たいりょく回復！</div>`;
+  h+=`<div class="saveNote">材料は🎒バッグの野菜＆倉庫の加工品から。食べると⚡たいりょく回復！</div>`;
   h+=`<div class="saveNote">いまの たいりょく：⚡${game.stamina} / ${game.maxStamina}</div>`;
-  MEALS.forEach(m=>{ const can=Object.entries(m.need).every(([k,v])=>(game.storage[k]||0)>=v);
-    const needTxt=Object.entries(m.need).map(([k,v])=>`${(PRODUCTS[k]||{emoji:"📦"}).emoji}${v}`).join("＋");
+  MEALS.forEach(m=>{ const can=mealCanMake(m);
+    const needTxt=Object.entries(m.need).map(([k,v])=>ingLabel(k,v)).join("＋");
     h+=`<div class="item"><div class="ico">${m.emoji}</div><div class="info"><div class="nm">${m.name}</div>
       <div class="sub">${needTxt} → ⚡たいりょく+${m.sta}</div></div>
       <button class="act" data-cookmeal="${m.key}" ${can?"":"disabled"}>作って食べる</button></div>`; });
   h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
 function cookMeal(key){ const m=MEALS.find(x=>x.key===key); if(!m)return;
   if(game.stamina>=game.maxStamina){ toast("おなかいっぱい😋 たいりょくは満タンだよ"); return; }
-  if(!Object.entries(m.need).every(([k,v])=>(game.storage[k]||0)>=v)){ toast("材料が足りないよ"); SFX.error(); return; }
-  Object.entries(m.need).forEach(([k,v])=>{ game.storage[k]-=v; if(game.storage[k]<=0)delete game.storage[k]; });
+  if(!mealCanMake(m)){ toast("材料が足りないよ"); SFX.error(); return; }
+  mealConsume(m); updateBagBtn();
   game.stamina=Math.min(game.maxStamina, game.stamina+m.sta); SFX.harvest(); gainExp(1);
   setSpeech(`${m.name}いただきます！${m.emoji} 元気でた⚡`,2400);
   if(GS){ const p=playerTile(); GS.fxBurst(p.x,p.y,["#ffd84d","#ff8fc0","#9be84d","#ffffff"]); GS.fxFloat(p.x,p.y,"⚡+"+m.sta,"#2f7d2f"); }
@@ -1476,6 +1502,7 @@ function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>d
   sheet.querySelectorAll("[data-ship1]").forEach(b=>b.onclick=()=>shipCrop(b.dataset.ship1,false));
   sheet.querySelectorAll("[data-shipstack]").forEach(b=>b.onclick=()=>shipCrop(b.dataset.shipstack,true));
   sheet.querySelectorAll("[data-shipall]").forEach(b=>b.onclick=shipAll);
+  sheet.querySelectorAll("[data-bagsort]").forEach(b=>b.onclick=()=>{ bagSort=BAG_SORTS[(BAG_SORTS.indexOf(bagSort)+1)%BAG_SORTS.length]; openBag(); });
   sheet.querySelectorAll("[data-cropgiftopen]").forEach(b=>b.onclick=openCropGift);
   sheet.querySelectorAll("[data-cropgift]").forEach(b=>b.onclick=()=>cropGift(b.dataset.cropgift));
   sheet.querySelectorAll("[data-backhost]").forEach(b=>b.onclick=()=>openHostDetail(curHost));
