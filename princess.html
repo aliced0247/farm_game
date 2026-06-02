@@ -2,138 +2,200 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#ffb3d1" />
 <title>👑 甘やかされ姫ぐらし</title>
 <style>
   :root{
     --pink:#ff9ec4; --pink-dk:#e96aa0; --pink-lt:#ffe3ef;
-    --gold:#f4c84a; --gold-dk:#caa01e; --cream:#fff7f3; --ink:#6a4350;
-    --peach:#ffd9c2; --lav:#e7d6ff;
+    --gold:#f4c84a; --gold-dk:#caa01e; --cream:#fff8f4; --ink:#6a4350;
     --shadow:0 4px 14px rgba(180,90,140,.22);
+    --wall1:#ffe7f1; --wall2:#ffd9ea; --floor1:#f3d3b8; --floor2:#e9c2a3;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;
     font-family:"Hiragino Maru Gothic ProN","Rounded Mplus 1c",system-ui,sans-serif;}
   html,body{margin:0;padding:0;height:100%;}
-  body{
-    background:linear-gradient(165deg,#ffe0ee 0%,#ffe7d6 45%,#ece0ff 100%);
-    color:var(--ink); overflow:hidden; user-select:none; display:flex; justify-content:center;
-  }
+  body{background:#f3e6ff; color:var(--ink); overflow:hidden; user-select:none; display:flex; justify-content:center;}
   #app{
     width:100%; max-width:480px; height:100dvh; position:relative; display:flex; flex-direction:column;
-    background:radial-gradient(circle at 50% 30%, #fff7fb 0%, #ffeef6 55%, #f3e6ff 100%);
-    box-shadow:0 0 40px rgba(180,90,140,.25); overflow:hidden;
+    background:var(--cream); box-shadow:0 0 40px rgba(180,90,140,.25); overflow:hidden;
   }
 
-  /* top */
+  /* ===== top bar ===== */
   #topbar{
-    display:flex; align-items:center; gap:7px; padding:9px 11px;
+    display:flex; align-items:center; gap:6px; padding:9px 10px;
+    padding-top:calc(9px + env(safe-area-inset-top));
     background:linear-gradient(90deg,#ffb3d1,#cdb4f6); color:#fff; font-weight:800;
-    box-shadow:0 2px 10px rgba(150,80,140,.3); z-index:6;
+    box-shadow:0 2px 12px rgba(150,80,140,.32); z-index:8;
   }
-  #title{flex:1; font-size:14px; text-shadow:0 1px 2px rgba(150,60,110,.4); letter-spacing:.3px;}
-  .iconbtn{background:rgba(255,255,255,.28); border:none; color:#fff; font-size:17px;
-    width:34px; height:34px; border-radius:50%; cursor:pointer;}
+  #title{flex:1; font-size:14px; text-shadow:0 1px 2px rgba(150,60,110,.4); white-space:nowrap;}
+  .iconbtn{background:rgba(255,255,255,.26); border:none; color:#fff; font-size:16px;
+    width:33px; height:33px; border-radius:50%; cursor:pointer; flex:none;}
   .iconbtn:active{transform:scale(.9);}
 
-  /* happiness bar */
-  #happywrap{padding:7px 12px 3px; z-index:5;}
+  /* ===== happiness ===== */
+  #happywrap{padding:7px 12px 5px; z-index:7; background:linear-gradient(180deg,#ffeef6,transparent);}
   #happytop{display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:800; color:var(--pink-dk);}
-  #happybar{height:13px; background:#ffd9ea; border-radius:8px; overflow:hidden; margin-top:3px; box-shadow:inset 0 1px 3px rgba(180,80,130,.25);}
+  #rankname{display:flex; align-items:center; gap:4px;}
+  #happybar{height:13px; background:#ffd9ea; border-radius:8px; overflow:hidden; margin-top:4px; box-shadow:inset 0 1px 3px rgba(180,80,130,.28);}
   #happybar>i{display:block; height:100%; width:0%;
     background:linear-gradient(90deg,#ff9ec4,#ffd06b,#ff9ec4); background-size:200% 100%;
-    transition:width .5s; animation:shine 3s linear infinite;}
+    transition:width .55s cubic-bezier(.3,1.3,.5,1); animation:shine 3.2s linear infinite;}
   @keyframes shine{to{background-position:200% 0;}}
 
-  /* stage */
-  #stage{flex:1; position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:center;}
-  /* canopy bed */
-  #canopy{position:absolute; top:0; left:50%; transform:translateX(-50%); width:78%; max-width:330px; height:60px; z-index:1;}
-  #canopy:before{content:""; position:absolute; top:0; left:50%; transform:translateX(-50%);
-    width:34px; height:34px; background:var(--gold); border-radius:50%;
-    box-shadow:0 0 0 4px #fff,0 0 16px var(--gold);}
-  #canopy:after{content:""; position:absolute; top:16px; left:0; right:0; height:46px;
-    background:linear-gradient(180deg,#ffc2dd,#ffd9ea); clip-path:polygon(0 0,100% 0,90% 100%,50% 60%,10% 100%);
-    border-radius:0 0 30px 30px; opacity:.95;}
+  /* ===== scene (the room) ===== */
+  #scene{flex:1; position:relative; overflow:hidden; min-height:0;}
+  #room{position:absolute; inset:0;}
+  .wall{position:absolute; left:0; right:0; top:0; height:74%;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0 2px, transparent 2px 26px),
+      linear-gradient(180deg, var(--wall1), var(--wall2));}
+  .wall:after{content:""; position:absolute; left:0; right:0; bottom:0; height:10px;
+    background:linear-gradient(180deg, rgba(180,110,150,.18), transparent);}
+  .floor{position:absolute; left:0; right:0; bottom:0; height:26%;
+    background:linear-gradient(180deg, var(--floor1), var(--floor2));
+    box-shadow:inset 0 6px 12px rgba(150,90,60,.18);}
+  .rug{position:absolute; left:50%; bottom:3%; transform:translateX(-50%);
+    width:78%; height:20%; border-radius:50%;
+    background:radial-gradient(circle, #ffd0e6 0%, #ffbcdd 60%, #ff9ec4 100%);
+    box-shadow:0 4px 10px rgba(180,90,140,.25); opacity:.95;}
+  .window{position:absolute; top:9%; left:50%; transform:translateX(-50%);
+    width:120px; height:96px; border-radius:60px 60px 12px 12px; overflow:hidden;
+    border:6px solid #fff; box-shadow:0 6px 14px rgba(150,90,130,.3), inset 0 0 0 3px #ffd9b0;}
+  .sky{position:absolute; inset:0; transition:background .8s;}
+  .celestial{position:absolute; font-size:26px; left:50%; top:30%; transform:translate(-50%,-50%); transition:all .8s;}
+  .stars{position:absolute; inset:0; opacity:0; transition:opacity .8s;
+    background-image:radial-gradient(1.5px 1.5px at 20% 30%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 70% 20%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 45% 55%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 85% 60%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 30% 70%, #fff, transparent);}
+  .windowbars{position:absolute; inset:0;}
+  .windowbars:before,.windowbars:after{content:""; position:absolute; background:#fff; opacity:.85;}
+  .windowbars:before{left:50%; top:0; bottom:0; width:4px; transform:translateX(-50%);}
+  .windowbars:after{top:46%; left:0; right:0; height:4px;}
+  .curtain{position:absolute; top:8%; width:30px; height:104px; pointer-events:none;}
+  .curtain.l{left:calc(50% - 86px); background:linear-gradient(90deg,#ff9ec4,#ffc2dd); border-radius:0 0 0 16px; box-shadow:2px 0 6px rgba(180,90,140,.25);}
+  .curtain.r{left:calc(50% + 56px); background:linear-gradient(270deg,#ff9ec4,#ffc2dd); border-radius:0 0 16px 0; box-shadow:-2px 0 6px rgba(180,90,140,.25);}
 
-  #princess{margin-top:70px; font-size:120px; line-height:1; z-index:2;
-    filter:drop-shadow(0 8px 8px rgba(180,90,140,.3)); transition:transform .2s; position:relative;}
-  #princess.bounce{animation:hop .55s;}
-  @keyframes hop{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-18px) rotate(-4deg)}60%{transform:translateY(-6px) rotate(3deg)}}
-  #acc{position:absolute; top:64px; right:30%; font-size:34px; animation:float 3s ease-in-out infinite; z-index:3;}
-  @keyframes float{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-10px) rotate(8deg)}}
-  #outfitlabel{font-size:12px; font-weight:800; color:var(--pink-dk); margin-top:2px; z-index:2;}
+  #app[data-tod="morning"] .sky{background:linear-gradient(180deg,#ffe6c4,#ffd0e6);}
+  #app[data-tod="day"]     .sky{background:linear-gradient(180deg,#bfe6ff,#eaf7ff);}
+  #app[data-tod="evening"] .sky{background:linear-gradient(180deg,#ffb178,#ff9ec4 70%,#c98bd6);}
+  #app[data-tod="night"]   .sky{background:linear-gradient(180deg,#2b2658,#5a4a8e);}
+  #app[data-tod="night"]   .stars{opacity:1;}
+  #app[data-tod="night"]   #room:after{opacity:.22;}
+  #app[data-tod="evening"] #room:after{opacity:.08;}
+  #room:after{content:""; position:absolute; inset:0; background:linear-gradient(180deg,#3a2a6a,#1a1230);
+    opacity:0; transition:opacity .8s; pointer-events:none; mix-blend-mode:multiply;}
 
-  /* attendants */
-  #attendants{display:flex; gap:14px; margin-top:4px; z-index:2; font-size:30px;}
-  #attendants span{filter:drop-shadow(0 3px 3px rgba(150,90,130,.3)); animation:sway 4s ease-in-out infinite;}
-  #attendants span:nth-child(2){animation-delay:.6s}
-  #attendants span:nth-child(3){animation-delay:1.2s}
-  #attendants span:nth-child(4){animation-delay:1.8s}
-  #attendants span:nth-child(5){animation-delay:2.4s}
+  .canopy{position:absolute; top:0; left:50%; transform:translateX(-50%); width:64%; max-width:300px; height:74px; z-index:3; pointer-events:none;}
+  .canopy .pole{position:absolute; top:6px; left:50%; transform:translateX(-50%); width:30px; height:30px;
+    background:radial-gradient(circle at 40% 35%, #ffe9a8, var(--gold)); border-radius:50%;
+    box-shadow:0 0 0 4px #fff, 0 0 14px rgba(244,200,74,.7);}
+  .canopy .drape{position:absolute; top:22px; left:0; right:0; height:50px;
+    background:linear-gradient(180deg,#ffc2dd,#ffd9ea);
+    clip-path:polygon(0 0,100% 0,88% 100%,50% 55%,12% 100%); border-radius:0 0 40px 40px;
+    box-shadow:0 6px 10px rgba(180,90,140,.18);}
+
+  .decor{position:absolute; z-index:2; filter:drop-shadow(0 3px 3px rgba(120,80,110,.28));
+    animation:decorIn .5s ease-out both;}
+  @keyframes decorIn{from{transform:translate(-50%,-50%) scale(0);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+  .decor.sway{animation:decorIn .5s ease-out both, dsway 5s ease-in-out infinite;}
+  @keyframes dsway{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-54%)}}
+
+  #princessWrap{position:absolute; left:50%; top:46%; transform:translate(-50%,-50%); z-index:4; text-align:center;}
+  #princess{font-size:108px; line-height:1; display:inline-block; position:relative;
+    filter:drop-shadow(0 8px 7px rgba(180,90,140,.32)); animation:breathe 4s ease-in-out infinite;}
+  @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+  #princess.bounce{animation:hop .6s;}
+  @keyframes hop{0%,100%{transform:translateY(0) rotate(0)}22%{transform:translateY(-20px) rotate(-5deg)}55%{transform:translateY(-6px) rotate(4deg)}}
+  #acc{position:absolute; top:-2px; right:-30px; font-size:32px; animation:floaty 3.2s ease-in-out infinite;}
+  @keyframes floaty{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-9px) rotate(9deg)}}
+  #emote{position:absolute; top:-30px; left:50%; transform:translateX(-50%); font-size:30px; opacity:0;}
+  #emote.show{animation:emote 1.3s ease-out;}
+  @keyframes emote{0%{opacity:0;transform:translate(-50%,6px) scale(.5)}25%{opacity:1;transform:translate(-50%,-6px) scale(1.1)}100%{opacity:0;transform:translate(-50%,-26px) scale(1)}}
+  #outfitlabel{margin-top:2px; font-size:12px; font-weight:800; color:var(--pink-dk);
+    background:rgba(255,255,255,.7); padding:2px 10px; border-radius:10px; display:inline-block; backdrop-filter:blur(2px);}
+
+  #attendants{position:absolute; left:0; right:0; bottom:6%; z-index:3;
+    display:flex; justify-content:center; gap:6%; font-size:30px;}
+  #attendants .att{filter:drop-shadow(0 3px 3px rgba(120,80,110,.3)); cursor:pointer; position:relative;
+    animation:sway 4.5s ease-in-out infinite; transition:transform .12s;}
+  #attendants .att:active{transform:translateY(-6px) scale(1.12);}
   @keyframes sway{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  #attendants .att:nth-child(2){animation-delay:.7s}
+  #attendants .att:nth-child(3){animation-delay:1.3s}
+  #attendants .att:nth-child(4){animation-delay:1.9s}
+  #attendants .att:nth-child(5){animation-delay:2.5s}
 
-  /* speech */
-  #speech{margin:8px 14px 6px; background:#fff; border:2px solid var(--pink); border-radius:18px;
-    padding:11px 14px; font-size:14.5px; line-height:1.55; box-shadow:var(--shadow);
-    min-height:54px; max-width:94%; position:relative; z-index:2;}
-  #speech .who{font-size:11px; font-weight:800; color:var(--pink-dk); display:block; margin-bottom:2px;}
-  #speech.pop{animation:pop .28s;}
-  @keyframes pop{from{transform:scale(.92);opacity:.4}to{transform:scale(1);opacity:1}}
+  /* ===== bottom panel: speech + actions (flex-stacked, never overlap) ===== */
+  #panel{z-index:9; background:var(--pink-lt); border-top:3px solid var(--pink);
+    box-shadow:0 -4px 16px rgba(180,90,140,.18); display:flex; flex-direction:column;}
+  #speech{position:relative; margin:10px 12px 4px; background:#fff; border:2px solid var(--pink);
+    border-radius:16px; padding:9px 13px 10px; font-size:14px; line-height:1.5; box-shadow:var(--shadow);
+    min-height:58px; display:flex; flex-direction:column; justify-content:center;}
+  #speech:before{content:""; position:absolute; top:-11px; left:34px; border:9px solid transparent; border-bottom-color:var(--pink);}
+  #speech:after{content:""; position:absolute; top:-8px; left:36px; border:7px solid transparent; border-bottom-color:#fff;}
+  #speech .who{font-size:11px; font-weight:800; color:var(--pink-dk); margin-bottom:2px;}
+  #speech.pop{animation:pop .3s;}
+  @keyframes pop{from{transform:translateY(4px) scale(.97);opacity:.5}to{transform:translateY(0) scale(1);opacity:1}}
 
-  /* actions */
-  #actions{background:var(--pink-lt); border-top:3px solid var(--pink);
-    padding:8px 8px calc(8px + env(safe-area-inset-bottom));
-    display:grid; grid-template-columns:repeat(3,1fr); gap:7px; z-index:5;}
-  .act{background:#fff; border:2px solid var(--pink); border-radius:15px; padding:9px 4px; text-align:center;
+  #actions{padding:6px 8px calc(9px + env(safe-area-inset-bottom));
+    display:grid; grid-template-columns:repeat(4,1fr); gap:6px;}
+  .act{background:#fff; border:2px solid var(--pink); border-radius:14px; padding:7px 2px; text-align:center;
     cursor:pointer; box-shadow:0 3px 0 var(--pink-dk); transition:transform .07s;}
   .act:active{transform:translateY(3px); box-shadow:none;}
-  .act .em{font-size:25px; display:block;}
-  .act .nm{font-size:12px; font-weight:800; margin-top:1px;}
+  .act .em{font-size:22px; display:block;}
+  .act .nm{font-size:10.5px; font-weight:800; margin-top:1px; letter-spacing:-.3px;}
   .act.gold{border-color:var(--gold); box-shadow:0 3px 0 var(--gold-dk); background:#fffbe9;}
 
-  /* floating hearts & fly text */
   .fly{position:absolute; font-weight:900; font-size:20px; pointer-events:none; z-index:30;
-    animation:fly 1.2s ease-out forwards; text-shadow:0 1px 3px #fff;}
-  @keyframes fly{0%{transform:translateY(0) scale(.8);opacity:1}100%{transform:translateY(-80px) scale(1.2);opacity:0}}
-  .amb{position:absolute; pointer-events:none; z-index:1; font-size:18px;
-    animation:amb 4s linear forwards; opacity:.85;}
-  @keyframes amb{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:.9}100%{transform:translateY(-340px) scale(1.1) rotate(20deg);opacity:0}}
+    animation:fly 1.25s ease-out forwards; text-shadow:0 1px 3px #fff;}
+  @keyframes fly{0%{transform:translateY(0) scale(.7);opacity:1}100%{transform:translateY(-86px) scale(1.25);opacity:0}}
+  .amb{position:absolute; pointer-events:none; z-index:2;}
+  @keyframes amb{0%{transform:translateY(0) scale(.5) rotate(0);opacity:0}12%{opacity:.85}100%{transform:translateY(-380px) scale(1.05) rotate(28deg);opacity:0}}
+  #confetti{position:absolute; inset:0; pointer-events:none; z-index:35; overflow:hidden;}
 
-  /* overlay/modal */
-  #overlay{position:absolute; inset:0; background:rgba(120,50,90,.42); backdrop-filter:blur(2px);
+  #overlay{position:absolute; inset:0; background:rgba(120,50,90,.42); backdrop-filter:blur(3px);
     display:none; align-items:center; justify-content:center; z-index:40; padding:18px;}
   #overlay.show{display:flex;}
-  .modal{background:var(--cream); border-radius:22px; width:100%; max-width:380px; max-height:86dvh;
-    overflow-y:auto; border:3px solid var(--gold); box-shadow:0 12px 40px rgba(120,40,80,.4); animation:pop .25s;}
+  .modal{background:var(--cream); border-radius:22px; width:100%; max-width:382px; max-height:84dvh;
+    overflow-y:auto; border:3px solid var(--gold); box-shadow:0 14px 44px rgba(120,40,80,.42); animation:mpop .28s;}
+  @keyframes mpop{from{transform:scale(.9) translateY(10px);opacity:0}to{transform:scale(1);opacity:1}}
   .modal h2{margin:0; padding:14px 16px; font-size:17px; text-align:center; color:#fff;
-    background:linear-gradient(90deg,#ff9ec4,#cdb4f6); position:sticky; top:0;}
+    background:linear-gradient(90deg,#ff9ec4,#cdb4f6); position:sticky; top:0; z-index:1;}
   .modal .body{padding:15px 16px;}
   .modal p{font-size:14px; line-height:1.6; margin:0 0 10px;}
-  .center{text-align:center;}
-  .small{font-size:12px; color:#a06;}
+  .center{text-align:center;} .small{font-size:12px; color:#a06;}
   .btn{background:linear-gradient(90deg,var(--pink),var(--pink-dk)); color:#fff; border:none; border-radius:14px;
     padding:12px 14px; font-size:15px; font-weight:800; cursor:pointer; box-shadow:0 3px 0 var(--pink-dk); width:100%;}
   .btn:active{transform:translateY(2px); box-shadow:none;}
   .btn.gold{background:linear-gradient(90deg,var(--gold),var(--gold-dk)); box-shadow:0 3px 0 var(--gold-dk);}
   .btn.ghost{background:#fff; color:var(--pink-dk); border:2px solid var(--pink); box-shadow:0 3px 0 var(--pink);}
   .btn+.btn{margin-top:8px;}
-  .ofitem{display:flex; align-items:center; gap:10px; background:#fff; border:2px solid var(--pink-lt);
+  .row{display:flex; align-items:center; gap:10px; background:#fff; border:2px solid var(--pink-lt);
     border-radius:14px; padding:9px 10px; margin-bottom:7px;}
-  .ofitem.worn{border-color:var(--gold); background:#fffbe9;}
-  .ofitem.locked{opacity:.5;}
-  .ofitem .em{font-size:28px;}
-  .ofitem .info{flex:1; font-weight:800; font-size:14px;}
-  .ofitem .info .s{font-size:11px; color:#a06; font-weight:600;}
-  .ofitem button{width:auto; flex:none; font-size:13px; padding:8px 12px;}
-  #confetti{position:absolute; inset:0; pointer-events:none; z-index:35; overflow:hidden;}
+  .row.worn{border-color:var(--gold); background:#fffbe9;}
+  .row.locked{opacity:.5;}
+  .row .em{font-size:26px; flex:none; width:32px; text-align:center;}
+  .row .info{flex:1; font-weight:800; font-size:14px;}
+  .row .info .s{font-size:11px; color:#a06; font-weight:600;}
+  .row button{width:auto; flex:none; font-size:13px; padding:8px 12px;}
+  .grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  .cell{aspect-ratio:1; background:#fff; border:2px solid var(--pink-lt); border-radius:14px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:26px; position:relative;}
+  .cell.got{border-color:var(--gold); background:#fffbe9;}
+  .cell .cnt{position:absolute; right:4px; bottom:3px; font-size:10px; font-weight:800; color:var(--pink-dk);}
+  .cell .nm{font-size:8.5px; font-weight:700; color:#a06; margin-top:1px; line-height:1;}
+  .cell.locked{color:#e9c9da;}
 </style>
 </head>
 <body>
-<div id="app">
+<div id="app" data-tod="day">
   <div id="topbar">
     <span id="title">👑 甘やかされ姫ぐらし</span>
     <button class="iconbtn" id="btn-closet" title="おきがえ">👗</button>
+    <button class="iconbtn" id="btn-treasure" title="たからもの">💝</button>
     <button class="iconbtn" id="btn-sound" title="おと">🔊</button>
     <button class="iconbtn" id="btn-help" title="あそびかた">❓</button>
   </div>
@@ -143,22 +205,29 @@
     <div id="happybar"><i></i></div>
   </div>
 
-  <div id="stage">
-    <div id="canopy"></div>
-    <div id="princess">👸</div>
-    <div id="acc">🎀</div>
-    <div id="outfitlabel">ピンクのドレス</div>
-    <div id="attendants">
-      <span title="メイド・リリ">👧</span>
-      <span title="しつじ・セバス">🧑‍🦳</span>
-      <span title="騎士・レイ">🤴</span>
-      <span title="コック・ドルチェ">👨‍🍳</span>
-      <span title="ねこ・もふ">🐱</span>
+  <div id="scene">
+    <div id="room">
+      <div class="wall"></div>
+      <div class="curtain l"></div>
+      <div class="window"><div class="sky"></div><div class="stars"></div><div class="celestial">☀️</div><div class="windowbars"></div></div>
+      <div class="curtain r"></div>
+      <div class="floor"></div>
+      <div class="rug"></div>
+      <div class="canopy"><div class="pole"></div><div class="drape"></div></div>
+      <div id="decorlayer"></div>
     </div>
-    <div id="speech"><span class="who">メイド・リリ</span>姫さま、おはようございます♡ きょうも な〜んにもしなくて大丈夫。ぜんぶ私たちにおまかせくださいね。</div>
+    <div id="princessWrap">
+      <div id="princess">👸<span id="acc">🎀</span><span id="emote">💕</span></div>
+      <div id="outfitlabel">ピンクのドレス</div>
+    </div>
+    <div id="attendants"></div>
   </div>
 
-  <div id="actions"></div>
+  <div id="panel">
+    <div id="speech"><span class="who">👧 メイド・リリ</span><span class="txt">姫さま、おはようございます♡ きょうも な〜んにもしなくて大丈夫。ぜんぶ私たちにおまかせくださいね。</span></div>
+    <div id="actions"></div>
+  </div>
+
   <div id="confetti"></div>
 </div>
 
@@ -167,9 +236,8 @@
 <script>
 "use strict";
 (function(){
-const SAVE_KEY="pamperedprincess_v1";
+const SAVE_KEY="pamperedprincess_v2";
 
-/* ===== characters ===== */
 const CHARS={
   lili:{name:"メイド・リリ", em:"👧"},
   sebas:{name:"しつじ・セバス", em:"🧑‍🦳"},
@@ -177,8 +245,8 @@ const CHARS={
   dolce:{name:"コック・ドルチェ", em:"👨‍🍳"},
   mofu:{name:"ねこ・もふ", em:"🐱"},
 };
+const ATT_ORDER=["lili","sebas","ray","dolce","mofu"];
 
-/* ===== outfits (unlock by rank level) ===== */
 const OUTFITS=[
   {name:"ピンクのドレス",     acc:"🎀", lv:0},
   {name:"ふわふわパジャマ",   acc:"🧸", lv:1},
@@ -188,96 +256,161 @@ const OUTFITS=[
   {name:"てんしのドレス",     acc:"😇", lv:5},
   {name:"でんせつの姫ドレス", acc:"🌟", lv:6},
 ];
+const RANKS=["おひめさま","あまえんぼ姫","ぐうたら姫","わがまま姫♡","だめにされ姫","とろけ姫","でんせつの甘やかされ姫"];
+function needFor(lv){ return lv<=0?0:35*lv*lv; }
 
-/* ===== ranks (titles) ===== */
-const RANKS=[
-  "おひめさま","あまえんぼ姫","ぐうたら姫","わがまま姫♡","だめにされ姫","とろけ姫","でんせつの甘やかされ姫"
+const DECOR=[
+  {em:"🪴", x:7,  y:60, lv:1, size:36, sway:true,  name:"観葉植物"},
+  {em:"🛋️", x:85, y:62, lv:1, size:40, sway:false, name:"ソファ"},
+  {em:"🖼️", x:16, y:24, lv:2, size:30, sway:false, name:"肖像画"},
+  {em:"🕯️", x:84, y:26, lv:2, size:24, sway:true,  name:"キャンドル"},
+  {em:"🍰", x:11, y:48, lv:3, size:26, sway:false, name:"ケーキスタンド"},
+  {em:"🫖", x:89, y:46, lv:3, size:26, sway:false, name:"ティーセット"},
+  {em:"🪞", x:90, y:30, lv:4, size:28, sway:false, name:"すがた見"},
+  {em:"🐈", x:28, y:80, lv:4, size:26, sway:true,  name:"もう一匹のねこ"},
+  {em:"🌹", x:6,  y:82, lv:5, size:24, sway:true,  name:"バラ"},
+  {em:"🌷", x:94, y:82, lv:5, size:24, sway:true,  name:"チューリップ"},
+  {em:"🦢", x:72, y:84, lv:6, size:28, sway:true,  name:"はくちょう"},
+  {em:"🏺", x:5,  y:40, lv:6, size:28, sway:false, name:"金のつぼ"},
 ];
-// happiness needed to REACH level i (cumulative)
-function needFor(lv){ return lv<=0?0:30*lv*lv; } // 0,30,120,270,480,750,1080
 
-/* ===== doting lines per action ===== */
+const TREASURES=[
+  {id:"ring",  em:"💍", name:"ゆびわ"},
+  {id:"neck",  em:"📿", name:"ネックレス"},
+  {id:"tiara", em:"👑", name:"ティアラ"},
+  {id:"teddy", em:"🧸", name:"くまさん"},
+  {id:"music", em:"🎵", name:"オルゴール"},
+  {id:"mirror",em:"🪞", name:"てかがみ"},
+  {id:"pearl", em:"🦪", name:"しんじゅ"},
+  {id:"rose",  em:"🌹", name:"バラの花束"},
+  {id:"gem",   em:"💎", name:"だいやの宝石"},
+  {id:"cake",  em:"🎂", name:"特大ケーキ"},
+  {id:"swan",  em:"🦢", name:"白鳥のかざり"},
+  {id:"star",  em:"⭐", name:"願いの星"},
+];
+
 const LINES={
   sweets:[
-    ["dolce","ほっぺが落ちるケーキ、焼きあがりましたよ姫さま♡ あ〜ん、してください。"],
-    ["lili","いちごは私がぜんぶ取り分けますね。姫さまは食べるだけ♪"],
-    ["dolce","おかわりは無限です。カロリーは私が引き受けますので！"],
-    ["lili","お口についたクリーム、私がふきますね。んもう、かわいい…♡"],
+    ["dolce","ほっぺが落ちるショートケーキ、焼きあがりましたよ姫さま♡ さ、あ〜んしてください。"],
+    ["lili","いちごは私がぜんぶ取り分けますね。姫さまは口を開けて待ってるだけでいいんです♪"],
+    ["dolce","おかわりは無限です。カロリーは私がぜんぶ引き受けますので、ご安心を！"],
+    ["lili","お口についたクリーム、私がそっとふきますね。んもう…かわいいなあ♡"],
+    ["dolce","姫さまの『おいしい』が聞きたくて、夜なべして新作を考えました。"],
   ],
   tea:[
-    ["sebas","とっておきの紅茶でございます。湯加減も茶葉も、姫さま好みに整えました。"],
-    ["lili","ふーふー冷ましておきましたよ。猫舌の姫さま、やけどしちゃうから♡"],
-    ["sebas","おかわりはいつでも。私はそのためにここにおりますので。"],
+    ["sebas","本日はダージリンのファーストフラッシュを。湯加減も蒸らしも、姫さま好みに整えております。"],
+    ["lili","ふーふー冷ましておきましたよ。猫舌の姫さま、やけどしちゃうといけないから♡"],
+    ["sebas","おかわりはいつでもどうぞ。私はそのためにここに控えておりますので。"],
+    ["dolce","紅茶には焼きたてのスコーンをおそえしました。クロテッドクリームもたっぷり。"],
   ],
   massage:[
-    ["lili","かたこり、ぜんぶほぐしちゃいますね。んん〜、姫さますべすべ…♡"],
-    ["sebas","お疲れなど一切たまらぬよう、毎日でもおもみいたします。"],
-    ["mofu","にゃ〜ん（ひざの上でゴロゴロ。あたたかい…）"],
+    ["lili","かたこり、ぜ〜んぶほぐしちゃいますね。んん〜、姫さまほんとにすべすべ…♡"],
+    ["sebas","お疲れなど一切たまらぬよう、毎日でもおもみいたします。どうぞ脱力を。"],
+    ["mofu","にゃ〜ん…（ひざの上でゴロゴロ、ふみふみマッサージ中）"],
+    ["lili","アロマも焚きましたよ。ラベンダーの香りで、とろ〜んとしちゃってください。"],
   ],
   bath:[
-    ["lili","お風呂にバラの花びらを浮かべました♡ さ、お背中ながしますね。"],
-    ["sebas","湯あがりのタオルもふかふかに温めてございます。"],
-    ["dolce","湯あがりのつめた〜いジュースもご用意しております！"],
+    ["lili","お風呂にバラの花びらを浮かべました♡ さあ、お背中ながしますね。"],
+    ["sebas","湯あがりのタオルは、ふっかふかに温めてございます。湯冷めは絶対させません。"],
+    ["dolce","湯あがりには、つめた〜いフルーツジュースをご用意しております！"],
+    ["lili","髪も私がやさしく乾かしますね。さらっさらの、つやつやにしてみせます♡"],
   ],
   pet:[
-    ["mofu","ごろ〜ん（おなかを見せてあまえてくる）"],
+    ["mofu","ごろ〜ん（おなかを見せて全力であまえてくる）"],
     ["mofu","にゃっ♡（姫さまの手にすりすり。もふもふ無限供給）"],
-    ["lili","もふは姫さまが大好きなんです。ずっとそばにいたいんですって♡"],
-  ],
-  gift:[
-    ["ray","姫さまに似合うと思い、宝石をお持ちしました。…受け取ってくれますか。"],
-    ["sebas","街じゅうから集めた贈り物でございます。お気に召すまで何でも。"],
-    ["ray","姫さまの笑顔のためなら、ドラゴンだって倒してきます。"],
-    ["lili","お花、お部屋いっぱいに飾りましたよ♡ いい香り〜。"],
+    ["lili","もふは姫さまが大好きなんです。ずーっとおそばにいたいんですって♡"],
+    ["mofu","ぐるぐる…（のどを鳴らしながら姫さまのひざで丸くなる）"],
   ],
   nap:[
-    ["lili","おふとん、あたためておきました。ね、おひるねしましょ?♡ 子守唄うたいますね。"],
-    ["mofu","にゃ〜（となりでまるくなる。いっしょにねんね）"],
-    ["sebas","お目覚めまで、誰にも邪魔はさせません。ごゆっくり。"],
+    ["lili","おふとん、ぽかぽかに温めておきました。ね、おひるねしましょ?♡ 子守唄、うたいますね。"],
+    ["mofu","にゃ〜…（となりでまるくなって、いっしょにねんね）"],
+    ["sebas","お目覚めまで、世界中の物音を遠ざけておきます。どうぞ、ごゆっくり。"],
+    ["lili","ねむくなるまで、ずっと頭なでなでしてますね。す〜やすや…♡"],
   ],
   praise:[
-    ["ray","姫さまは…世界でいちばん、おうつくしいです。"],
-    ["lili","なにもできなくたって、姫さまはここにいるだけで百点満点です♡"],
-    ["sebas","あなたさまは生まれながらに尊い御方。胸を張ってよいのですよ。"],
-    ["dolce","姫さまの『おいしい』の一言で、私は一生がんばれます！"],
+    ["ray","姫さまは…世界でいちばん、おうつくしい。お会いするたび見とれてしまいます。"],
+    ["lili","なにもできなくたって、姫さまはここにいてくれるだけで百点満点なんですよ♡"],
+    ["sebas","あなたさまは生まれながらに尊い御方。どうか、胸を張っておいでください。"],
+    ["dolce","姫さまの笑顔ひとつで、城じゅうが幸せになるんです。最高の魔法ですよ。"],
     ["ray","しがらみも、めんどうごとも、ぜんぶ私が引き受けます。姫さまは笑っていてください。"],
-    ["mofu","にゃ〜ん♡（だいすき、ってかおをすりよせる）"],
+    ["mofu","にゃ〜ん♡（だいすき、ってほっぺをすりすり）"],
+    ["lili","がんばらなくていいの。だらけてていいの。姫さまはそのままで最高なんですから♡"],
   ],
 };
 
-/* ===== spontaneous (idle) pampering ===== */
+const GIFT_LINES=[
+  ["ray","姫さまに似合うと思い、{T}をお持ちしました。…受け取ってくれますか。"],
+  ["sebas","世界中から取り寄せた{T}にございます。お気に召すまで、何でもご用意いたします。"],
+  ["lili","じゃ〜ん♡ 姫さまに{T}のプレゼントです！ ぜったい似合うと思って♪"],
+  ["ray","姫さまの笑顔のためなら、地の果てへでも{T}を探しに行きますよ。"],
+];
+
+const GREET={
+  morning:["lili","おはようございます姫さま♡ よくおやすみでしたか? 朝ごはん、ベッドまでお運びしますね。"],
+  day:    ["dolce","いいお天気ですよ。お昼のおやつは何にしましょう? ぜ〜んぶご用意できます♪"],
+  evening:["sebas","夕やけがきれいですね。あたたかい紅茶をどうぞ。今日も一日、お疲れさまでした。"],
+  night:  ["lili","もう夜ですね。お部屋もぽかぽかにしてあります。ゆっくりお過ごしくださいね♡"],
+};
 const IDLE=[
-  ["dolce","姫さま、焼きたてのクッキーはいかがですか?♡"],
-  ["lili","ひざかけ、お持ちしましたよ。寒くないですか?"],
-  ["sebas","お飲み物のおかわりをそっと置いておきますね。"],
-  ["ray","…つい姫さまを見守ってしまいます。お気になさらず。"],
-  ["mofu","ご〜ろごろ…（あしもとでまったり）"],
-  ["lili","姫さま、ほっぺがぷにぷに…♡ さわってもいいですか?"],
-  ["dolce","新作スイーツ、いちばんに味見してくださいね!"],
+  ["dolce","姫さま、焼きたてのクッキーが焼けました♡ ひとつ、いかがですか?"],
+  ["lili","ひざかけ、おかけしますね。すこしも寒い思いはさせません。"],
+  ["sebas","お飲み物のおかわりを、そっと置いておきますね。"],
+  ["ray","…つい姫さまを見守ってしまいます。お気になさらず、どうぞそのままで。"],
+  ["mofu","ご〜ろごろ…（あしもとでまったり寝ころぶ）"],
+  ["lili","姫さまのほっぺ、ぷにぷに…♡ つい、なでたくなっちゃいます。"],
+  ["dolce","新作スイーツ、いちばんに味見してくださいね! 自信作なんです。"],
+  ["sebas","お部屋の温度、ちょうどよろしいですか? いつでもお申しつけを。"],
+  ["mofu","にゃ〜ん（おみやげに、ちいさな羽根を持ってきた）"],
 ];
 
 let S;
-function fresh(){ return { happy:0, lv:0, outfit:0, muted:false, seen:false }; }
-function load(){ try{const r=localStorage.getItem(SAVE_KEY); if(r){S=Object.assign(fresh(),JSON.parse(r));return;}}catch(e){} S=fresh(); }
+function fresh(){ return { happy:0, lv:0, outfit:0, muted:false, seen:false, treasures:{} }; }
+function load(){ try{const r=localStorage.getItem(SAVE_KEY); if(r){S=Object.assign(fresh(),JSON.parse(r)); if(!S.treasures)S.treasures={}; return;}}catch(e){} S=fresh(); }
 function save(){ try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){} }
 
-/* ===== sound ===== */
 let actx=null;
-function beep(f,d,t){ if(S.muted)return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+function tone(f,d,t,vol){ if(S.muted)return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
   const o=actx.createOscillator(),g=actx.createGain(); o.type=t||"sine"; o.frequency.value=f;
-  o.connect(g); g.connect(actx.destination); g.gain.setValueAtTime(.1,actx.currentTime);
-  g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+d); o.start(); o.stop(actx.currentTime+d);}catch(e){} }
+  o.connect(g); g.connect(actx.destination); g.gain.setValueAtTime(vol||.09,actx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.0008,actx.currentTime+d); o.start(); o.stop(actx.currentTime+d);}catch(e){} }
+function chord(arr,step,t,vol){ arr.forEach((f,i)=>setTimeout(()=>tone(f,.5,t||"sine",vol),i*(step||60))); }
 const SFX={
-  pat:()=>{beep(740,.08,"sine"); setTimeout(()=>beep(990,.1,"sine"),70);},
-  chime:()=>{[660,880,1100].forEach((f,i)=>setTimeout(()=>beep(f,.12,"sine"),i*60));},
-  level:()=>{[523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>beep(f,.2,"sine"),i*120));},
+  pat:()=>{tone(740,.1,"sine",.08); setTimeout(()=>tone(988,.14,"sine",.07),70);},
+  soft:()=>{tone(523,.18,"triangle",.06); setTimeout(()=>tone(784,.22,"sine",.06),90);},
+  treasure:()=>chord([659,880,1046,1318],70,"sine",.08),
+  level:()=>chord([523,659,784,1046,1318,1568],110,"sine",.09),
 };
 
 const $=s=>document.querySelector(s);
 const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 const pick=a=>a[rnd(0,a.length-1)];
+function tod(){ const h=new Date().getHours();
+  if(h>=5&&h<10)return"morning"; if(h>=10&&h<16)return"day"; if(h>=16&&h<19)return"evening"; return"night"; }
 
-/* ===== render ===== */
+function applyTod(){
+  const t=tod(); $("#app").dataset.tod=t;
+  document.querySelector(".celestial").textContent={morning:"🌅",day:"☀️",evening:"🌇",night:"🌙"}[t];
+}
+function renderAttendants(){
+  const w=$("#attendants"); w.innerHTML="";
+  ATT_ORDER.forEach(k=>{
+    const s=document.createElement("span"); s.className="att"; s.textContent=CHARS[k].em; s.title=CHARS[k].name;
+    s.onclick=()=>{
+      const pool=[...IDLE, GREET[tod()]].filter(l=>l[0]===k);
+      const l=pool.length?pick(pool):pick(IDLE);
+      say(l[0],l[1]); S.happy+=1; flyHearts(1,2); emote(); checkLevel(); save(); render();
+    };
+    w.appendChild(s);
+  });
+}
+function renderDecor(){
+  const w=$("#decorlayer"); w.innerHTML="";
+  DECOR.forEach(d=>{ if(S.lv<d.lv) return;
+    const el=document.createElement("div"); el.className="decor"+(d.sway?" sway":"");
+    el.textContent=d.em; el.style.left=d.x+"%"; el.style.top=d.y+"%"; el.style.fontSize=d.size+"px";
+    w.appendChild(el);
+  });
+}
 function render(){
   const of=OUTFITS[S.outfit];
   $("#acc").textContent=of.acc;
@@ -285,9 +418,9 @@ function render(){
   $("#rankname").textContent="♡ "+RANKS[Math.min(S.lv,RANKS.length-1)];
   $("#happynum").textContent="しあわせ "+S.happy;
   const cur=needFor(S.lv), nxt=needFor(S.lv+1);
-  const pct = nxt>cur ? Math.min(100,(S.happy-cur)/(nxt-cur)*100) : 100;
-  $("#happybar>i").style.width=pct+"%";
+  $("#happybar>i").style.width=(nxt>cur?Math.min(100,(S.happy-cur)/(nxt-cur)*100):100)+"%";
   $("#btn-sound").textContent=S.muted?"🔇":"🔊";
+  renderDecor();
 }
 
 const ACTIONS=[
@@ -309,135 +442,151 @@ function renderActions(){
     w.appendChild(d);
   });
 }
-
 function say(who,text){
-  const c=CHARS[who]||{name:"???"};
+  const c=CHARS[who]||{name:"???",em:""};
   const el=$("#speech");
-  el.innerHTML=`<span class="who">${c.em||""} ${c.name}</span>${text}`;
+  el.innerHTML=`<span class="who">${c.em} ${c.name}</span><span class="txt">${text}</span>`;
   el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
 }
 function bounce(){ const p=$("#princess"); p.classList.remove("bounce"); void p.offsetWidth; p.classList.add("bounce"); }
+function emote(){ const e=$("#emote"); e.textContent=pick(["💕","😌","🥰","☺️","✨","💗","😊"]);
+  e.classList.remove("show"); void e.offsetWidth; e.classList.add("show"); }
 
 function doAction(a){
-  SFX.pat();
+  if(a.id==="gift"){ giveGift(a); return; }
+  if(a.id==="praise") SFX.soft(); else SFX.pat();
   const line=pick(LINES[a.id]);
-  say(line[0], line[1]);
-  S.happy += a.gain;
-  bounce(); flyHearts(a.gain);
-  checkLevel();
-  save(); render();
+  say(line[0],line[1]);
+  S.happy+=a.gain; bounce(); emote(); flyHearts(a.gain, a.id==="praise"?7:5);
+  checkLevel(); save(); render();
+}
+function giveGift(a){
+  SFX.treasure();
+  const t=pick(TREASURES); const first=!S.treasures[t.id];
+  S.treasures[t.id]=(S.treasures[t.id]||0)+1;
+  const g=pick(GIFT_LINES);
+  say(g[0], g[1].replace("{T}", "<b>"+t.em+t.name+"</b>") + (first?"　<span style='color:#caa01e;font-weight:800'>✨はじめて！</span>":""));
+  S.happy+=a.gain; bounce(); emote(); flyHearts(a.gain,6); flyOne(t.em);
+  checkLevel(); save(); render();
 }
 
-function flyHearts(n){
-  const st=$("#stage").getBoundingClientRect();
-  const ems=["💗","♡","✨","💞","🌸"];
-  const el=document.createElement("div"); el.className="fly"; el.textContent="+"+n+" ♡"; el.style.color="#e0367a";
-  el.style.left=(st.width/2-22+rnd(-20,20))+"px"; el.style.top="42%"; $("#stage").appendChild(el);
-  setTimeout(()=>el.remove(),1200);
-  for(let i=0;i<5;i++){ const s=document.createElement("div"); s.className="fly"; s.textContent=pick(ems);
-    s.style.left=(st.width/2-20+rnd(-60,60))+"px"; s.style.top=(38+rnd(-8,12))+"%";
-    s.style.animationDelay=(i*60)+"ms"; $("#stage").appendChild(s); setTimeout(()=>s.remove(),1300); }
+function flyHearts(n,count){
+  const st=$("#scene").getBoundingClientRect(); const cx=st.width/2;
+  const main=document.createElement("div"); main.className="fly"; main.textContent="+"+n+" ♡"; main.style.color="#e0367a";
+  main.style.left=(cx-22+rnd(-16,16))+"px"; main.style.top="40%"; $("#scene").appendChild(main); setTimeout(()=>main.remove(),1250);
+  const ems=["💗","♡","✨","💞","🌸","💕"];
+  for(let i=0;i<(count||5);i++){ const s=document.createElement("div"); s.className="fly"; s.textContent=pick(ems);
+    s.style.left=(cx-20+rnd(-70,70))+"px"; s.style.top=(36+rnd(-8,14))+"%"; s.style.fontSize=rnd(15,24)+"px";
+    s.style.animationDelay=(i*55)+"ms"; $("#scene").appendChild(s); setTimeout(()=>s.remove(),1400); }
 }
-
-/* ambient hearts even when idle */
+function flyOne(em){
+  const st=$("#scene").getBoundingClientRect();
+  const s=document.createElement("div"); s.className="fly"; s.textContent=em; s.style.fontSize="34px";
+  s.style.left=(st.width/2-17)+"px"; s.style.top="42%"; $("#scene").appendChild(s); setTimeout(()=>s.remove(),1300);
+}
 function ambient(){
-  const st=$("#stage").getBoundingClientRect();
-  const ems=["💗","♡","✨","🌸","💕"];
+  if($("#overlay").classList.contains("show")) return;
+  const t=tod();
+  const ems = t==="night" ? ["✨","⭐","💗","♡"] : ["💗","♡","✨","🌸","💕","🦋"];
   const e=document.createElement("div"); e.className="amb"; e.textContent=pick(ems);
-  e.style.left=rnd(8,92)+"%"; e.style.bottom="120px"; e.style.fontSize=rnd(14,24)+"px";
-  $("#stage").appendChild(e); setTimeout(()=>e.remove(),4000);
+  e.style.cssText=`left:${rnd(6,94)}%;bottom:30%;font-size:${rnd(13,22)}px;animation:amb ${rnd(38,52)/10}s linear forwards;opacity:.8;`;
+  $("#scene").appendChild(e); setTimeout(()=>e.remove(),5500);
 }
 
-/* level up */
 function checkLevel(){
-  while(S.happy >= needFor(S.lv+1) && S.lv < RANKS.length-1){
+  while(S.happy>=needFor(S.lv+1) && S.lv<RANKS.length-1){
     S.lv++;
-    SFX.level(); confetti(26);
-    // auto unlock & wear the outfit for this level if any
-    const newOf = OUTFITS.findIndex(o=>o.lv===S.lv);
+    SFX.level(); confetti(28);
+    const newOf=OUTFITS.findIndex(o=>o.lv===S.lv);
+    const newDecor=DECOR.filter(d=>d.lv===S.lv);
     setTimeout(()=>{
-      let body=`<div class="center" style="font-size:60px">👑✨</div>
+      let body=`<div class="center" style="font-size:58px">👑✨</div>
         <p class="center">甘やかされ度がアップ！<br>あなたは今や…<br><b style="color:#e0367a;font-size:18px">「${RANKS[S.lv]}」</b></p>`;
-      if(newOf>=0){
-        S.outfit=newOf;
-        body+=`<p class="center">🎁 みんなから新しいドレスのプレゼント！<br><b>${OUTFITS[newOf].acc} ${OUTFITS[newOf].name}</b><br><span class="small">（👗ボタンでいつでもおきがえできるよ）</span></p>`;
-      }
+      if(newOf>=0){ S.outfit=newOf;
+        body+=`<p class="center">🎁 みんなから新しいドレス！<br><b>${OUTFITS[newOf].acc} ${OUTFITS[newOf].name}</b></p>`; }
+      if(newDecor.length){
+        body+=`<p class="center">🛋️ お部屋に新しい飾りが増えたよ♡<br><b>${newDecor.map(d=>d.em+d.name).join("　")}</b></p>`; }
       body+=`<button class="btn gold" onclick="__close()">うれしい…♡</button>`;
-      modal("🎉 もっと甘やかされちゃった",body);
-      render();
-    }, 250);
+      modal("🎉 もっと甘やかされちゃった", body); render();
+    },260);
   }
 }
 
-/* closet */
 function closet(){
-  let html=`<p class="small">どのドレスでも、何度でもおきがえ自由♡ がんばらなくても新しいドレスはみんながくれるよ。</p>`;
+  let html=`<p class="small">どのドレスでも、何度でもおきがえ自由♡ 新しいドレスはみんながプレゼントしてくれます。</p>`;
   OUTFITS.forEach((o,i)=>{
-    const unlocked = S.lv>=o.lv;
-    const worn = S.outfit===i;
-    let btn = worn?`<span class="small" style="color:#caa01e;font-weight:800">着用中♡</span>`
-      : unlocked?`<button class="btn ghost" onclick="__wear(${i})">きがえる</button>`
-      : `<span class="small">甘やかされ度 Lv${o.lv}で解放</span>`;
-    html+=`<div class="ofitem ${worn?'worn':''} ${unlocked?'':'locked'}">
-      <span class="em">${o.acc}</span>
-      <div class="info">${o.name}<div class="s">${unlocked?'もってる':'まだ'}</div></div>${btn}</div>`;
+    const un=S.lv>=o.lv, worn=S.outfit===i;
+    const btn=worn?`<span class="small" style="color:#caa01e;font-weight:800">着用中♡</span>`
+      :un?`<button class="btn ghost" onclick="__wear(${i})">きがえる</button>`
+      :`<span class="small">Lv${o.lv}で解放</span>`;
+    html+=`<div class="row ${worn?'worn':''} ${un?'':'locked'}"><span class="em">${o.acc}</span>
+      <div class="info">${o.name}<div class="s">${un?'もってる':'まだ'}</div></div>${btn}</div>`;
   });
   html+=`<button class="btn ghost" onclick="__close()" style="margin-top:8px">とじる</button>`;
-  modal("👗 おきがえ",html);
+  modal("👗 おきがえ", html);
 }
-window.__wear=function(i){ S.outfit=i; SFX.pat(); save(); render(); closet(); };
+window.__wear=function(i){ S.outfit=i; SFX.pat(); emote(); save(); render(); closet(); };
 
-/* confetti */
+function treasures(){
+  const got=Object.keys(S.treasures).length;
+  let html=`<p class="small center">プレゼント💐でもらった たからもの：<b>${got}/${TREASURES.length}しゅるい</b></p><div class="grid">`;
+  TREASURES.forEach(t=>{ const n=S.treasures[t.id]||0;
+    html+=`<div class="cell ${n?'got':'locked'}">${n?t.em:"❔"}<span class="nm">${n?t.name:"？？？"}</span>${n>1?`<span class="cnt">×${n}</span>`:""}</div>`;
+  });
+  html+=`</div><button class="btn ghost" onclick="__close()" style="margin-top:12px">とじる</button>`;
+  modal("💝 たからもの", html);
+}
+
 function confetti(n){
   const wrap=$("#confetti"); const ems=["🎉","✨","💗","👑","🌸","💎","💕"];
   for(let i=0;i<n;i++){ const e=document.createElement("div"); e.textContent=pick(ems);
     e.style.cssText=`position:absolute;left:${rnd(0,100)}%;top:-30px;font-size:${rnd(16,28)}px;`;
     wrap.appendChild(e); const dur=rnd(1500,2700);
-    e.animate([{transform:"translateY(0) rotate(0)",opacity:1},{transform:`translateY(${rnd(440,660)}px) rotate(${rnd(180,520)}deg)`,opacity:0}],{duration:dur,easing:"ease-in"});
+    e.animate([{transform:"translateY(0) rotate(0)",opacity:1},{transform:`translateY(${rnd(460,680)}px) rotate(${rnd(180,520)}deg)`,opacity:0}],{duration:dur,easing:"ease-in"});
     setTimeout(()=>e.remove(),dur);
   }
 }
 
-/* modal */
 function modal(t,b){ $("#modal").innerHTML=`<h2>${t}</h2><div class="body">${b}</div>`; $("#overlay").classList.add("show"); }
 window.__close=function(){ $("#overlay").classList.remove("show"); render(); };
 $("#overlay").addEventListener("click",e=>{ if(e.target.id==="overlay") __close(); });
 
-/* help / intro */
 function help(){
   modal("❓ あそびかた",
     `<p>あなたは生まれながらの <b>おひめさま👸</b>。<br>がんばらなくていいし、失敗もありません。</p>
-     <p>🔹 下のボタンをタップすると、メイドや執事や騎士たちが<b>とことん甘やかして</b>くれます。</p>
-     <p>🔹 甘やかされるほど <b>しあわせ度♡</b> が上がって、<b>新しいドレス</b>や<b>称号</b>がもらえます。</p>
-     <p>🔹 なにもしなくても、みんなが勝手にお世話しにきてくれるよ。</p>
-     <p class="center" style="color:#e0367a">さあ、思いっきりだらけて、甘やかされてね♡</p>
+     <p>🔹 下のボタンを押すと、メイド・執事・騎士・コック・ねこが<b>とことん甘やかして</b>くれます。</p>
+     <p>🔹 甘やかされるほど <b>しあわせ度♡</b> が上がり、<b>新しいドレス👗</b>・<b>お部屋の家具🛋️</b>・<b>称号</b>がふえていきます。</p>
+     <p>🔹 <b>💐プレゼント</b>で <b>たからもの💝</b> を集められます（右上の💝でコレクション）。</p>
+     <p>🔹 <b>窓の外の空</b>は、いまの時間に合わせて朝・昼・夕・夜に変わります。🌅☀️🌇🌙</p>
+     <p>🔹 なにもしなくても、みんなが勝手にお世話しにきてくれます。お城のみんなをタップしてもOK♪</p>
+     <p class="center" style="color:#e0367a">思いっきりだらけて、甘やかされてね♡</p>
      <button class="btn ghost" onclick="__close()">わかった♡</button>`);
 }
 function intro(){
   if(S.seen) return; S.seen=true; save();
   modal("👑 甘やかされ姫ぐらし",
-    `<div class="center" style="font-size:64px">👸💕</div>
+    `<div class="center" style="font-size:62px">👸💕</div>
      <p class="center">むずかしいことは ぜ〜んぶ忘れて。<br>ここはあなたが主役の、やさしいお城。</p>
      <p class="center">メイドも執事も騎士もねこも、<br>あなたを甘やかすことが生きがいです。</p>
      <p class="center small">なにもしなくて大丈夫。ただ、甘やかされてね♡</p>
      <button class="btn gold" onclick="__close()">ふにゃ〜♡（はじめる）</button>`);
 }
 
-/* buttons */
 $("#btn-closet").onclick=()=>{SFX.pat(); closet();};
+$("#btn-treasure").onclick=()=>{SFX.pat(); treasures();};
 $("#btn-help").onclick=()=>{SFX.pat(); help();};
 $("#btn-sound").onclick=()=>{ S.muted=!S.muted; save(); render(); if(!S.muted) SFX.pat(); };
 
-/* boot */
-load(); renderActions(); render();
+load(); applyTod(); renderAttendants(); renderActions(); render();
+{ const g=GREET[tod()]; say(g[0],g[1]); }
 intro();
 
-/* idle loops */
-setInterval(ambient, 1100);
+setInterval(ambient, 950);
+setInterval(applyTod, 60000);
 setInterval(()=>{
   if($("#overlay").classList.contains("show")) return;
-  const l=pick(IDLE); say(l[0], l[1]); S.happy+=1; flyHearts(1); checkLevel(); save(); render();
-}, 7000);
+  const l=pick(IDLE); say(l[0],l[1]); S.happy+=1; flyHearts(1,2); emote(); checkLevel(); save(); render();
+}, 8000);
 })();
 </script>
 </body>
