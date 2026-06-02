@@ -855,13 +855,16 @@ class Farm extends Phaser.Scene{
       if(dist<(E.size||16)*0.6 && this.playerInvuln<=0)this.playerHurt(E.atk); }); }
   attack(){ const now=performance.now(); if(now-(this.atkCD||0)<260)return; this.atkCD=now; SFX.swing();
     const o={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[this.facing];
-    const cx=this.player.x+o[0]*14, cy=this.player.y-6+o[1]*14;
+    const px=this.player.x, py=this.player.y-6;
+    const cx=px+o[0]*14, cy=py+o[1]*14;
     const ang={up:-1.57,down:1.57,left:3.14,right:0}[this.facing];
     const sl=this.add.image(cx,cy,"slash").setOrigin(0.2,0.5).setRotation(ang).setDepth(this.player.y+1);
     this.tweens.add({targets:sl,alpha:0,scaleX:1.5,scaleY:1.5,duration:200,onComplete:()=>sl.destroy()});
     const atk=weaponAtk(); let hit=false;
-    for(const e of this.enemies){ const r=(ENEMIES[e.type].size||16)*0.5+7;
-      if(Math.abs(e.x-cx)<r && Math.abs(e.y-cy)<r){ hit=true; e.hp-=atk; e.hurtT=0.2; e.x+=o[0]*7; e.y+=o[1]*7; } }
+    for(const e of this.enemies){ const r=(ENEMIES[e.type].size||16)*0.5+8;
+      const inFront=Math.abs(e.x-cx)<r && Math.abs(e.y-cy)<r;            // 前方の振り
+      const pointBlank=Math.hypot(e.x-px,e.y-py)<r+3;                    // 重なってる敵も当たる
+      if(inFront||pointBlank){ hit=true; e.hp-=atk; e.hurtT=0.2; e.x+=o[0]*7; e.y+=o[1]*7; } }
     if(hit)SFX.hit();
     const dead=this.enemies.filter(e=>e.hp<=0); dead.forEach(e=>this.enemyDie(e));
     this.enemies=this.enemies.filter(e=>e.hp>0);
