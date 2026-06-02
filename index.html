@@ -28,6 +28,13 @@
 
   #stage{ flex:1; position:relative; overflow:hidden; background:#6ea83f; }
   #stage canvas{ display:block; }
+  #weatherFx{ position:absolute; inset:0; pointer-events:none; z-index:3; display:none; }
+  #weatherFx.on{ display:block; }
+  #weatherFx.rain{ background:repeating-linear-gradient(108deg, transparent 0 5px, rgba(180,210,245,.20) 5px 6px); animation:rainmove .32s linear infinite; }
+  #weatherFx.rain::after{ content:""; position:absolute; inset:0; background:rgba(60,80,110,.10); }
+  @keyframes rainmove{ from{ background-position:0 0; } to{ background-position:-22px 64px; } }
+  #weatherFx.snow{ background:radial-gradient(circle, rgba(255,255,255,.6) 1px, transparent 1.6px) 0 0/15px 15px; animation:snowmove 3.2s linear infinite; opacity:.75; }
+  @keyframes snowmove{ from{ background-position:0 0; } to{ background-position:7px 130px; } }
   #loadMsg{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff;
     font-weight:700; font-size:14px; text-align:center; padding:20px; z-index:1; }
   #speech{ position:absolute; top:8px; left:50%; transform:translateX(-50%); max-width:88%; background:#fff;
@@ -146,6 +153,7 @@
 
   <div id="stage">
     <div id="loadMsg">🌱 牧場を読み込み中…</div>
+    <div id="weatherFx"></div>
     <div id="speech"></div>
     <button id="muteBtn" aria-label="音">🔊</button>
     <button id="calBtn" aria-label="カレンダー">🗓</button>
@@ -206,7 +214,9 @@ const SFX=(function(){
     swing(){ noise(0.09,0.10,0,1400); tone(760,0.07,"triangle",0.08,0,300); },
     hit(){ tone(320,0.07,"square",0.15,0,150); noise(0.06,0.08,0,800); },
     slay(){ arp([523,392,330,247],0.05,"square",0.13); },
-    hurt(){ tone(230,0.2,"sawtooth",0.16,0,110); noise(0.08,0.09,0); } };
+    hurt(){ tone(230,0.2,"sawtooth",0.16,0,110); noise(0.08,0.09,0); },
+    splash(){ noise(0.2,0.13,0,1400); tone(420,0.12,"sine",0.08,0,180); },
+    bite(){ tone(1245,0.08,"square",0.15,0); tone(1660,0.1,"square",0.14,0.08); } };
 })();
 window.addEventListener("pointerdown",()=>SFX.unlock(),{once:true});
 
@@ -238,6 +248,20 @@ function yearOf(day){ return Math.floor((day-1)/(SEASON_LEN*4))+1; }
 function dayInSeason(day){ return ((day-1)%SEASON_LEN)+1; }
 function cropInSeason(crop,sk){ const cf=CROPS[crop]; return !!cf&&cf.seasons&&cf.seasons.indexOf(sk)>=0; }
 function farmBg(){ return SEASON_BG[curSeason().key]||"#6ea83f"; }
+// ===== 天候 =====
+const WEATHER={ sunny:{name:"はれ",emoji:"☀️"}, cloudy:{name:"くもり",emoji:"⛅"},
+  rain:{name:"あめ",emoji:"🌧"}, storm:{name:"あらし",emoji:"⛈"}, snow:{name:"ゆき",emoji:"❄️"} };
+function rollWeather(day){ const sk=seasonOf(day).key, r=Math.random();
+  if(sk==="winter") return r<0.5?"sunny":(r<0.72?"cloudy":"snow");
+  if(sk==="summer") return r<0.55?"sunny":(r<0.75?"cloudy":(r<0.95?"rain":"storm"));
+  if(sk==="spring") return r<0.45?"sunny":(r<0.7?"cloudy":"rain");
+  return r<0.4?"sunny":(r<0.7?"cloudy":"rain");   // autumn
+}
+function isRaining(){ return game.weather==="rain"||game.weather==="storm"; }
+function applyWeatherFx(){ const el=document.getElementById("weatherFx"); if(!el)return;
+  const indoors=GS&&(GS.indoor||GS.inDungeon), w=game.weather;
+  const show=!indoors&&(w==="rain"||w==="storm"||w==="snow");
+  el.className = show ? ("on "+(w==="snow"?"snow":"rain")) : ""; }
 // 作物の品質（収穫時に判定。売値に倍率。品評会で審査される）
 const QUAL=[ {name:"ふつう",emoji:"🥉",mult:1.0}, {name:"銀",emoji:"🥈",mult:1.3}, {name:"金",emoji:"🥇",mult:1.6} ];
 function rollQuality(){ const lv=game.level||1, fa=(game.fairy&&game.fairy.affection)||0;
@@ -328,6 +352,19 @@ const PRODUCTS={
   pudding:{name:"プリン",emoji:"🍮",sell:560},
   cake:{name:"ケーキ",emoji:"🎂",sell:980},
 };
+// ===== 釣り（魚は倉庫に入り、加工小屋で売る／料理に使う）=====
+const FISH=[
+  {key:"funa",   name:"ふな",     emoji:"🐟", sell:90,   w:5,   rain:0},
+  {key:"koi",    name:"こい",     emoji:"🎏", sell:170,  w:3,   rain:0},
+  {key:"rainbow",name:"にじます", emoji:"🐠", sell:260,  w:2,   rain:1},
+  {key:"namazu", name:"なまず",   emoji:"🐡", sell:340,  w:1,   rain:3},   // 雨で釣れやすい
+  {key:"nushi",  name:"ぬしさま", emoji:"🐉", sell:1500, w:0.15,rain:0.4}, // 伝説
+  {key:"boot",   name:"ながぐつ", emoji:"🥾", sell:0,    w:1,   rain:0},   // ハズレ（ネタ）
+];
+const FISH_BY=Object.fromEntries(FISH.map(f=>[f.key,f]));
+FISH.forEach(f=>{ PRODUCTS[f.key]={name:f.name,emoji:f.emoji,sell:f.sell}; });
+function catchFish(){ const rain=isRaining(); let tot=0; const ws=FISH.map(f=>{ const w=f.w+(rain?f.rain:0); tot+=w; return w; });
+  let r=Math.random()*tot; for(let i=0;i<FISH.length;i++){ r-=ws[i]; if(r<=0)return FISH[i]; } return FISH[0]; }
 // 加工レシピ（材料は倉庫から消費、翌朝に完成して倉庫へ）
 const RECIPES=[
   {key:"omelet", out:"omelet", emoji:"🍳", name:"オムレツ", need:{egg:1}},
@@ -349,6 +386,9 @@ const MEALS=[
   {key:"frenchfry",name:"フライドポテト",emoji:"🍟",need:{potato:2},sta:14},
   {key:"parfait",name:"いちごパフェ",emoji:"🍧",need:{strawberry:2,milk:1},sta:22},
   {key:"melonbowl",name:"すいかボウル",emoji:"🍉",need:{watermelon:1},sta:18},
+  // 魚料理（材料は倉庫の魚）
+  {key:"grillfish",name:"やきざかな",emoji:"🐟",need:{funa:1},sta:14},
+  {key:"sashimi",name:"おさしみ",emoji:"🍣",need:{koi:1},sta:20},
 ];
 // ===== ダンジョン＆戦闘 =====
 const BASE_HP=12, MAX_FLOOR=10;
@@ -445,7 +485,7 @@ const LINES_BROKE=["おかねが無い…これじゃ会いに行けないよ〜
 function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
 function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,exp:0,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], drops:[],
-  storage:{}, feed:0, cooking:[], seedmaking:[], fairy:{appeared:false,greeted:false,affection:0},
+  storage:{}, feed:0, cooking:[], seedmaking:[], weather:"sunny", fairy:{appeared:false,greeted:false,affection:0},
   hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0, lastEventDay:0, bag:{},
   hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false,bday:0}])) }; }
 let game=loadGame()||freshGame();
@@ -462,6 +502,7 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   if(!Array.isArray(g.drops))g.drops=Array.isArray(g.eggs)?g.eggs.map(e=>({tx:e.tx,ty:e.ty,kind:"egg"})):[]; delete g.eggs;
   g.animals.forEach(a=>{ if(!a.type)a.type="chicken"; if(a.fed==null)a.fed=false; });
   if(!g.storage||typeof g.storage!=="object")g.storage={}; if(g.feed==null)g.feed=0; if(!Array.isArray(g.cooking))g.cooking=[]; if(!Array.isArray(g.seedmaking))g.seedmaking=[];
+  if(!g.weather||!WEATHER[g.weather])g.weather=rollWeather(g.day);
   if(!g.fairy)g.fairy={appeared:false,greeted:false,affection:0};
   if(g.weapon==null||!WEAPON_BY[g.weapon])g.weapon="fist"; if(g.armor==null||!ARMOR_BY[g.armor])g.armor="cloth";
   if(g.accessory==null||!ACC_BY[g.accessory])g.accessory="none";
@@ -500,6 +541,7 @@ const DUNGEON_STAIR={x:DROOM.x0+5,y:DROOM.y0+1};          // 上中央の階段�
 const PASTURE={x0:12,y0:6,x1:16,y1:8};               // ニワトリの放牧エリア（タイル範囲）
 function inPasture(tx,ty){ return tx>=PASTURE.x0&&tx<=PASTURE.x1&&ty>=PASTURE.y0&&ty<=PASTURE.y1; }
 const POND=[[2,9],[3,9],[2,10],[3,10]];
+function isWaterTile(tx,ty){ return POND.some(([x,y])=>x===tx&&y===ty); }
 const TREES=[[16,2],[2,7],[3,8]];
 const SEEDER={x:4,y:11};   // 種メーカーの機械（畑の近く）
 const PATH=new Set(); for(let x=3;x<=14;x++)PATH.add(x+",5"); PATH.add("3,4"); PATH.add("14,4");
@@ -680,6 +722,8 @@ function drawKingC(x,frame){ const G="#5fd06a",Gd="#3fa850",Gl="#bff5b8",K="#214
   rc(x,7,t+4,3,3,K); rc(x,14,t+4,3,3,K); rc(x,7,t+4,1,1,"#fff"); rc(x,14,t+4,1,1,"#fff"); rc(x,9,t+9,6,1,K);
   rc(x,6,t-4,12,4,Y); rc(x,6,t-4,12,1,"#fff6c2"); rc(x,6,t-6,2,2,Y); rc(x,11,t-7,2,3,Y); rc(x,16,t-6,2,2,Y);
   rc(x,6,t-1,12,1,Yd); rc(x,11,t-4,2,2,"#ff5fa2"); }
+function drawBobberC(x){ rc(x,6,3,4,4,"#e8473f"); rc(x,6,3,4,1,"#ff7a6e"); rc(x,6,7,4,4,"#ffffff");
+  rc(x,7,6,2,1,"#9a9a9a"); rc(x,7,1,1,2,"#7a5230"); }                       // ウキ（赤白）
 function drawStairsC(x){ rc(x,0,0,16,16,"#2a2533");
   for(let i=0;i<4;i++){ const yy=2+i*3; rc(x,2+i*2,yy,12-i*2,3,"#564f5c"); rc(x,2+i*2,yy,12-i*2,1,"#7d7585"); }
   rc(x,6,1,4,1,"#ffd84d"); }
@@ -774,7 +818,7 @@ class Farm extends Phaser.Scene{
       add("tree_"+s.key,16,32,x=>drawTreeC(x,s.key)); });
     add("empty",16,16,drawEmptyC); add("soilDry",16,16,x=>drawSoilC(x,false)); add("soilWet",16,16,x=>drawSoilC(x,true));
     CROP_IDS.forEach(c=>{ for(let s=0;s<3;s++) add("crop_"+c+"_"+s,16,16,x=>drawPlantC(x,c,s)); });
-    add("tree",16,32,drawTreeC); add("pond",16,16,drawPondC); add("fence",16,16,drawFenceC); add("seeder",16,20,drawSeederC);
+    add("tree",16,32,drawTreeC); add("pond",16,16,drawPondC); add("fence",16,16,drawFenceC); add("seeder",16,20,drawSeederC); add("bobber",16,16,drawBobberC);
     add("house",48,40,drawHouseC); add("shop",48,40,drawShopC); add("animalshop",48,40,drawAnimalShopC);
     add("coop",16,16,drawCoopGroundC); add("egg",16,16,drawEggC); add("milk",16,16,drawMilkC);
     add("kitchen",48,40,drawKitchenC); add("hostclub",48,40,drawHostClubC); add("cave",32,40,drawCaveC);
@@ -824,10 +868,34 @@ class Farm extends Phaser.Scene{
   enterHouse(){ this.indoor=true; SFX.buy();
     this.player.setPosition((ROOM.x0+4)*TS+8,(ROOM.y0+ROOM.h-2)*TS+14); this.facing="up";
     this.cameras.main.setBounds(ROOM.x0*TS,ROOM.y0*TS,ROOM.w*TS,ROOM.h*TS); this.cameras.main.setBackgroundColor("#2a2030");
-    setSpeech("ただいま〜🏠 ベッドでねる・コンロで料理ができるよ",2800); }
+    this.cancelFishing(); applyWeatherFx(); setSpeech("ただいま〜🏠 ベッドでねる・コンロで料理ができるよ",2800); }
   exitHouse(){ this.indoor=false; SFX.morning();
     this.player.setPosition(HOUSE.trig.x*TS+8,HOUSE.trig.y*TS+14); this.facing="down";
-    this.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); this.cameras.main.setBackgroundColor(farmBg()); }
+    this.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); this.cameras.main.setBackgroundColor(farmBg()); applyWeatherFx(); }
+  // ===== 釣り =====
+  startFishing(){ if(this.fishState||this.indoor||this.inDungeon)return; if(!spend(1)){ SFX.error(); return; }
+    const f=frontTile(); this.fishState="casting"; SFX.splash();
+    if(this.bobberSpr)this.bobberSpr.destroy();
+    this.bobberSpr=this.add.image(f.x*TS+8,f.y*TS+8,"bobber").setDepth(99995);
+    this.bobberTween=this.tweens.add({targets:this.bobberSpr,y:f.y*TS+5,duration:650,yoyo:true,repeat:-1,ease:"Sine.inOut"});
+    setSpeech("🎣 ウキを投げた…あたりを待とう",2200);
+    this.fishTimer=this.time.delayedCall(900+Math.random()*2600,()=>this.onBite()); }
+  onBite(){ if(this.fishState!=="casting")return; this.fishState="biting"; SFX.bite();
+    if(this.bobberTween){ this.bobberTween.stop(); this.bobberTween=null; }
+    if(this.bobberSpr)this.tweens.add({targets:this.bobberSpr,y:this.bobberSpr.y+3,duration:80,yoyo:true,repeat:8});
+    setSpeech("！ きた！いますぐボタンを押して🎣",1500);
+    this.fishTimer=this.time.delayedCall(1400,()=>this.failFish()); }
+  reelFish(){ if(this.fishState!=="biting")return; const f=catchFish();
+    game.storage[f.key]=(game.storage[f.key]||0)+1; this.endFishing(); SFX.harvest();
+    const p=playerTile(); this.fxBurst(p.x,p.y,["#9fd0ff","#5cb6e8","#ffffff","#ffd84d"]); this.fxFloat(p.x,p.y,f.emoji+" "+f.name,"#3a8fce");
+    if(f.key==="nushi")setSpeech("でた〜〜！🐉 ぬしさま！！とんでもない大物！✨",3400);
+    else if(f.key==="boot")setSpeech("…ながぐつ釣れた🥾 まあそんな日もあるよね",2400);
+    else setSpeech(`${f.emoji} ${f.name}が釣れた！加工小屋(🍳)で売れるよ`,2400);
+    saveGame(); }
+  failFish(){ if(this.fishState!=="biting")return; this.endFishing(); SFX.error(); setSpeech("にげられた〜！🎣💨 もう一回ねらお",2000); }
+  endFishing(){ this.fishState=null; if(this.fishTimer){ this.fishTimer.remove(); this.fishTimer=null; }
+    if(this.bobberTween){ this.bobberTween.stop(); this.bobberTween=null; } if(this.bobberSpr){ this.bobberSpr.destroy(); this.bobberSpr=null; } }
+  cancelFishing(){ this.endFishing(); }
   // ===== ダンジョン =====
   buildDungeon(){ const sx=DROOM.x0,sy=DROOM.y0,ex=DROOM.x0+DROOM.w-1,ey=DROOM.y0+DROOM.h-1;
     for(let ty=sy;ty<=ey;ty++)for(let tx=sx;tx<=ex;tx++){
@@ -863,7 +931,7 @@ class Farm extends Phaser.Scene{
     game.dungeonMax=Math.max(game.dungeonMax||0,1);
     this.player.setPosition(DUNGEON_EXIT.x*TS+8,(DUNGEON_EXIT.y-1)*TS+14); this.facing="up";
     this.cameras.main.setBounds(DROOM.x0*TS,DROOM.y0*TS,DROOM.w*TS,DROOM.h*TS); this.cameras.main.setBackgroundColor("#1a1622");
-    this.spawnFloor(); setSpeech("ダンジョン 地下1階⚔ 敵を全滅させて階段をめざせ！",2800);
+    this.cancelFishing(); applyWeatherFx(); this.spawnFloor(); setSpeech("ダンジョン 地下1階⚔ 敵を全滅させて階段をめざせ！",2800);
     updateHpHud(); updatePotBtn(); saveGame(); }
   nextFloor(){ this.floor++; game.dungeonMax=Math.max(game.dungeonMax||0,this.floor);
     game.hp=Math.min(game.maxHp, game.hp+Math.ceil(game.maxHp*0.2));      // 階移動で小回復
@@ -874,7 +942,7 @@ class Farm extends Phaser.Scene{
   exitDungeon(){ this.inDungeon=false; SFX.morning(); this.clearEnemies(); this.clearChest(); this.player.setAlpha(1);
     if(this.stairSpr)this.stairSpr.setVisible(false); this.stairsActive=false;
     this.player.setPosition(DUNGEON.trig.x*TS+8,DUNGEON.trig.y*TS+14); this.facing="down";
-    this.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); this.cameras.main.setBackgroundColor(farmBg());
+    this.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); this.cameras.main.setBackgroundColor(farmBg()); applyWeatherFx();
     updateHpHud(); updatePotBtn(); saveGame(); }
   onFloorCleared(){ if(this.floor>=MAX_FLOOR){ SFX.expand();
       burst(innerWidth/2,innerHeight*0.4,["#ffd84d","#ff5fa2","#5fd8ff","#ffffff"],28); this.spawnChest();
@@ -1002,6 +1070,8 @@ function getContext(){ const p=playerTile();
     if(GS.chestActive&&GS.chestTile&&p.x===GS.chestTile.x&&p.y===GS.chestTile.y)return {type:"chest",ico:"🎁",label:"宝箱をあける",mark:GS.chestTile};
     if(p.x===DUNGEON_EXIT.x&&p.y===DUNGEON_EXIT.y)return {type:"dexit",ico:"🚪",label:"地上にもどる"};
     return {type:"attack",ico:"⚔",label:"こうげき"}; }
+  if(GS&&GS.fishState==="biting")return {type:"reel",ico:"🎣",label:"つる！いま！⚡"};
+  if(GS&&GS.fishState)return {type:"fishwait",ico:"🎣",label:"…あたり待ち",none:true};
   if(p.x===HOUSE.trig.x&&p.y===HOUSE.trig.y)return {type:"enter",ico:"🚪",label:"いえに入る",trig:HOUSE.trig};
   if(p.x===SHOP.trig.x&&p.y===SHOP.trig.y)return {type:"shop",ico:"🛒",label:"ショップ",trig:SHOP.trig};
   if(p.x===ANIMAL_SHOP.trig.x&&p.y===ANIMAL_SHOP.trig.y)return {type:"animalshop",ico:"🐔",label:"どうぶつ屋",trig:ANIMAL_SHOP.trig};
@@ -1012,6 +1082,7 @@ function getContext(){ const p=playerTile();
     if(dx*dx+dy*dy < (1.6*TS)*(1.6*TS))return {type:"fairy",ico:"🧚",label:"プレゼント"}; }
   const f=frontTile();
   if(f.x===SEEDER.x&&f.y===SEEDER.y)return {type:"seeder",ico:"🌱",label:"種メーカー",mark:SEEDER};
+  if(isWaterTile(f.x,f.y))return {type:"fish",ico:"🎣",label:"つりをする",mark:{x:f.x,y:f.y}};
   const drop=game.drops.find(e=>(e.tx===p.x&&e.ty===p.y)||(e.tx===f.x&&e.ty===f.y));
   if(drop){ const pr=PRODUCTS[drop.kind]||PRODUCTS.egg; return {type:"drop",drop,ico:pr.emoji,label:pr.name+"をひろう",mark:{x:drop.tx,y:drop.ty}}; }
   if(GS&&game.animals.length){ let near=null;
@@ -1034,6 +1105,9 @@ function doAction(){ const c=getContext(); if(!c){ toast("近づいてからボ�
   if(c.type==="animalshop"){ SFX.buy(); openAnimalShop(); return; }
   if(c.type==="kitchen"){ SFX.buy(); openKitchen(); return; }
   if(c.type==="seeder"){ SFX.buy(); openSeeder(); return; }
+  if(c.type==="fish"){ GS.startFishing(); return; }
+  if(c.type==="reel"){ GS.reelFish(); return; }
+  if(c.type==="fishwait"){ return; }
   if(c.type==="host"){ SFX.buy(); openHostClub(); return; }
   if(c.type==="dungeon"){ SFX.buy(); openDungeonGate(); return; }
   if(c.type==="attack"){ GS.attack(); return; }
@@ -1127,6 +1201,9 @@ function sleep(){ SFX.sleep(); let earn=0; const sold={}; const prevS=curSeason(
   const madeSeeds={}; game.seedmaking=game.seedmaking.filter(s=>{ if(s.ready<=game.day){ const y=seedYield(s.crop);
     game.seeds[s.crop]=(game.seeds[s.crop]||0)+y; madeSeeds[s.crop]=(madeSeeds[s.crop]||0)+y; return false; } return true; });
   if(!game.fairy.appeared && game.day>=FAIRY_DAY){ game.fairy.appeared=true; if(GS)GS.buildFairy(); }
+  // 天候：新しい日の天気を決める。雨なら畑が自動で水やり
+  game.weather=rollWeather(game.day);
+  if(isRaining()) game.tiles.forEach(t=>{ if(t.state==="planted")t.watered=true; });
   if(GS){ GS.refreshAllPlots(); GS.refreshDrops(); } renderSeedBar(); saveGame(); showMorning(earn,sold,dishes,seasonMsg,madeSeeds); }
 function seedYield(crop){ if(crop==="golden")return Math.random()<0.4?2:1; const r=Math.random(); return r<0.2?3:(r<0.7?2:1); }
 
@@ -1576,6 +1653,7 @@ function showMorning(earn,sold,dishes,seasonMsg,madeSeeds){ const s=curSeason();
   if(dishes>0)html += `<br>🍳 加工品が${dishes}こ完成！`;
   if(madeSeeds&&Object.keys(madeSeeds).length)html += `<br>🌱 種ができた：${Object.keys(madeSeeds).map(c=>`${CROPS[c].name}×${madeSeeds[c]}`).join("・")}`;
   if(seasonMsg)html = `<b>${seasonMsg}</b><br>`+html;
+  const wx=WEATHER[game.weather]; html = `<b>${wx.emoji} ${wx.name}</b>${isRaining()?"（畑は自動で水やり🌧）":(game.weather==="snow"?"（しんしん…❄️）":"")}<br>`+html;
   const ev=(game.lastEventDay!==game.day)?eventToday():null;
   if(ev)html += `<br><br>🎉 今日は <b>${ev.emoji}${ev.name}</b>！`;
   e.innerHTML=html;
@@ -1588,7 +1666,7 @@ document.getElementById("mGo").onclick=()=>{ document.getElementById("morning").
     if(bd) setSpeech(`今日は ${bd.name} のたんじょうび🎂！お店で会ってお祝いしよ♡`,4200);
     else setSpeech(pick(LINES_MORNING),2600);
     if(GS)GS.time.delayedCall(700,()=>GS.morningFairyWater()); }
-  maybeTriggerEvent(); };
+  applyWeatherFx(); maybeTriggerEvent(); };
 
 /* ===================== HUD・種バー・トースト等 ===================== */
 function updateHUD(){ const s=curSeason(); updateBagBtn();
@@ -1660,7 +1738,7 @@ function boot(){
   new Phaser.Game({ type:Phaser.AUTO, parent:"stage", pixelArt:true, roundPixels:true, backgroundColor:"#6ea83f",
     physics:{ default:"arcade", arcade:{ debug:false } },
     scale:{ mode:Phaser.Scale.RESIZE, parent:"stage" }, scene:[Farm] });
-  renderSeedBar(); updateHUD();
+  renderSeedBar(); updateHUD(); applyWeatherFx();
   setSpeech("わたしの牧場へようこそ🎀 十字キーで歩いて、畑に行ってみて！",4200);
 }
 window.addEventListener("load",boot);
