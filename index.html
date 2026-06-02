@@ -165,6 +165,14 @@
       padding:0 calc(16px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
       align-items:flex-end; pointer-events:none; }
     #dpad{ pointer-events:none; } #dpad .dbtn{ pointer-events:auto; } #actionBtn{ pointer-events:auto; }
+    /* シート（ショップ等）は横では詰めて1画面に多く表示 */
+    #overlay .sheet{ max-width:560px; max-height:94vh; padding-top:12px; }
+    #overlay .sheet h2{ font-size:17px; margin:0 0 7px; }
+    #overlay .sectionTtl{ margin:8px 4px 5px; }
+    #overlay .item{ padding:6px 9px; margin-bottom:7px; gap:9px; }
+    #overlay .item canvas, #overlay .item .ico{ width:34px; height:34px; }
+    #overlay .item .ico{ font-size:22px; }
+    #overlay .item .nm{ font-size:14px; }
   }
 
 </style>
