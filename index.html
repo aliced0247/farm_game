@@ -209,8 +209,11 @@ const CROPS={
   strawberry:{name:"いちご",seed:150,days:4,sell:360,leaf:"#4f9a3a",fruit:"#e8473f",fruit2:"#ffffff"},
   corn:{name:"トウモロコシ",seed:120,days:5,sell:400,leaf:"#6cbf3a",fruit:"#f5d23b",fruit2:"#e8a92b"},
   watermelon:{name:"すいか",seed:300,days:6,sell:780,leaf:"#5aa83a",fruit:"#46b85a",fruit2:"#2f7d3c"},
+  // 黄金作物：ショップでは買えず、ダンジョン10階ボスの宝箱からのみ手に入る限定の種
+  golden:{name:"おうごんカブ",seed:0,days:5,sell:1800,leaf:"#5fbf4f",fruit:"#ffd84d",fruit2:"#fff6b0",special:true},
 };
-const CROP_IDS=["turnip","potato","tomato","strawberry","corn","watermelon"];
+const CROP_IDS=["turnip","potato","tomato","strawberry","corn","watermelon","golden"];
+const GOLDEN_SEED_REWARD=3;   // ボスの宝箱でもらえる黄金の種の数
 const EXPANSIONS=[ {cols:6,rows:4,cost:1000}, {cols:6,rows:6,cost:3000} ];
 const CHICKEN_COST=800, EGG_SELL=80, MAX_CHICKENS=6;
 const COW_COST=2500, MILK_SELL=150, MAX_COWS=4, FEED_COST=25;
@@ -407,7 +410,7 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   return g; }catch(e){ return null; } }
 function resetGame(){ if(!confirm("本当に最初からはじめる？\nいまの畑・おかね・進行はすべて消えます。"))return;
   localStorage.removeItem(SAVE_KEY); game=freshGame(); activeSeed=null; closeSheet(); renderSeedBar();
-  if(GS){ GS.indoor=false; GS.inDungeon=false; GS.clearEnemies(); GS.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); GS.cameras.main.setBackgroundColor("#6ea83f");
+  if(GS){ GS.indoor=false; GS.inDungeon=false; GS.clearEnemies(); GS.clearChest(); GS.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); GS.cameras.main.setBackgroundColor("#6ea83f");
     GS.player.setPosition(8*16+8,10*16+14); GS.facing="down"; GS.buildPlots(); GS.buildAnimals(); GS.buildFairy(); }
   setSpeech("よ〜し、心機一転！またイチからがんばろ🎀"); }
 
@@ -462,7 +465,9 @@ function drawPlantC(x,crop,stage){ const cf=CROPS[crop], p=(a,b,w,h,c)=>rc(x,a,b
     else if(crop==="turnip"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(6,7,5,5,cf.fruit); p(6,11,5,1,"#d8d4c8"); p(6,6,2,2,cf.fruit2); p(8,5,2,2,cf.fruit2); }
     else if(crop==="potato"){ p(7,6,2,4,"#4d8a2c"); p(5,6,3,2,cf.leaf); p(9,7,3,2,cf.leaf); p(4,10,4,4,cf.fruit); p(8,10,4,4,cf.fruit); p(5,10,1,1,cf.fruit2); p(9,10,1,1,cf.fruit2); }
     else if(crop==="strawberry"){ p(5,7,6,2,cf.leaf); p(4,8,2,2,cf.leaf); p(10,8,2,2,cf.leaf); p(5,10,3,4,cf.fruit); p(9,10,3,4,cf.fruit); p(6,11,1,1,cf.fruit2); p(10,12,1,1,cf.fruit2); }
-    else if(crop==="watermelon"){ p(4,7,2,2,cf.leaf); p(5,8,7,6,cf.fruit); p(6,8,1,6,cf.fruit2); p(8,8,1,6,cf.fruit2); p(10,8,1,6,cf.fruit2); p(6,8,2,1,"#7fd98e"); } } }
+    else if(crop==="watermelon"){ p(4,7,2,2,cf.leaf); p(5,8,7,6,cf.fruit); p(6,8,1,6,cf.fruit2); p(8,8,1,6,cf.fruit2); p(10,8,1,6,cf.fruit2); p(6,8,2,1,"#7fd98e"); }
+    else if(crop==="golden"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf);
+      p(6,5,5,7,cf.fruit); p(6,5,5,1,cf.fruit2); p(6,5,1,7,cf.fruit2); p(7,7,1,1,"#ffffff"); p(9,9,1,1,"#fffef0"); p(5,4,1,1,"#fffef0"); p(11,6,1,1,"#fffef0"); } } }
 function drawTreeC(x){ rc(x,4,9,8,7,"#3f8a3a"); rc(x,3,11,10,4,"#4f9e44"); rc(x,5,8,6,3,"#5cb350"); rc(x,6,7,3,2,"#6cc25c");
   rc(x,7,16,2,8,"#7a5230"); rc(x,7,16,1,8,"#8a6038"); }
 function drawPondC(x){ rc(x,0,0,16,16,"#3f9ad6"); rc(x,1,1,14,3,"#56b0e6"); rc(x,3,5,2,1,"#bfe6ff"); rc(x,9,9,3,1,"#bfe6ff"); }
@@ -595,6 +600,12 @@ function drawKingC(x,frame){ const G="#5fd06a",Gd="#3fa850",Gl="#bff5b8",K="#214
 function drawStairsC(x){ rc(x,0,0,16,16,"#2a2533");
   for(let i=0;i<4;i++){ const yy=2+i*3; rc(x,2+i*2,yy,12-i*2,3,"#564f5c"); rc(x,2+i*2,yy,12-i*2,1,"#7d7585"); }
   rc(x,6,1,4,1,"#ffd84d"); }
+function drawChestC(x){ const W="#8a5a2a",Wd="#6e4520",G="#ffd84d",Gd="#e0a81f",L="#fff6b0";
+  rc(x,2,7,12,7,W); rc(x,2,11,12,1,Wd); rc(x,2,13,12,1,Wd);              // 箱本体
+  rc(x,2,4,12,4,G); rc(x,2,4,12,1,L); rc(x,2,7,12,1,Gd);                 // ふた
+  rc(x,2,4,1,10,Gd); rc(x,13,4,1,10,Gd);                                // ふち
+  rc(x,7,8,2,3,Gd); rc(x,7,9,2,1,"#7a5230");                            // 錠前
+  rc(x,4,2,1,1,"#ffffff"); rc(x,11,3,1,1,"#ffffff"); }                  // キラ
 function drawSlashC(x){ x.clearRect(0,0,18,18); x.strokeStyle="#ffffff"; x.lineWidth=3; x.lineCap="round";
   x.beginPath(); x.arc(3,9,10,-0.95,0.95); x.stroke();
   x.strokeStyle="#bfe9ff"; x.lineWidth=1.2; x.beginPath(); x.arc(3,9,10,-0.95,0.95); x.stroke(); }
@@ -666,7 +677,7 @@ class Farm extends Phaser.Scene{
     add("house",48,40,drawHouseC); add("shop",48,40,drawShopC); add("animalshop",48,40,drawAnimalShopC);
     add("coop",16,16,drawCoopGroundC); add("egg",16,16,drawEggC); add("milk",16,16,drawMilkC);
     add("kitchen",48,40,drawKitchenC); add("hostclub",48,40,drawHostClubC); add("cave",32,40,drawCaveC);
-    add("dfloor",16,16,drawDFloorC); add("dwall",16,16,drawDWallC); add("slash",18,18,drawSlashC); add("stairs",16,16,drawStairsC);
+    add("dfloor",16,16,drawDFloorC); add("dwall",16,16,drawDWallC); add("slash",18,18,drawSlashC); add("stairs",16,16,drawStairsC); add("chest",16,16,drawChestC);
     add("e_slime_0",16,16,x=>drawSlimeC(x,0)); add("e_slime_1",16,16,x=>drawSlimeC(x,1));
     add("e_redslime_0",16,16,x=>drawSlimeC(x,0,SLIME_COL.red)); add("e_redslime_1",16,16,x=>drawSlimeC(x,1,SLIME_COL.red));
     add("e_bat_0",16,16,x=>drawBatC(x,0)); add("e_bat_1",16,16,x=>drawBatC(x,1));
@@ -725,9 +736,22 @@ class Farm extends Phaser.Scene{
         this.solids.add(this.add.rectangle(tx*TS+8,ty*TS+8,TS,TS,0,0)); }
       else this.add.image(tx*TS,ty*TS,"dfloor").setOrigin(0).setDepth(0); }
     this.stairSpr=this.add.image(DUNGEON_STAIR.x*TS,DUNGEON_STAIR.y*TS,"stairs").setOrigin(0).setDepth(1).setVisible(false);
-    this.enemies=[]; this.floor=1; this.floorCleared=false; this.stairsActive=false; }
+    this.enemies=[]; this.floor=1; this.floorCleared=false; this.stairsActive=false;
+    this.chestSpr=null; this.chestActive=false; this.chestTile=null; }
   clearEnemies(){ (this.enemies||[]).forEach(e=>e.spr.destroy()); this.enemies=[]; }
-  spawnFloor(){ this.clearEnemies(); this.floorCleared=false; this.stairsActive=false;
+  clearChest(){ if(this.chestSpr){ this.chestSpr.destroy(); this.chestSpr=null; } this.chestActive=false; this.chestTile=null; }
+  spawnChest(){ this.clearChest(); const t={x:DROOM.x0+5,y:DROOM.y0+4}; this.chestTile=t;
+    const s=this.add.image(t.x*TS+8,t.y*TS+10,"chest").setOrigin(0.5,0.8).setDepth(t.y*TS+10).setScale(0);
+    this.tweens.add({targets:s,scale:1,duration:300,ease:"Back.out"}); this.chestSpr=s; this.chestActive=true;
+    this.fxBurst(t.x,t.y,["#ffd84d","#fff6b0","#ffffff"]); }
+  openChest(){ if(!this.chestActive)return; this.chestActive=false; const t=this.chestTile;
+    game.seeds.golden=(game.seeds.golden||0)+GOLDEN_SEED_REWARD; SFX.expand();
+    if(this.chestSpr){ const s=this.chestSpr; this.tweens.add({targets:s,y:s.y-6,alpha:0,duration:400,onComplete:()=>s.destroy()}); this.chestSpr=null; }
+    this.fxBurst(t.x,t.y,["#ffd84d","#fff6b0","#ffae00","#ffffff"]); this.fxFloat(t.x,t.y,"🌱おうごんの種+"+GOLDEN_SEED_REWARD,"#e0a81f");
+    burst(innerWidth/2,innerHeight*0.45,["#ffd84d","#fff6b0","#ffae00","#ffffff"],24);
+    setSpeech("宝箱から「おうごんカブの種」をゲット🌱✨ 畑で育てて大もうけ！",4400);
+    activeSeed="golden"; renderSeedBar(); saveGame(); }
+  spawnFloor(){ this.clearEnemies(); this.clearChest(); this.floorCleared=false; this.stairsActive=false;
     if(this.stairSpr)this.stairSpr.setVisible(false);
     const list=FLOORS[this.floor]||FLOORS[1];
     const ix0=(DROOM.x0+2)*TS, ix1=(DROOM.x0+DROOM.w-2)*TS, iy0=(DROOM.y0+2)*TS, iy1=(DROOM.y0+DROOM.h-4)*TS;
@@ -746,14 +770,14 @@ class Farm extends Phaser.Scene{
     SFX.morning(); this.spawnFloor();
     setSpeech(`地下${this.floor}階へおりた…${this.floor>=MAX_FLOOR?"つよい気配がする…👑":"⚔"}`,2800);
     updateHpHud(); saveGame(); }
-  exitDungeon(){ this.inDungeon=false; SFX.morning(); this.clearEnemies(); this.player.setAlpha(1);
+  exitDungeon(){ this.inDungeon=false; SFX.morning(); this.clearEnemies(); this.clearChest(); this.player.setAlpha(1);
     if(this.stairSpr)this.stairSpr.setVisible(false); this.stairsActive=false;
     this.player.setPosition(DUNGEON.trig.x*TS+8,DUNGEON.trig.y*TS+14); this.facing="down";
     this.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); this.cameras.main.setBackgroundColor("#6ea83f");
     updateHpHud(); updatePotBtn(); saveGame(); }
   onFloorCleared(){ if(this.floor>=MAX_FLOOR){ SFX.expand();
-      burst(innerWidth/2,innerHeight*0.4,["#ffd84d","#ff5fa2","#5fd8ff","#ffffff"],28);
-      setSpeech("ダンジョン制覇🎉👑 スライムキングをたおした！下の扉から地上へ",4200); }
+      burst(innerWidth/2,innerHeight*0.4,["#ffd84d","#ff5fa2","#5fd8ff","#ffffff"],28); this.spawnChest();
+      setSpeech("ダンジョン制覇🎉👑 スライムキングをたおした！宝箱があらわれた！🎁",4200); }
     else { this.stairsActive=true; if(this.stairSpr)this.stairSpr.setVisible(true); SFX.expand();
       setSpeech("全滅させた！▲上の階段で次の階へ（▼下の扉で地上）",3200); } }
   updateEnemies(time,dt){ const bx0=(DROOM.x0+1)*TS+5,bx1=(DROOM.x0+DROOM.w-1)*TS-5,by0=(DROOM.y0+1)*TS+5,by1=(DROOM.y0+DROOM.h-1)*TS-5;
@@ -867,7 +891,9 @@ function getContext(){ const p=playerTile();
     if(HOME_BED.some(([x,y])=>x===f.x&&y===f.y))return {type:"sleepbed",ico:"🛏",label:"ねる",mark:{x:HOME_BED[0][0],y:HOME_BED[0][1]}};
     if(HOME_STOVE.some(([x,y])=>x===f.x&&y===f.y))return {type:"cook",ico:"🍳",label:"料理する",mark:{x:HOME_STOVE[0][0],y:HOME_STOVE[0][1]}};
     return null; }
-  if(GS&&GS.inDungeon){ if(p.x===DUNGEON_EXIT.x&&p.y===DUNGEON_EXIT.y)return {type:"dexit",ico:"🚪",label:"地上にもどる"};
+  if(GS&&GS.inDungeon){
+    if(GS.chestActive&&GS.chestTile&&p.x===GS.chestTile.x&&p.y===GS.chestTile.y)return {type:"chest",ico:"🎁",label:"宝箱をあける",mark:GS.chestTile};
+    if(p.x===DUNGEON_EXIT.x&&p.y===DUNGEON_EXIT.y)return {type:"dexit",ico:"🚪",label:"地上にもどる"};
     return {type:"attack",ico:"⚔",label:"こうげき"}; }
   if(p.x===HOUSE.trig.x&&p.y===HOUSE.trig.y)return {type:"enter",ico:"🚪",label:"いえに入る",trig:HOUSE.trig};
   if(p.x===SHOP.trig.x&&p.y===SHOP.trig.y)return {type:"shop",ico:"🛒",label:"ショップ",trig:SHOP.trig};
@@ -901,6 +927,7 @@ function doAction(){ const c=getContext(); if(!c){ toast("近づいてからボ�
   if(c.type==="host"){ SFX.buy(); openHostClub(); return; }
   if(c.type==="dungeon"){ SFX.buy(); openDungeonGate(); return; }
   if(c.type==="attack"){ GS.attack(); return; }
+  if(c.type==="chest"){ GS.openChest(); return; }
   if(c.type==="dexit"){ GS.exitDungeon(); return; }
   if(c.type==="feed"){ feedAnimals(); return; }
   if(c.type==="fairy"){ SFX.plant(); openFairy(); return; }
@@ -982,7 +1009,7 @@ function closeSheet(){ overlay.classList.remove("show"); }
 function drawIcon(cv,crop){ const x=cv.getContext("2d"); x.clearRect(0,0,cv.width,cv.height); x.imageSmoothingEnabled=false;
   const a=mkCanvas(16,16,c=>{ drawSoilC(c,false); drawPlantC(c,crop,2); }); x.drawImage(a,0,0,cv.width,cv.height); }
 function openShop(){ let h=`<h2>🛒 ショップ</h2><div class="sectionTtl">🌱 たね</div>`;
-  CROP_IDS.forEach(c=>{ const cf=CROPS[c],ok=game.money>=cf.seed;
+  CROP_IDS.forEach(c=>{ const cf=CROPS[c]; if(cf.special)return; const ok=game.money>=cf.seed;
     h+=`<div class="item"><canvas width="64" height="64" data-icon="${c}"></canvas><div class="info"><div class="nm">${cf.name}</div>
       <div class="sub">種 ${cf.seed}円 ・ ${cf.days}日 ・ 売値 ${cf.sell}円</div><div class="own">手持ち：${game.seeds[c]}こ</div></div>
       <button class="act" data-buy="${c}" ${ok?"":"disabled"}>買う</button></div>`; });
