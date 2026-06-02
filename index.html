@@ -42,6 +42,11 @@
   #hpHud #hpTxt{ font-size:12px; font-weight:800; color:#ffd9df; line-height:1; }
   #hpHud #hpBarWrap{ width:100px; height:6px; background:#3a2030; border-radius:4px; overflow:hidden; }
   #hpHud #hpBar{ height:100%; width:100%; background:linear-gradient(90deg,#ff5b6e,#ff9eb0); transition:width .2s; }
+  #potBtn{ position:absolute; top:60px; left:8px; z-index:6; display:none; align-items:center; gap:5px; cursor:pointer;
+    background:#1a1622dd; border:2px solid #6b4a2b; border-radius:11px; padding:6px 11px; box-shadow:0 3px 0 #120c1a; }
+  #potBtn:active{ transform:translateY(2px); box-shadow:0 1px 0 #120c1a; }
+  #potBtn .pe{ font-size:18px; } #potBtn .pl{ font-size:11px; font-weight:800; color:#bff5b8; }
+  #potBtn .pn{ font-size:13px; font-weight:900; color:#fff; }
 
   #seedbar{ display:flex; align-items:center; gap:8px; overflow-x:auto; padding:8px 10px; background:#7a5733;
     box-shadow:inset 0 3px 6px rgba(0,0,0,.22); -webkit-overflow-scrolling:touch; height:86px; box-sizing:border-box; flex:none; }
@@ -135,6 +140,7 @@
     <div id="speech"></div>
     <button id="muteBtn" aria-label="音">🔊</button>
     <div id="hpHud"><span id="hpTxt"></span><div id="hpBarWrap"><div id="hpBar"></div></div></div>
+    <div id="potBtn"><span class="pe">🧪</span><span class="pl">のむ</span><span class="pn">0</span></div>
   </div>
 
   <div id="seedbar"></div>
@@ -277,37 +283,90 @@ const MEALS=[
   {key:"cakeplate",name:"ごほうびケーキ",emoji:"🍰",need:{cake:1},sta:25},
 ];
 // ===== ダンジョン＆戦闘 =====
-const BASE_HP=12;
+const BASE_HP=12, MAX_FLOOR=10;
 // 敵から落ちる素材（クラフト専用・倉庫とは別の game.mats に貯まる）
 const MATERIALS={
   slimejelly:{name:"スライムゼリー",emoji:"🟢"},
+  wing:{name:"コウモリのはね",emoji:"🪽"},
   ore:{name:"こうせき",emoji:"🪨"},
+  bone:{name:"ほね",emoji:"🦴"},
   crystal:{name:"クリスタル",emoji:"🔮"},
+  royaljelly:{name:"キングゼリー",emoji:"👑"},
 };
-// 武器（攻撃力）・防具（防御＆最大HP）。fist/cloth は最初から装備
+// 武器（攻撃力）。fist は最初から
 const WEAPONS=[
-  {key:"fist",   name:"すで",            emoji:"👊", atk:1, need:null},
-  {key:"copper", name:"どうのつるぎ",     emoji:"🗡", atk:3, need:{slimejelly:5}},
-  {key:"iron",   name:"はがねのつるぎ",   emoji:"⚔",  atk:5, need:{ore:4,slimejelly:3}},
-  {key:"crystal",name:"クリスタルソード", emoji:"🌟", atk:8, need:{crystal:3,ore:5}},
+  {key:"fist",   name:"すで",            emoji:"👊",  atk:1,  need:null},
+  {key:"copper", name:"どうのつるぎ",     emoji:"🗡",  atk:3,  need:{slimejelly:5}},
+  {key:"iron",   name:"はがねのつるぎ",   emoji:"⚔",   atk:5,  need:{ore:4,slimejelly:3}},
+  {key:"crystal",name:"クリスタルソード", emoji:"🌟",  atk:8,  need:{crystal:3,ore:5}},
+  {key:"bone",   name:"ボーンソード",     emoji:"🦴",  atk:11, need:{bone:6,crystal:3}},
+  {key:"king",   name:"おうじゃの剣",     emoji:"🗡️", atk:15, need:{royaljelly:3,crystal:4}},
 ];
+// 防具（防御＆最大HP）。cloth は最初から
 const ARMORS=[
-  {key:"cloth",  name:"ぬののふく",       emoji:"👕", def:0, hp:0,  need:null},
-  {key:"jelly",  name:"ゼリーアーマー",   emoji:"🦺", def:1, hp:6,  need:{slimejelly:6}},
-  {key:"iron",   name:"はがねのよろい",   emoji:"🛡", def:3, hp:10, need:{ore:6,slimejelly:4}},
-  {key:"crystal",name:"クリスタルメイル", emoji:"💠", def:5, hp:18, need:{crystal:4,ore:6}},
+  {key:"cloth",  name:"ぬののふく",       emoji:"👕", def:0,  hp:0,  need:null},
+  {key:"jelly",  name:"ゼリーアーマー",   emoji:"🦺", def:1,  hp:6,  need:{slimejelly:6}},
+  {key:"iron",   name:"はがねのよろい",   emoji:"🛡", def:3,  hp:10, need:{ore:6,slimejelly:4}},
+  {key:"crystal",name:"クリスタルメイル", emoji:"💠", def:5,  hp:18, need:{crystal:4,ore:6}},
+  {key:"bone",   name:"ボーンアーマー",   emoji:"☠️", def:7,  hp:26, need:{bone:6,crystal:4}},
+  {key:"king",   name:"おうじゃの鎧",     emoji:"👑", def:10, hp:40, need:{royaljelly:3,crystal:5}},
+];
+// アクセサリー（攻撃・防御・HPに加算）。none は装備なし
+const ACCESSORIES=[
+  {key:"none",   name:"（なし）",         emoji:"➖", atk:0, def:0, hp:0,  need:null},
+  {key:"ring",   name:"ちからの指輪",     emoji:"💍", atk:2, def:0, hp:0,  need:{ore:5}},
+  {key:"amulet", name:"まもりのお守り",   emoji:"🧿", atk:0, def:2, hp:4,  need:{bone:4}},
+  {key:"feather",name:"はねかざり",       emoji:"🪶", atk:1, def:1, hp:6,  need:{wing:6}},
+  {key:"crown",  name:"おうのかんむり",   emoji:"👑", atk:3, def:3, hp:12, need:{royaljelly:2,crystal:3}},
+];
+// ポーション（消耗品・HP回復）。倉庫やmatsとは別の game.items に個数で貯まる
+const POTIONS=[
+  {key:"potion",   name:"ポーション",     emoji:"🧪", heal:12, need:{slimejelly:3}},
+  {key:"hipotion", name:"ハイポーション", emoji:"🧉", heal:30, need:{slimejelly:4,crystal:1}},
 ];
 const WEAPON_BY=Object.fromEntries(WEAPONS.map(w=>[w.key,w]));
 const ARMOR_BY=Object.fromEntries(ARMORS.map(a=>[a.key,a]));
-// スライムの強さ
-const SLIME_HP=4, SLIME_ATK=2, SLIME_SIGHT=46, SLIME_CHASE=26, SLIME_WANDER=12, DUNGEON_SLIMES=5;
-function weaponAtk(){ return (WEAPON_BY[game.weapon]||WEAPON_BY.fist).atk; }
-function armorDef(){ return (ARMOR_BY[game.armor]||ARMOR_BY.cloth).def; }
-function recalcHp(){ game.maxHp=BASE_HP+((ARMOR_BY[game.armor]||ARMOR_BY.cloth).hp);
+const ACC_BY=Object.fromEntries(ACCESSORIES.map(a=>[a.key,a]));
+const POTION_BY=Object.fromEntries(POTIONS.map(p=>[p.key,p]));
+// 敵の種類（2フレームのテクスチャ tex_0 / tex_1）
+const SLIME_COL={ green:{g:"#5fd06a",gd:"#3fa850",gl:"#bff5b8",k:"#214a26"},
+                  red:  {g:"#e8584f",gd:"#b53a36",gl:"#ffb3ac",k:"#5a1f1c"} };
+const ENEMIES={
+  slime:   {name:"スライム",       hp:4,  atk:2, sight:46,  chase:26, wander:12, size:16, tex:"e_slime"},
+  bat:     {name:"コウモリ",       hp:3,  atk:2, sight:72,  chase:42, wander:26, size:14, tex:"e_bat", erratic:true},
+  redslime:{name:"レッドスライム", hp:9,  atk:3, sight:50,  chase:24, wander:12, size:16, tex:"e_redslime"},
+  golem:   {name:"ゴーレム",       hp:18, atk:4, sight:40,  chase:16, wander:8,  size:16, tex:"e_golem"},
+  ghost:   {name:"ゴースト",       hp:7,  atk:3, sight:82,  chase:30, wander:18, size:16, tex:"e_ghost", erratic:true},
+  king:    {name:"スライムキング", hp:70, atk:5, sight:260, chase:18, wander:10, size:24, tex:"e_king", boss:true},
+};
+// 各階のスポーン（地下1〜10階。10階はボス）
+const FLOORS={
+  1:["slime","slime","slime","slime"],
+  2:["slime","slime","slime","slime","slime"],
+  3:["slime","slime","slime","bat","bat"],
+  4:["slime","slime","bat","bat","redslime"],
+  5:["bat","bat","redslime","redslime","redslime"],
+  6:["redslime","redslime","redslime","golem","bat"],
+  7:["redslime","redslime","golem","golem","ghost"],
+  8:["golem","golem","ghost","ghost","redslime"],
+  9:["golem","golem","golem","ghost","ghost"],
+  10:["king","redslime","redslime"],
+};
+function accBonus(){ return ACC_BY[game.accessory]||ACC_BY.none; }
+function weaponAtk(){ return (WEAPON_BY[game.weapon]||WEAPON_BY.fist).atk + accBonus().atk; }
+function armorDef(){ return (ARMOR_BY[game.armor]||ARMOR_BY.cloth).def + accBonus().def; }
+function recalcHp(){ game.maxHp=BASE_HP+(ARMOR_BY[game.armor]||ARMOR_BY.cloth).hp+accBonus().hp;
   if(game.hp==null||game.hp>game.maxHp)game.hp=game.maxHp; }
-// 敵を倒したときのドロップ抽選
-function rollDrop(){ const g={ slimejelly: 1+(Math.random()<0.4?1:0) };
-  if(Math.random()<0.28)g.ore=1; if(Math.random()<0.06)g.crystal=1; return g; }
+// 敵タイプごとのドロップ抽選
+function dropFor(type){ const g={}, add=(k,n)=>{ g[k]=(g[k]||0)+n; };
+  if(type==="slime"){ add("slimejelly",1+(Math.random()<0.4?1:0)); if(Math.random()<0.28)add("ore",1); if(Math.random()<0.06)add("crystal",1); }
+  else if(type==="bat"){ add("wing",1); if(Math.random()<0.3)add("slimejelly",1); if(Math.random()<0.08)add("crystal",1); }
+  else if(type==="redslime"){ add("slimejelly",2); if(Math.random()<0.5)add("ore",1); if(Math.random()<0.12)add("crystal",1); }
+  else if(type==="golem"){ add("ore",2+(Math.random()<0.5?1:0)); if(Math.random()<0.4)add("crystal",1); if(Math.random()<0.15)add("bone",1); }
+  else if(type==="ghost"){ add("bone",1+(Math.random()<0.5?1:0)); if(Math.random()<0.25)add("crystal",1); }
+  else if(type==="king"){ add("royaljelly",3); add("crystal",3); add("ore",4); }
+  return g; }
+function potionCount(){ return POTIONS.reduce((s,p)=>s+(game.items[p.key]||0),0); }
 
 function prodInfo(id){ if(CROPS[id])return {name:CROPS[id].name,sell:CROPS[id].sell};
   if(PRODUCTS[id])return {name:PRODUCTS[id].name,sell:PRODUCTS[id].sell}; return {name:id,sell:0}; }
@@ -319,7 +378,7 @@ function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
 function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,exp:0,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], drops:[],
   storage:{}, feed:0, cooking:[], fairy:{appeared:false,greeted:false,affection:0},
-  hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", mats:{}, crafted:{},
+  hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0,
   hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false}])) }; }
 let game=loadGame()||freshGame();
 let activeSeed=null;
@@ -336,8 +395,10 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   if(!g.storage||typeof g.storage!=="object")g.storage={}; if(g.feed==null)g.feed=0; if(!Array.isArray(g.cooking))g.cooking=[];
   if(!g.fairy)g.fairy={appeared:false,greeted:false,affection:0};
   if(g.weapon==null||!WEAPON_BY[g.weapon])g.weapon="fist"; if(g.armor==null||!ARMOR_BY[g.armor])g.armor="cloth";
-  if(!g.mats||typeof g.mats!=="object")g.mats={}; if(!g.crafted||typeof g.crafted!=="object")g.crafted={};
-  g.maxHp=BASE_HP+(ARMOR_BY[g.armor].hp); if(g.hp==null||g.hp>g.maxHp||g.hp<0)g.hp=g.maxHp;
+  if(g.accessory==null||!ACC_BY[g.accessory])g.accessory="none";
+  if(!g.mats||typeof g.mats!=="object")g.mats={}; if(!g.items||typeof g.items!=="object")g.items={};
+  if(!g.crafted||typeof g.crafted!=="object")g.crafted={}; if(g.dungeonMax==null)g.dungeonMax=0;
+  g.maxHp=BASE_HP+ARMOR_BY[g.armor].hp+ACC_BY[g.accessory].hp; if(g.hp==null||g.hp>g.maxHp||g.hp<0)g.hp=g.maxHp;
   if(!g.hosts)g.hosts={};
   HOSTS.forEach(h=>{ if(!g.hosts[h.id])g.hosts[h.id]={spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false};
     else { const s=g.hosts[h.id]; if(s.dates==null)s.dates=0; if(s.dateDay==null)s.dateDay=0; if(s.love==null)s.love=0; if(s.lover==null)s.lover=false; } });
@@ -365,7 +426,8 @@ const HOME_BED=[[ROOM.x0+1,ROOM.y0+1],[ROOM.x0+2,ROOM.y0+1]];
 const HOME_STOVE=[[ROOM.x0+ROOM.w-3,ROOM.y0+1],[ROOM.x0+ROOM.w-2,ROOM.y0+1]];
 // ダンジョンの戦闘エリア（家と同じくマップ外の領域に作る）
 const DROOM={x0:20,y0:14,w:11,h:9};
-const DUNGEON_EXIT={x:DROOM.x0+5,y:DROOM.y0+DROOM.h-1};
+const DUNGEON_EXIT={x:DROOM.x0+5,y:DROOM.y0+DROOM.h-1};   // 下中央の扉＝地上へ
+const DUNGEON_STAIR={x:DROOM.x0+5,y:DROOM.y0+1};          // 上中央の階段＝次の階へ
 const PASTURE={x0:12,y0:6,x1:16,y1:8};               // ニワトリの放牧エリア（タイル範囲）
 function inPasture(tx,ty){ return tx>=PASTURE.x0&&tx<=PASTURE.x1&&ty>=PASTURE.y0&&ty<=PASTURE.y1; }
 const POND=[[2,9],[3,9],[2,10],[3,10]];
@@ -506,11 +568,33 @@ function drawDFloorC(x){ rc(x,0,0,16,16,"#3a3340"); rc(x,0,0,16,1,"#473e50");
   rc(x,4,5,2,1,"#332c3a"); rc(x,11,10,2,1,"#332c3a"); rc(x,8,3,1,1,"#46404f"); }
 function drawDWallC(x){ rc(x,0,0,16,16,"#6b6470"); rc(x,0,10,16,6,"#564f5c"); rc(x,0,9,16,1,"#7d7585");
   rc(x,5,2,1,7,"#564f5c"); rc(x,11,11,1,4,"#46404c"); rc(x,2,1,4,2,"#7d7585"); }
-function drawSlimeC(x,frame){ const G="#5fd06a",Gd="#3fa850",Gl="#bff5b8",K="#214a26";
-  const t=frame?6:4, h=14-t;
-  rc(x,2,t,12,h,G); rc(x,2,t,12,2,Gl); rc(x,2,12,12,2,Gd); rc(x,2,t,2,h,Gd); rc(x,12,t,2,h,Gd);
-  rc(x,5,t+3,2,2,K); rc(x,9,t+3,2,2,K); rc(x,5,t+3,1,1,"#fff"); rc(x,9,t+3,1,1,"#fff");
-  rc(x,6,t+6,4,1,K); }
+function drawSlimeC(x,frame,col){ col=col||{g:"#5fd06a",gd:"#3fa850",gl:"#bff5b8",k:"#214a26"};
+  const g=col.g,gd=col.gd,gl=col.gl,k=col.k, t=frame?6:4, h=14-t;
+  rc(x,2,t,12,h,g); rc(x,2,t,12,2,gl); rc(x,2,12,12,2,gd); rc(x,2,t,2,h,gd); rc(x,12,t,2,h,gd);
+  rc(x,5,t+3,2,2,k); rc(x,9,t+3,2,2,k); rc(x,5,t+3,1,1,"#fff"); rc(x,9,t+3,1,1,"#fff");
+  rc(x,6,t+6,4,1,k); }
+function drawBatC(x,frame){ const B="#4a3a5a",Bd="#352a42",K="#ffd84d"; const wy=frame?5:7;
+  rc(x,1,wy,5,4,B); rc(x,10,wy,5,4,B); rc(x,1,wy,5,1,Bd); rc(x,10,wy,5,1,Bd);   // はね
+  rc(x,6,6,4,5,B); rc(x,6,6,4,1,Bd); rc(x,6,4,1,2,B); rc(x,9,4,1,2,B);            // 体・耳
+  rc(x,7,8,1,1,K); rc(x,8,8,1,1,K); }                                            // 目
+function drawGolemC(x,frame){ const R="#8a8470",Rd="#6b6658",Rl="#a8a18a",E="#ff7a3a";
+  rc(x,4,3,8,10,R); rc(x,4,3,8,2,Rl); rc(x,4,11,8,2,Rd);                          // 胴
+  rc(x,2,5,2,5,R); rc(x,12,5,2,5,R); rc(x,5,13,2,3,Rd); rc(x,9,13,2,3,Rd);        // 腕・脚
+  rc(x,5,5,2,2,E); rc(x,9,5,2,2,E);                                              // 目（発光）
+  if(frame)rc(x,2,4,2,2,Rd); else rc(x,12,4,2,2,Rd); }
+function drawGhostC(x,frame){ const W="#e8eaff",K="#3a3550"; x.save(); x.globalAlpha=0.85;
+  rc(x,3,3,10,9,W); rc(x,3,3,10,2,"#ffffff"); const b=frame?0:1;
+  rc(x,3,12,3,2,W); rc(x,7,12,3,2+b,W); rc(x,11,12,2,2,W);                        // ゆらゆら裾
+  rc(x,5,6,2,2,K); rc(x,9,6,2,2,K); rc(x,5,6,1,1,"#fff"); rc(x,9,6,1,1,"#fff"); x.restore(); }
+function drawKingC(x,frame){ const G="#5fd06a",Gd="#3fa850",Gl="#bff5b8",K="#214a26",Y="#ffd84d",Yd="#e0a81f";
+  const t=frame?8:6, h=21-t;
+  rc(x,3,t,18,h,G); rc(x,3,t,18,3,Gl); rc(x,3,18,18,3,Gd); rc(x,3,t,3,h,Gd); rc(x,18,t,3,h,Gd);
+  rc(x,7,t+4,3,3,K); rc(x,14,t+4,3,3,K); rc(x,7,t+4,1,1,"#fff"); rc(x,14,t+4,1,1,"#fff"); rc(x,9,t+9,6,1,K);
+  rc(x,6,t-4,12,4,Y); rc(x,6,t-4,12,1,"#fff6c2"); rc(x,6,t-6,2,2,Y); rc(x,11,t-7,2,3,Y); rc(x,16,t-6,2,2,Y);
+  rc(x,6,t-1,12,1,Yd); rc(x,11,t-4,2,2,"#ff5fa2"); }
+function drawStairsC(x){ rc(x,0,0,16,16,"#2a2533");
+  for(let i=0;i<4;i++){ const yy=2+i*3; rc(x,2+i*2,yy,12-i*2,3,"#564f5c"); rc(x,2+i*2,yy,12-i*2,1,"#7d7585"); }
+  rc(x,6,1,4,1,"#ffd84d"); }
 function drawSlashC(x){ x.clearRect(0,0,18,18); x.strokeStyle="#ffffff"; x.lineWidth=3; x.lineCap="round";
   x.beginPath(); x.arc(3,9,10,-0.95,0.95); x.stroke();
   x.strokeStyle="#bfe9ff"; x.lineWidth=1.2; x.beginPath(); x.arc(3,9,10,-0.95,0.95); x.stroke(); }
@@ -582,8 +666,13 @@ class Farm extends Phaser.Scene{
     add("house",48,40,drawHouseC); add("shop",48,40,drawShopC); add("animalshop",48,40,drawAnimalShopC);
     add("coop",16,16,drawCoopGroundC); add("egg",16,16,drawEggC); add("milk",16,16,drawMilkC);
     add("kitchen",48,40,drawKitchenC); add("hostclub",48,40,drawHostClubC); add("cave",32,40,drawCaveC);
-    add("dfloor",16,16,drawDFloorC); add("dwall",16,16,drawDWallC); add("slash",18,18,drawSlashC);
-    add("slime_0",16,16,x=>drawSlimeC(x,0)); add("slime_1",16,16,x=>drawSlimeC(x,1));
+    add("dfloor",16,16,drawDFloorC); add("dwall",16,16,drawDWallC); add("slash",18,18,drawSlashC); add("stairs",16,16,drawStairsC);
+    add("e_slime_0",16,16,x=>drawSlimeC(x,0)); add("e_slime_1",16,16,x=>drawSlimeC(x,1));
+    add("e_redslime_0",16,16,x=>drawSlimeC(x,0,SLIME_COL.red)); add("e_redslime_1",16,16,x=>drawSlimeC(x,1,SLIME_COL.red));
+    add("e_bat_0",16,16,x=>drawBatC(x,0)); add("e_bat_1",16,16,x=>drawBatC(x,1));
+    add("e_golem_0",16,16,x=>drawGolemC(x,0)); add("e_golem_1",16,16,x=>drawGolemC(x,1));
+    add("e_ghost_0",16,16,x=>drawGhostC(x,0)); add("e_ghost_1",16,16,x=>drawGhostC(x,1));
+    add("e_king_0",24,24,x=>drawKingC(x,0)); add("e_king_1",24,24,x=>drawKingC(x,1));
     add("homefloor",16,16,drawHomeFloorC); add("homewall",16,16,drawHomeWallC); add("homedoor",16,16,drawHomeDoorC);
     add("bed",32,20,drawBedC); add("stove",32,18,drawStoveC);
     add("chicken_0",16,16,x=>drawChickenC(x,0)); add("chicken_1",16,16,x=>drawChickenC(x,1));
@@ -635,35 +724,52 @@ class Farm extends Phaser.Scene{
       else if(wall){ this.add.image(tx*TS,ty*TS,"dwall").setOrigin(0).setDepth(ty*TS+8);
         this.solids.add(this.add.rectangle(tx*TS+8,ty*TS+8,TS,TS,0,0)); }
       else this.add.image(tx*TS,ty*TS,"dfloor").setOrigin(0).setDepth(0); }
-    this.enemies=[]; }
+    this.stairSpr=this.add.image(DUNGEON_STAIR.x*TS,DUNGEON_STAIR.y*TS,"stairs").setOrigin(0).setDepth(1).setVisible(false);
+    this.enemies=[]; this.floor=1; this.floorCleared=false; this.stairsActive=false; }
   clearEnemies(){ (this.enemies||[]).forEach(e=>e.spr.destroy()); this.enemies=[]; }
-  spawnEnemies(n){ this.clearEnemies();
-    const ix0=(DROOM.x0+2)*TS, ix1=(DROOM.x0+DROOM.w-2)*TS, iy0=(DROOM.y0+2)*TS, iy1=(DROOM.y0+DROOM.h-3)*TS;
-    for(let i=0;i<n;i++){ const x=ix0+Math.random()*(ix1-ix0), y=iy0+Math.random()*(iy1-iy0);
-      const spr=this.add.image(x,y,"slime_0").setOrigin(0.5,0.8).setDepth(y);
-      this.enemies.push({spr,x,y,vx:0,vy:0,t:Math.random()*2,hp:SLIME_HP,hurtT:0}); } }
-  enterDungeon(){ this.inDungeon=true; SFX.buy(); recalcHp(); game.hp=game.maxHp; this.playerInvuln=0; this.dungeonCleared=false;
+  spawnFloor(){ this.clearEnemies(); this.floorCleared=false; this.stairsActive=false;
+    if(this.stairSpr)this.stairSpr.setVisible(false);
+    const list=FLOORS[this.floor]||FLOORS[1];
+    const ix0=(DROOM.x0+2)*TS, ix1=(DROOM.x0+DROOM.w-2)*TS, iy0=(DROOM.y0+2)*TS, iy1=(DROOM.y0+DROOM.h-4)*TS;
+    list.forEach(type=>{ const E=ENEMIES[type]; const x=ix0+Math.random()*(ix1-ix0), y=iy0+Math.random()*(iy1-iy0);
+      const spr=this.add.image(x,y,E.tex+"_0").setOrigin(0.5,0.8).setDepth(y);
+      this.enemies.push({type,spr,x,y,vx:0,vy:0,t:Math.random()*2,hp:E.hp,hurtT:0,seed:Math.random()*100}); }); }
+  enterDungeon(){ this.inDungeon=true; SFX.buy(); recalcHp(); game.hp=game.maxHp; this.playerInvuln=0; this.floor=1;
+    game.dungeonMax=Math.max(game.dungeonMax||0,1);
     this.player.setPosition(DUNGEON_EXIT.x*TS+8,(DUNGEON_EXIT.y-1)*TS+14); this.facing="up";
     this.cameras.main.setBounds(DROOM.x0*TS,DROOM.y0*TS,DROOM.w*TS,DROOM.h*TS); this.cameras.main.setBackgroundColor("#1a1622");
-    this.spawnEnemies(DUNGEON_SLIMES); setSpeech("ダンジョン探索！⚔ 敵をたおして素材をあつめよう",2800);
+    this.spawnFloor(); setSpeech("ダンジョン 地下1階⚔ 敵を全滅させて階段をめざせ！",2800);
+    updateHpHud(); updatePotBtn(); saveGame(); }
+  nextFloor(){ this.floor++; game.dungeonMax=Math.max(game.dungeonMax||0,this.floor);
+    game.hp=Math.min(game.maxHp, game.hp+Math.ceil(game.maxHp*0.2));      // 階移動で小回復
+    this.player.setPosition(DUNGEON_EXIT.x*TS+8,(DUNGEON_EXIT.y-1)*TS+14); this.facing="up";
+    SFX.morning(); this.spawnFloor();
+    setSpeech(`地下${this.floor}階へおりた…${this.floor>=MAX_FLOOR?"つよい気配がする…👑":"⚔"}`,2800);
     updateHpHud(); saveGame(); }
   exitDungeon(){ this.inDungeon=false; SFX.morning(); this.clearEnemies(); this.player.setAlpha(1);
+    if(this.stairSpr)this.stairSpr.setVisible(false); this.stairsActive=false;
     this.player.setPosition(DUNGEON.trig.x*TS+8,DUNGEON.trig.y*TS+14); this.facing="down";
     this.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); this.cameras.main.setBackgroundColor("#6ea83f");
-    updateHpHud(); saveGame(); }
+    updateHpHud(); updatePotBtn(); saveGame(); }
+  onFloorCleared(){ if(this.floor>=MAX_FLOOR){ SFX.expand();
+      burst(innerWidth/2,innerHeight*0.4,["#ffd84d","#ff5fa2","#5fd8ff","#ffffff"],28);
+      setSpeech("ダンジョン制覇🎉👑 スライムキングをたおした！下の扉から地上へ",4200); }
+    else { this.stairsActive=true; if(this.stairSpr)this.stairSpr.setVisible(true); SFX.expand();
+      setSpeech("全滅させた！▲上の階段で次の階へ（▼下の扉で地上）",3200); } }
   updateEnemies(time,dt){ const bx0=(DROOM.x0+1)*TS+5,bx1=(DROOM.x0+DROOM.w-1)*TS-5,by0=(DROOM.y0+1)*TS+5,by1=(DROOM.y0+DROOM.h-1)*TS-5;
     const px=this.player.x,py=this.player.y; this.playerInvuln=Math.max(0,(this.playerInvuln||0)-dt);
-    this.enemies.forEach(e=>{ e.hurtT=Math.max(0,e.hurtT-dt);
+    this.enemies.forEach(e=>{ const E=ENEMIES[e.type]; e.hurtT=Math.max(0,e.hurtT-dt);
       const dx=px-e.x, dy=py-e.y, dist=Math.hypot(dx,dy)||1;
-      if(dist<SLIME_SIGHT){ e.vx=dx/dist*SLIME_CHASE; e.vy=dy/dist*SLIME_CHASE; }
+      if(dist<E.sight){ e.vx=dx/dist*E.chase; e.vy=dy/dist*E.chase;
+        if(E.erratic){ const w=Math.sin(time/90+e.seed)*0.6; e.vx+=-dy/dist*E.chase*w; e.vy+=dx/dist*E.chase*w; } }
       else { e.t-=dt; if(e.t<=0){ e.t=0.8+Math.random()*1.5;
-        if(Math.random()<0.4){ e.vx=0; e.vy=0; } else { const a=Math.random()*6.283; e.vx=Math.cos(a)*SLIME_WANDER; e.vy=Math.sin(a)*SLIME_WANDER; } } }
+        if(Math.random()<0.4){ e.vx=0; e.vy=0; } else { const a=Math.random()*6.283; e.vx=Math.cos(a)*E.wander; e.vy=Math.sin(a)*E.wander; } } }
       let nx=e.x+e.vx*dt, ny=e.y+e.vy*dt;
       if(nx<bx0||nx>bx1)e.vx*=-1; if(ny<by0||ny>by1)e.vy*=-1;
       e.x=Math.max(bx0,Math.min(bx1,nx)); e.y=Math.max(by0,Math.min(by1,ny));
-      e.spr.setTexture("slime_"+(Math.floor(time/220)%2)).setPosition(e.x,e.y).setDepth(e.y);
+      e.spr.setTexture(E.tex+"_"+(Math.floor(time/(E.boss?300:200))%2)).setPosition(e.x,e.y).setDepth(e.y);
       if(e.hurtT>0)e.spr.setTint(0xff8080); else e.spr.clearTint();
-      if(dist<11 && this.playerInvuln<=0)this.playerHurt(SLIME_ATK); }); }
+      if(dist<(E.size||16)*0.6 && this.playerInvuln<=0)this.playerHurt(E.atk); }); }
   attack(){ const now=performance.now(); if(now-(this.atkCD||0)<260)return; this.atkCD=now; SFX.swing();
     const o={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[this.facing];
     const cx=this.player.x+o[0]*14, cy=this.player.y-6+o[1]*14;
@@ -671,16 +777,15 @@ class Farm extends Phaser.Scene{
     const sl=this.add.image(cx,cy,"slash").setOrigin(0.2,0.5).setRotation(ang).setDepth(this.player.y+1);
     this.tweens.add({targets:sl,alpha:0,scaleX:1.5,scaleY:1.5,duration:200,onComplete:()=>sl.destroy()});
     const atk=weaponAtk(); let hit=false;
-    for(const e of this.enemies){ if(Math.abs(e.x-cx)<15 && Math.abs(e.y-cy)<15){ hit=true;
-      e.hp-=atk; e.hurtT=0.2; e.x+=o[0]*7; e.y+=o[1]*7; } }
+    for(const e of this.enemies){ const r=(ENEMIES[e.type].size||16)*0.5+7;
+      if(Math.abs(e.x-cx)<r && Math.abs(e.y-cy)<r){ hit=true; e.hp-=atk; e.hurtT=0.2; e.x+=o[0]*7; e.y+=o[1]*7; } }
     if(hit)SFX.hit();
     const dead=this.enemies.filter(e=>e.hp<=0); dead.forEach(e=>this.enemyDie(e));
     this.enemies=this.enemies.filter(e=>e.hp>0);
-    if(!this.enemies.length && !this.dungeonCleared){ this.dungeonCleared=true; SFX.expand();
-      setSpeech("ぜんぶ倒した！🎉 入口の扉から地上にもどれるよ",3000); } }
-  enemyDie(e){ SFX.slay(); const tx=Math.floor(e.x/TS),ty=Math.floor(e.y/TS);
-    this.fxBurst(tx,ty,["#5fd06a","#bff5b8","#3fa850","#ffffff"]);
-    const got=rollDrop(); Object.entries(got).forEach(([k,v])=>{ game.mats[k]=(game.mats[k]||0)+v; });
+    if(!this.enemies.length && !this.floorCleared){ this.floorCleared=true; this.onFloorCleared(); } }
+  enemyDie(e){ const E=ENEMIES[e.type]; SFX.slay(); const tx=Math.floor(e.x/TS),ty=Math.floor(e.y/TS);
+    this.fxBurst(tx,ty,E.boss?["#ffd84d","#5fd06a","#ff5fa2","#ffffff"]:["#5fd06a","#bff5b8","#3fa850","#ffffff"]);
+    const got=dropFor(e.type); Object.entries(got).forEach(([k,v])=>{ game.mats[k]=(game.mats[k]||0)+v; });
     this.fxFloat(tx,ty,Object.entries(got).map(([k,v])=>MATERIALS[k].emoji+"+"+v).join(" "),"#bff5b8");
     e.spr.destroy(); saveGame(); }
   playerHurt(dmg){ const d=Math.max(1, dmg-armorDef()); game.hp-=d; this.playerInvuln=0.9; SFX.hurt();
@@ -742,7 +847,8 @@ class Farm extends Phaser.Scene{
       else { this.fairyX=this.fairySpr.x; this.fairyY=this.fairySpr.y; } }
     if(this.indoor){ const pt=playerTile(); if(pt.x===HOME_DOOR.x&&pt.y===HOME_DOOR.y)this.exitHouse(); }
     if(this.inDungeon){ this.updateEnemies(time,dt); const pt=playerTile();
-      if(pt.x===DUNGEON_EXIT.x&&pt.y===DUNGEON_EXIT.y)this.exitDungeon(); }
+      if(pt.x===DUNGEON_EXIT.x&&pt.y===DUNGEON_EXIT.y)this.exitDungeon();
+      else if(this.stairsActive&&pt.x===DUNGEON_STAIR.x&&pt.y===DUNGEON_STAIR.y)this.nextFloor(); }
     this.updateHighlight(); updateHUD(); updateHpHud();
   }
   updateHighlight(){ this.hl.clear(); const c=getContext(); if(!c)return;
@@ -1049,40 +1155,56 @@ function giveGift(key){ const g=GIFTS.find(x=>x.key===key); if(!g)return;
     GS.fxBurst(tx,ty,["#ff9ed6","#fff6b0","#bfeaff","#ffffff"]); GS.fxFloat(tx,ty,"+"+g.aff+" 💕","#e0559a"); }
   setSpeech(pick(["わ〜ありがと💕 もっとお手伝いするね！","えへへ、うれしい✨","だいすき！お水やりがんばる🌱"]),2200);
   openFairy(); saveGame(); }
-function craftRow(kind,it){ const id=kind+":"+it.key;
-  const equipped=(kind==="w"?game.weapon:game.armor)===it.key;
+const DICT_BY={w:WEAPON_BY,a:ARMOR_BY,c:ACC_BY};
+function craftRow(kind,it){
+  const needTxt=it.need?("素材 "+Object.entries(it.need).map(([k,v])=>`${MATERIALS[k].emoji}${v}`).join(" ")):"さいしょから";
+  const can=it.need&&Object.entries(it.need).every(([k,v])=>(game.mats[k]||0)>=v);
+  if(kind==="p"){ // ポーション（消耗品・何度でも作れる）
+    return `<div class="item"><div class="ico">${it.emoji}</div><div class="info"><div class="nm">${it.name}</div>
+      <div class="sub">❤️ HP+${it.heal} ・ もちもの ${game.items[it.key]||0}こ</div><div class="own">${needTxt}</div></div>
+      <button class="act buyx" data-craftp="${it.key}" ${can?"":"disabled"}>つくる</button></div>`; }
+  const id=kind+":"+it.key;
+  const cur=kind==="w"?game.weapon:kind==="a"?game.armor:game.accessory;
+  const equipped=cur===it.key;
   const owned=!it.need||(game.crafted&&game.crafted[id]);
-  const stat=kind==="w"?`攻撃 ${it.atk}`:`防御 ${it.def}・最大HP+${it.hp}`;
+  const stat=kind==="w"?`攻撃+${it.atk}`:kind==="a"?`防御${it.def}・最大HP+${it.hp}`:`攻撃+${it.atk}・防御+${it.def}・HP+${it.hp}`;
   let btn;
   if(equipped) btn=`<button class="act" disabled>そうび中✅</button>`;
   else if(owned) btn=`<button class="act" data-equip="${id}">そうび</button>`;
-  else { const can=Object.entries(it.need).every(([k,v])=>(game.mats[k]||0)>=v);
-    btn=`<button class="act buyx" data-craft="${id}" ${can?"":"disabled"}>つくる</button>`; }
-  const needTxt=it.need?("素材 "+Object.entries(it.need).map(([k,v])=>`${MATERIALS[k].emoji}${v}`).join(" ")):"さいしょから";
+  else btn=`<button class="act buyx" data-craft="${id}" ${can?"":"disabled"}>つくる</button>`;
   return `<div class="item"><div class="ico">${it.emoji}</div><div class="info"><div class="nm">${it.name}</div>
     <div class="sub">${stat}</div><div class="own">${needTxt}</div></div>${btn}</div>`; }
 function openDungeonGate(){ recalcHp();
-  const w=WEAPON_BY[game.weapon]||WEAPON_BY.fist, a=ARMOR_BY[game.armor]||ARMOR_BY.cloth;
+  const w=WEAPON_BY[game.weapon]||WEAPON_BY.fist, a=ARMOR_BY[game.armor]||ARMOR_BY.cloth, ac=accBonus();
   let h=`<h2>⚔ ダンジョン</h2>`;
   h+=`<div class="item"><div class="ico">🗺</div><div class="info"><div class="nm">いまの装備</div>
-    <div class="sub">${w.emoji} ${w.name}（攻撃${w.atk}）／ ${a.emoji} ${a.name}（防御${a.def}）</div>
-    <div class="own">❤️ さいだいHP ${game.maxHp}</div></div></div>`;
+    <div class="sub">${w.emoji}${w.name} ／ ${a.emoji}${a.name}${ac.key!=="none"?` ／ ${ac.emoji}${ac.name}`:""}</div>
+    <div class="own">⚔ こうげき ${weaponAtk()}　🛡 ぼうぎょ ${armorDef()}　❤️ さいだいHP ${game.maxHp}</div></div></div>`;
+  h+=`<div class="saveNote">いちばん深く もぐった階：地下${game.dungeonMax||0}階 / 全${MAX_FLOOR}階</div>`;
   const mk=Object.keys(MATERIALS).filter(k=>(game.mats[k]||0)>0);
   h+=`<div class="saveNote">${mk.length?("もちもの素材： "+mk.map(k=>`${MATERIALS[k].emoji}${game.mats[k]}`).join("　")):"素材はまだ無いよ。もぐって敵から集めよう！"}</div>`;
   h+=`<button class="act buyx" data-dive style="width:calc(100% - 8px);margin:8px 4px;font-size:17px;min-height:50px">⚔ もぐる！（HP全回復）</button>`;
   h+=`<div class="sectionTtl">🗡 ぶき（攻撃力）</div>`; WEAPONS.forEach(it=>h+=craftRow("w",it));
   h+=`<div class="sectionTtl">🛡 ぼうぐ（防御＆最大HP）</div>`; ARMORS.forEach(it=>h+=craftRow("a",it));
-  h+=`<div class="saveNote">敵を倒すと素材💧 集めた素材で装備をつくって強くなろう⚔</div>`;
+  h+=`<div class="sectionTtl">💍 アクセサリー</div>`; ACCESSORIES.forEach(it=>h+=craftRow("c",it));
+  h+=`<div class="sectionTtl">🧪 ポーション（もちこんで使う）</div>`; POTIONS.forEach(it=>h+=craftRow("p",it));
+  h+=`<div class="saveNote">敵を倒すと素材💧 深い階ほど強い敵＆レア素材。10階のボスを目指そう👑</div>`;
   h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
 function equipItem(id,silent){ const [kind,key]=id.split(":");
-  if(kind==="w")game.weapon=key; else { game.armor=key; recalcHp(); game.hp=game.maxHp; }
+  if(kind==="w")game.weapon=key; else if(kind==="a"){ game.armor=key; recalcHp(); game.hp=game.maxHp; }
+  else { game.accessory=key; recalcHp(); game.hp=game.maxHp; }
   if(!silent)SFX.buy(); openDungeonGate(); saveGame(); }
-function craftItem(id){ const [kind,key]=id.split(":"); const it=(kind==="w"?WEAPON_BY:ARMOR_BY)[key];
+function craftItem(id){ const [kind,key]=id.split(":"); const it=(DICT_BY[kind]||{})[key];
   if(!it||!it.need)return;
   if(!Object.entries(it.need).every(([k,v])=>(game.mats[k]||0)>=v)){ toast("素材が足りないよ"); SFX.error(); return; }
   Object.entries(it.need).forEach(([k,v])=>{ game.mats[k]-=v; if(game.mats[k]<=0)delete game.mats[k]; });
   game.crafted[id]=true; SFX.expand(); if(GS){ const p=playerTile(); GS.fxBurst(p.x,p.y,["#ffd84d","#bff5b8","#5fd8ff","#ffffff"]); }
   setSpeech(`${it.emoji} ${it.name}が完成！そうびしたよ✨`,2600); equipItem(id,true); }
+function craftItemP(key){ const it=POTION_BY[key]; if(!it)return;
+  if(!Object.entries(it.need).every(([k,v])=>(game.mats[k]||0)>=v)){ toast("素材が足りないよ"); SFX.error(); return; }
+  Object.entries(it.need).forEach(([k,v])=>{ game.mats[k]-=v; if(game.mats[k]<=0)delete game.mats[k]; });
+  game.items[key]=(game.items[key]||0)+1; SFX.buy();
+  setSpeech(`${it.emoji} ${it.name}をつくった！ダンジョンで使えるよ`,2200); openDungeonGate(); saveGame(); }
 function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>drawIcon(cv,cv.dataset.icon));
   sheet.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>buy(b.dataset.buy));
   sheet.querySelectorAll("[data-buyanimal]").forEach(b=>b.onclick=()=>buyAnimal(b.dataset.buyanimal));
@@ -1101,6 +1223,7 @@ function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>d
   sheet.querySelectorAll("[data-gift]").forEach(b=>b.onclick=()=>giveGift(b.dataset.gift));
   sheet.querySelectorAll("[data-dive]").forEach(b=>b.onclick=()=>{ closeSheet(); GS.enterDungeon(); });
   sheet.querySelectorAll("[data-craft]").forEach(b=>b.onclick=()=>craftItem(b.dataset.craft));
+  sheet.querySelectorAll("[data-craftp]").forEach(b=>b.onclick=()=>craftItemP(b.dataset.craftp));
   sheet.querySelectorAll("[data-equip]").forEach(b=>b.onclick=()=>equipItem(b.dataset.equip));
   sheet.querySelectorAll("[data-expand]").forEach(b=>b.onclick=()=>buyExpansion(+b.dataset.expand));
   sheet.querySelectorAll("[data-reset]").forEach(b=>b.onclick=resetGame);
@@ -1129,9 +1252,19 @@ function updateHUD(){ document.getElementById("dayVal").textContent=game.day;
   btn.querySelector(".ico").textContent=c?c.ico:"✋"; btn.querySelector(".lbl").textContent=c?c.label:"—";
   btn.classList.toggle("dim",!c||!!(c&&c.none)); }
 function updateHpHud(){ const hud=document.getElementById("hpHud"); if(!hud)return;
-  const show=!!(GS&&GS.inDungeon); hud.style.display=show?"flex":"none"; if(!show)return;
-  document.getElementById("hpTxt").textContent="❤️ "+Math.max(0,game.hp)+" / "+game.maxHp;
+  const show=!!(GS&&GS.inDungeon); hud.style.display=show?"flex":"none"; updatePotBtn(); if(!show)return;
+  document.getElementById("hpTxt").textContent="地下"+(GS.floor||1)+"階　❤️ "+Math.max(0,game.hp)+" / "+game.maxHp;
   document.getElementById("hpBar").style.width=Math.max(0,game.hp/game.maxHp*100)+"%"; }
+function updatePotBtn(){ const b=document.getElementById("potBtn"); if(!b)return;
+  const n=potionCount(), show=!!(GS&&GS.inDungeon&&n>0); b.style.display=show?"flex":"none";
+  if(show)b.querySelector(".pn").textContent=n; }
+function usePotion(){ if(!GS||!GS.inDungeon)return;
+  if(game.hp>=game.maxHp){ toast("HPは満タンだよ"); return; }
+  const p=POTIONS.find(p=>(game.items[p.key]||0)>0); if(!p){ toast("ポーションが無いよ🧪"); return; }
+  game.items[p.key]--; if(game.items[p.key]<=0)delete game.items[p.key];
+  game.hp=Math.min(game.maxHp, game.hp+p.heal); SFX.water();
+  if(GS){ const pt=playerTile(); GS.fxFloat(pt.x,pt.y,"+"+p.heal+"❤️","#7fe07f"); }
+  updateHpHud(); saveGame(); }
 function renderSeedBar(){ const bar=document.getElementById("seedbar"); const owned=CROP_IDS.filter(c=>game.seeds[c]>0);
   if(owned.length===0){ bar.innerHTML=`<div class="seedbar-empty">🌱 種を持ってないよ。ショップ(🛒)で買おう！</div>`; return; }
   ensureActiveSeed();
@@ -1161,6 +1294,7 @@ document.getElementById("actionBtn").addEventListener("click",e=>{ e.preventDefa
 document.getElementById("muteBtn").onclick=()=>{ SFX.unlock(); SFX.setMuted(!SFX.isMuted());
   document.getElementById("muteBtn").textContent=SFX.isMuted()?"🔇":"🔊"; if(!SFX.isMuted())SFX.coin(); };
 document.getElementById("muteBtn").textContent=SFX.isMuted()?"🔇":"🔊";
+document.getElementById("potBtn").addEventListener("click",e=>{ e.preventDefault(); usePotion(); });
 const KM={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",w:"up",s:"down",a:"left",d:"right"};
 addEventListener("keydown",e=>{ if(KM[e.key])held[KM[e.key]]=true; if(e.key===" "||e.key==="Enter")doAction(); });
 addEventListener("keyup",e=>{ if(KM[e.key])held[KM[e.key]]=false; });
