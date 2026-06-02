@@ -277,17 +277,20 @@ const HOSTS=[
     lines:["今日も会いに来てくれたんだ、うれしいよ♡","畑がんばってるんだってね、えらい姫だ✨","会えない日も君のこと考えてたよ？…なんてね♪","君のためにシャンパン冷やしといたよ🍾"],
     react:{drink:["かんぱ〜い🥃 ありがと姫♡","その一杯、効くわ〜✨"],champ:["シャンパンいただきます🍾✨","君がナンバーワンだよ"],tower:["タワーきたーー🗼✨ 君は伝説だ！","一生ついていくよ、姫♡"]},
     date:["やっと二人きりだね","今日は時間を気にしないで楽しもう？"],
-    dateA:["…そんなにくっついて、離さないよ？","あったかいね。ずっとこうしてたいな"],dateB:["いい笑顔。保存版にするね📸","君との写真、待受にしていい？"]},
+    dateA:["…そんなにくっついて、離さないよ？","あったかいね。ずっとこうしてたいな"],dateB:["いい笑顔。保存版にするね📸","君との写真、待受にしていい？"],
+    bday:{season:"spring",day:6},fav:["strawberry","watermelon"]},
   {id:"shun",name:"アオイ",title:"ツンデレ系",col:{hair:"#1f2d3a",hairH:"#33485c",suit:"#0e1620",tie:"#5fd8ff"},
     lines:["…来たんだ。べつに待ってないけど","ふん、今日も顔見れて…まあいいや","稼いでるらしいな。…えらいじゃん","早く座れよ。…となり、空けといた"],
     react:{drink:["…悪くないチョイスだ","ありがと、とか言わないからな"],champ:["っ…シャンパンって柄かよ、お前","…ちょっとは見直した"],tower:["タワー!? …バカ、無理すんな。…うれしいけど","お前みたいなの、初めてだよ…"]},
     date:["…二人で出かけるとか柄じゃねぇけど","今日だけ特別な。勘違いすんなよ"],
-    dateA:["…っ、急にくっつくな。…離れろとは言ってない","…顔、赤くないし"],dateB:["写真とか恥ずいだろ…一枚だけな","…その写真、俺にも送れよ"]},
+    dateA:["…っ、急にくっつくな。…離れろとは言ってない","…顔、赤くないし"],dateB:["写真とか恥ずいだろ…一枚だけな","…その写真、俺にも送れよ"],
+    bday:{season:"summer",day:3},fav:["tomato","potato"]},
   {id:"kai",name:"カイ",title:"盛り上げ系",col:{hair:"#5a3a1a",hairH:"#7a5226",suit:"#241830",tie:"#ffd84d"},
     lines:["うぃ〜っす姫!! 待ってたよ〜🎉","今日もかわいいねぇ！はい優勝👑","稼いできた？さっすが俺の姫✨","ノリで乾杯しよ乾杯〜🥂"],
     react:{drink:["いえ〜い🥃 ありがと〜!!","のど潤った〜、サンキュ姫♡"],champ:["シャンパンタイム〜!!🍾 パリピ最高!!","君のおかげで店が盛り上がる〜♪"],tower:["タワーキタ━━🗼🍾━━!! 神!!","今日の主役は姫で確定〜👑✨"]},
     date:["デート!? いえ〜い行こ行こ🎶","今日は一日中はしゃごうぜ〜!!"],
-    dateA:["お、積極的〜!? いいねぇ😆","腕組みデートとか優勝じゃん♡"],dateB:["撮ろ撮ろ〜📸 ベストショット狙お!","SNS映え確実っしょこれ✨"]},
+    dateA:["お、積極的〜!? いいねぇ😆","腕組みデートとか優勝じゃん♡"],dateB:["撮ろ撮ろ〜📸 ベストショット狙お!","SNS映え確実っしょこれ✨"],
+    bday:{season:"autumn",day:9},fav:["watermelon","corn"]},
 ];
 const HOSTById=Object.fromEntries(HOSTS.map(h=>[h.id,h]));
 const DOUHAN_FEE=3000;
@@ -304,6 +307,17 @@ const HOST_CONFESS={
     yes:"君のこと、本気で好きになっちゃった。恋人になってよ！一生楽しませるって約束する🎉❤️"},
 };
 const LOVER_LINES=["おはよ、俺の彼女♡","今日も君が世界一かわいい","早く仕事おわらせて会いに来てよ？","ずっと一緒だよ、姫❤️","君といる毎日が幸せだ"];
+// 誕生日の専用セリフ
+const BDAY_LINES={
+  leo:"今日が誕生日だって覚えててくれたんだ…君は本当に特別だよ。一生、忘れない♡",
+  shun:"…なんで俺の誕生日知ってんだよ。……でも、来てくれて、その、うれしい。ありがと…な",
+  kai:"うぇっ!? 俺の誕生日おぼえてくれてたの!? 姫サイコー!!🎉 今日は一生分はしゃぐぞ〜!!",
+};
+// 誕生日・好物のヘルパー
+function isHostBday(id){ const ho=HOSTById[id]; return ho.bday.season===curSeason().key && ho.bday.day===dayInSeason(game.day); }
+function hostBdayToday(){ return HOSTS.find(ho=>isHostBday(ho.id))||null; }
+function bdayOn(sk,d){ return HOSTS.find(ho=>ho.bday.season===sk && ho.bday.day===d)||null; }
+function isFavCrop(id,crop){ return crop==="golden" || HOSTById[id].fav.indexOf(crop)>=0; }   // おうごんカブは全員の好物
 // 動物のおとしもの＆加工品（倉庫アイテム）
 const PRODUCTS={
   egg:{name:"たまご",emoji:"🥚",sell:EGG_SELL},
@@ -433,7 +447,7 @@ function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], drops:[],
   storage:{}, feed:0, cooking:[], seedmaking:[], fairy:{appeared:false,greeted:false,affection:0},
   hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0, lastEventDay:0, bag:{},
-  hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false}])) }; }
+  hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false,bday:0}])) }; }
 let game=loadGame()||freshGame();
 let activeSeed=null;
 let curHost=null;
@@ -455,8 +469,8 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   if(!g.crafted||typeof g.crafted!=="object")g.crafted={}; if(g.dungeonMax==null)g.dungeonMax=0; if(g.lastEventDay==null)g.lastEventDay=0;
   g.maxHp=BASE_HP+ARMOR_BY[g.armor].hp+ACC_BY[g.accessory].hp; if(g.hp==null||g.hp>g.maxHp||g.hp<0)g.hp=g.maxHp;
   if(!g.hosts)g.hosts={};
-  HOSTS.forEach(h=>{ if(!g.hosts[h.id])g.hosts[h.id]={spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false};
-    else { const s=g.hosts[h.id]; if(s.dates==null)s.dates=0; if(s.dateDay==null)s.dateDay=0; if(s.love==null)s.love=0; if(s.lover==null)s.lover=false; } });
+  HOSTS.forEach(h=>{ if(!g.hosts[h.id])g.hosts[h.id]={spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false,bday:0};
+    else { const s=g.hosts[h.id]; if(s.dates==null)s.dates=0; if(s.dateDay==null)s.dateDay=0; if(s.love==null)s.love=0; if(s.lover==null)s.lover=false; if(s.bday==null)s.bday=0; } });
   if(g.host){ const l=g.hosts.leo; l.spent=g.host.spent||0; l.line=g.host.line||""; l.lineDay=g.host.lineDay||0; delete g.host; }
   const lc=HOSTS.filter(h=>g.hosts[h.id].lover).length; g.maxStamina=14+g.level+lc*2; if(g.stamina>g.maxStamina)g.stamina=g.maxStamina;
   return g; }catch(e){ return null; } }
@@ -1261,7 +1275,10 @@ function openHostDetail(id){ curHost=id; const ho=HOSTById[id], st=game.hosts[id
   h+=`<div class="item"><canvas width="72" height="72" data-host="${id}" style="image-rendering:pixelated;border-radius:12px;background:#2a1d38;flex:none"></canvas>
     <div class="info"><div class="nm">${ho.name} ${st.lover?'<span style="color:#e0559a">❤️恋人</span>':`<span style="color:#ff5fa2">${rank.emoji}${rank.name}</span>`}</div>
     <div class="sub">「${st.line||pool[0]}」</div>
-    <div class="own">${"❤️".repeat(hearts)}${"🤍".repeat(5-hearts)} 恋ごころ ${st.love}/100 ・ 同伴 ${st.dates}回</div></div></div>`;
+    <div class="own">${"❤️".repeat(hearts)}${"🤍".repeat(5-hearts)} 恋ごころ ${st.love}/100 ・ 同伴 ${st.dates}回</div>
+    <div class="sub">🎂 ${SEASON_BY[ho.bday.season].emoji}${ho.bday.day}日 ・ 好物 ${ho.fav.map(c=>CROPS[c].emoji).join("")}🌟</div></div></div>`;
+  if(isHostBday(id)){ if(st.bday!==yearOf(game.day)) h+=`<button class="act" data-bdaycelebrate style="width:calc(100% - 8px);margin:8px 4px;background:linear-gradient(180deg,#ffd14d,#f0931a);color:#fff;box-shadow:0 3px 0 #c4761a;border:none;font-size:16px">🎂 たんじょうびをお祝いする！</button>`;
+    else h+=`<div class="saveNote" style="background:#fff0c2;color:#a85f17">🎂 今日は${ho.name}のたんじょうび！お祝いずみ♡</div>`; }
   if(st.lover) h+=`<div class="saveNote" style="background:#ffd9ec;color:#b03a72">❤️ ${ho.name}と恋人です。ずっと一緒だよ♡</div>`;
   else if(st.love>=CONFESS_LOVE) h+=`<button class="act" data-confess style="width:calc(100% - 8px);margin:8px 4px;background:linear-gradient(180deg,#ff8fc0,#e0559a);color:#fff;box-shadow:0 3px 0 #b03a72;border:none">💗 告白する</button>`;
   else h+=`<div class="saveNote">恋ごころを100にすると告白できる💗（同伴や貢ぎで上がるよ）</div>`;
@@ -1281,21 +1298,33 @@ function openHostDetail(id){ curHost=id; const ho=HOSTById[id], st=game.hosts[id
     <button class="act" data-cropgiftopen>えらぶ</button></div>`;
   h+=`<button class="closeBtn" data-back>← ほかの子へ</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
 function cropLove(crop,q){ return Math.max(1, Math.round(CROPS[crop].sell*QUAL[q].mult/200)); }
+// ホスト別の恋ごころ（好物×3／誕生日は×1.5）
+function cropLoveFor(id,crop,q){ let love=cropLove(crop,q); if(isFavCrop(id,crop))love*=3; if(isHostBday(id))love=Math.round(love*1.5); return love; }
 function openCropGift(){ const ho=HOSTById[curHost]; if(!ho)return; const stacks=bagStacks();
-  let h=`<h2>🥕 ${ho.name}に貢ぐ</h2><div class="saveNote">育てた野菜をプレゼント💝 金品質ほど恋ごころが大きく上がるよ</div>`;
+  const favTxt=ho.fav.map(c=>CROPS[c].emoji).join("")+"🌟";
+  let h=`<h2>🥕 ${ho.name}に貢ぐ</h2><div class="saveNote">育てた野菜をプレゼント💝 ${ho.name}の好物（${favTxt}）は恋ごころ3倍${isHostBday(curHost)?"・今日は誕生日でさらにUP🎂":""}</div>`;
   if(!stacks.length)h+=`<div class="saveNote">バッグに作物が無いよ。畑で収穫してきてね🌾</div>`;
-  else stacks.forEach(s=>{ const cf=CROPS[s.crop],qq=QUAL[s.q];
-    h+=`<div class="item"><canvas width="44" height="44" data-icon="${s.crop}"></canvas><div class="info"><div class="nm">${cf.name} ${qq.emoji}${qq.name}</div>
-      <div class="sub">恋ごころ +${cropLove(s.crop,s.q)}</div><div class="own">×${s.n}</div></div>
+  else stacks.forEach(s=>{ const cf=CROPS[s.crop],qq=QUAL[s.q], fav=isFavCrop(curHost,s.crop);
+    h+=`<div class="item"><canvas width="44" height="44" data-icon="${s.crop}"></canvas><div class="info"><div class="nm">${cf.name} ${qq.emoji}${qq.name}${fav?' <span style="color:#e0559a">♥好物</span>':""}</div>
+      <div class="sub">恋ごころ +${cropLoveFor(curHost,s.crop,s.q)}</div><div class="own">×${s.n}</div></div>
       <button class="act" data-cropgift="${s.crop}:${s.q}">貢ぐ</button></div>`; });
   h+=`<button class="closeBtn" data-backhost>← もどる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
 function cropGift(id){ const i=id.lastIndexOf(":"),crop=id.slice(0,i),q=+id.slice(i+1); if(!bagRemove(crop,q,1)){ toast("その野菜が無いよ"); return; }
-  const ho=HOSTById[curHost], st=game.hosts[curHost], love=cropLove(crop,q);
+  const ho=HOSTById[curHost], st=game.hosts[curHost], love=cropLoveFor(curHost,crop,q), fav=isFavCrop(curHost,crop);
   const hit=(st.love<CONFESS_LOVE && st.love+love>=CONFESS_LOVE && !st.lover);
   st.love=Math.min(100, st.love+love); SFX.coin(); updateBagBtn();
   if(GS){ const p=playerTile(); GS.fxBurst(p.x,p.y,["#ff5fa2","#9be84d","#ffd84d","#fff"]); GS.fxFloat(p.x,p.y,"+"+love+"💕","#e0559a"); }
-  setSpeech(hit?`💗 ${ho.name}の恋ごころが満タン！告白できるよ！`:`${ho.name}「${CROPS[crop].name}…君の手づくり？うれしいよ♡」`,2800);
+  setSpeech(hit?`💗 ${ho.name}の恋ごころが満タン！告白できるよ！`:fav?`${ho.name}「${CROPS[crop].name}!? わたしの好物じゃん…君、わかってるね♡」`:`${ho.name}「${CROPS[crop].name}…君の手づくり？うれしいよ♡」`,2800);
   openCropGift(); saveGame(); }
+function celebrateBday(){ const id=curHost, ho=HOSTById[id], st=game.hosts[id]; if(!ho)return;
+  if(!isHostBday(id)||st.bday===yearOf(game.day)){ toast("今日は誕生日じゃないみたい"); return; }
+  st.bday=yearOf(game.day); const hit=(st.love<CONFESS_LOVE && st.love+25>=CONFESS_LOVE && !st.lover);
+  st.love=Math.min(100, st.love+25); game.stamina=game.maxStamina; SFX.expand();
+  burst(innerWidth/2,innerHeight*0.4,["#ff5fa2","#ffd84d","#5fd8ff","#fff"],28);
+  let body=`${BDAY_LINES[id]||"ありがとう…！"}<br><br>🎂 ${ho.name}のたんじょうびをお祝いした！<br>❤️ 恋ごころ +25<br>⚡ たいりょく全回復`;
+  if(hit)body+=`<br><br>💗 恋ごころが満タン！告白できるよ！`;
+  setSpeech(`${ho.name}のたんじょうび、お祝いできた🎂♡`,2600); saveGame();
+  douhanScene(`🎂 ${ho.name} HAPPY BIRTHDAY`, body, [{label:"おめでとう🎂♡",on:()=>openHostDetail(id)}]); }
 function hostGift(key){ const g=HOST_GIFTS.find(x=>x.key===key), id=curHost, ho=HOSTById[id]; if(!g||!ho)return; const st=game.hosts[id];
   if(game.money<g.cost){ toast("おかねが足りないよ💸"); SFX.error(); setSpeech("お金ためてからまた来てね？♡",2200); return; }
   const before=hostRank(st.spent); game.money-=g.cost; st.spent+=g.cost; SFX.coin();
@@ -1421,14 +1450,16 @@ function openCalendar(){ if(calView===null)calView=seasonIndex(game.day);
     <div style="font-weight:900;font-size:17px;color:#7a5326">${s.emoji}${s.name} <span style="font-size:12px;color:#9a7b4a">${yearOf(game.day)}年目</span></div>
     <button class="act" data-calnext style="padding:10px 14px">▶</button></div>`;
   h+=`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:0 2px 4px">`;
-  for(let d=1;d<=SEASON_LEN;d++){ const ev=EVENTS[s.key+":"+d], isToday=(d===today);
+  for(let d=1;d<=SEASON_LEN;d++){ const ev=EVENTS[s.key+":"+d], bd=bdayOn(s.key,d), isToday=(d===today);
+    const mark=ev?ev.emoji:(bd?"🎂":"");
     h+=`<div style="aspect-ratio:1;border-radius:10px;border:2px solid ${isToday?"#ff8fc0":"#c79a5b"};background:${isToday?"#fff0f6":"#fff"};
       display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 -3px 0 #f0e2bf;position:relative">
       <div style="font-size:13px;font-weight:900;color:${isToday?"#e0559a":"#7a5326"}">${d}</div>
-      <div style="font-size:15px;line-height:1;height:17px">${ev?ev.emoji:""}</div>
+      <div style="font-size:15px;line-height:1;height:17px">${mark}</div>
       ${isToday?'<div style="position:absolute;top:1px;right:3px;font-size:8px;color:#e0559a;font-weight:900">今</div>':""}</div>`; }
   h+=`</div>`;
-  const evs=[]; for(let d=1;d<=SEASON_LEN;d++){ const ev=EVENTS[s.key+":"+d]; if(ev)evs.push(`${d}日：${ev.emoji}${ev.name}`); }
+  const evs=[]; for(let d=1;d<=SEASON_LEN;d++){ const ev=EVENTS[s.key+":"+d], bd=bdayOn(s.key,d);
+    if(ev)evs.push(`${d}日：${ev.emoji}${ev.name}`); if(bd)evs.push(`${d}日：🎂${bd.name}のたんじょうび`); }
   h+=`<div class="sectionTtl">🎉 今季のイベント</div><div class="saveNote" style="text-align:left">${evs.join("<br>")||"なし"}</div>`;
   const crops=CROP_IDS.filter(c=>!CROPS[c].special&&cropInSeason(c,s.key)).map(c=>CROPS[c].name);
   h+=`<div class="sectionTtl">🌱 旬の作物</div><div class="saveNote" style="text-align:left">${crops.length?crops.join("・"):"なし（畑はおやすみ）"}<br>🌟おうごんカブは全季OK</div>`;
@@ -1524,6 +1555,7 @@ function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>d
   sheet.querySelectorAll("[data-back]").forEach(b=>b.onclick=openHostClub);
   sheet.querySelectorAll("[data-douhan]").forEach(b=>b.onclick=startDouhan);
   sheet.querySelectorAll("[data-confess]").forEach(b=>b.onclick=startConfess);
+  sheet.querySelectorAll("[data-bdaycelebrate]").forEach(b=>b.onclick=celebrateBday);
   sheet.querySelectorAll("[data-hostgift]").forEach(b=>b.onclick=()=>hostGift(b.dataset.hostgift));
   sheet.querySelectorAll("[data-gift]").forEach(b=>b.onclick=()=>giveGift(b.dataset.gift));
   sheet.querySelectorAll("[data-dive]").forEach(b=>b.onclick=()=>{ closeSheet(); GS.enterDungeon(); });
@@ -1552,7 +1584,10 @@ function showMorning(earn,sold,dishes,seasonMsg,madeSeeds){ const s=curSeason();
 document.getElementById("mGo").onclick=()=>{ document.getElementById("morning").classList.remove("show"); SFX.morning();
   if(game.fairy.appeared && !game.fairy.greeted){ game.fairy.greeted=true; saveGame();
     setSpeech("水やりの妖精があらわれた✨ 左の広場にいるよ！プレゼントで仲良くなろ🎁",4500); }
-  else { setSpeech(pick(LINES_MORNING),2600); if(GS)GS.time.delayedCall(700,()=>GS.morningFairyWater()); }
+  else { const bd=hostBdayToday();
+    if(bd) setSpeech(`今日は ${bd.name} のたんじょうび🎂！お店で会ってお祝いしよ♡`,4200);
+    else setSpeech(pick(LINES_MORNING),2600);
+    if(GS)GS.time.delayedCall(700,()=>GS.morningFairyWater()); }
   maybeTriggerEvent(); };
 
 /* ===================== HUD・種バー・トースト等 ===================== */
