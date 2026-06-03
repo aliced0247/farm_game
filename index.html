@@ -122,6 +122,10 @@
   .resetBtn{ width:100%; margin-top:10px; padding:11px; border:none; border-radius:12px; background:#f4d6d6;
     color:#b5483f; font-weight:700; font-size:13px; font-family:inherit; cursor:pointer; }
   .saveNote{ text-align:center; font-size:11px; color:#9a7b4a; margin-top:10px; }
+  .saveRow{ display:flex; gap:8px; margin-top:10px; }
+  .saveBtn{ flex:1; padding:11px; border:none; border-radius:12px; background:#d8ead0; color:#3f7a3a;
+    font-weight:800; font-size:13px; font-family:inherit; cursor:pointer; box-shadow:inset 0 -3px 0 #bcd9b0; }
+  .saveBtn:active{ transform:translateY(2px); box-shadow:none; }
 
   #morning{ position:fixed; inset:0; z-index:30; display:none; align-items:center; justify-content:center;
     background:radial-gradient(circle at 50% 38%, rgba(255,236,170,.96), rgba(255,210,120,.96)); }
@@ -576,11 +580,35 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   if(g.host){ const l=g.hosts.leo; l.spent=g.host.spent||0; l.line=g.host.line||""; l.lineDay=g.host.lineDay||0; delete g.host; }
   const lc=HOSTS.filter(h=>g.hosts[h.id].lover).length; g.maxStamina=14+g.level+lc*2; if(g.stamina>g.maxStamina)g.stamina=g.maxStamina;
   return g; }catch(e){ return null; } }
+function refreshWorld(){ if(GS){ GS.indoor=false; GS.inDungeon=false; GS.clearEnemies(); GS.clearChest(); GS.clearPartner&&GS.clearPartner(); GS.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS);
+    GS.player.setPosition(8*16+8,10*16+14); GS.facing="down"; GS.buildPlots(); GS.buildAnimals(); GS.buildFairy(); GS.applySeasonVisuals(); } }
 function resetGame(){ if(!confirm("本当に最初からはじめる？\nいまの畑・おかね・進行はすべて消えます。"))return;
-  localStorage.removeItem(SAVE_KEY); game=freshGame(); activeSeed=null; closeSheet(); renderSeedBar();
-  if(GS){ GS.indoor=false; GS.inDungeon=false; GS.clearEnemies(); GS.clearChest(); GS.clearPartner&&GS.clearPartner(); GS.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS);
-    GS.player.setPosition(8*16+8,10*16+14); GS.facing="down"; GS.buildPlots(); GS.buildAnimals(); GS.buildFairy(); GS.applySeasonVisuals(); }
+  localStorage.removeItem(SAVE_KEY); game=freshGame(); activeSeed=null; closeSheet(); renderSeedBar(); refreshWorld();
   setSpeech("よ〜し、心機一転！またイチからがんばろ🎀"); }
+function exportSave(){ try{
+    const blob=new Blob([JSON.stringify(game)],{type:"application/json"}), url=URL.createObjectURL(blob);
+    const d=new Date(), p=n=>String(n).padStart(2,"0");
+    const a=document.createElement("a"); a.href=url; a.download=`farmsave_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1500);
+    toast("セーブを書き出したよ💾"); setSpeech("ファイルアプリ→iCloud Driveに置くと安心だよ☁️",3000);
+  }catch(e){ alert("書き出しに失敗しました: "+e.message); } }
+function importSave(){
+  const inp=document.createElement("input"); inp.type="file"; inp.accept="application/json,.json";
+  inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f)return; const r=new FileReader();
+    r.onload=()=>{ try{
+        const obj=JSON.parse(r.result);
+        if(!obj||typeof obj!=="object"||obj.money==null||!Array.isArray(obj.tiles)) throw new Error("ファーム畑のセーブ形式じゃないみたい");
+        if(!confirm("このファイルのデータを読み込みます。\nいまの進行は上書きされます。よろしい？"))return;
+        const backup=localStorage.getItem(SAVE_KEY);
+        localStorage.setItem(SAVE_KEY,JSON.stringify(obj));
+        const g=loadGame();
+        if(!g){ if(backup!=null)localStorage.setItem(SAVE_KEY,backup); throw new Error("データを読み込めませんでした"); }
+        game=g; activeSeed=null; saveGame(); closeSheet(); renderSeedBar(); refreshWorld();
+        updateHUD(); updateBagBtn(); updateHpHud(); updatePotBtn();
+        toast("セーブを読み込んだよ📂✨"); setSpeech("つづきから再開だよ〜🎀",2600);
+      }catch(e){ alert("読み込めませんでした: "+e.message); } };
+    r.readAsText(f); };
+  inp.click(); }
 
 /* ===================== マップ定義 ===================== */
 const TS=16, MAP_W=18, MAP_H=13, FARM_X=6, FARM_Y=6;
@@ -1317,8 +1345,11 @@ function openShop(){ const s=curSeason();
   else next.forEach(ex=>{ const idx=EXPANSIONS.indexOf(ex),ok=game.money>=ex.cost;
     h+=`<div class="item"><div class="ico">🌾</div><div class="info"><div class="nm">${ex.cols}×${ex.rows}（${ex.cols*ex.rows}マス）</div>
       <div class="sub">いまの畑をひろげる</div></div><button class="act buyx" data-expand="${idx}" ${ok?"":"disabled"}>${ex.cost}円</button></div>`; });
-  h+=`<button class="closeBtn" data-close>とじる</button><button class="resetBtn" data-reset>🗑 最初からはじめる</button>
-    <div class="saveNote">💾 進行はこの端末に自動セーブされています</div>`;
+  h+=`<button class="closeBtn" data-close>とじる</button>
+    <div class="sectionTtl">💾 セーブのバックアップ</div>
+    <div class="saveRow"><button class="saveBtn" data-export>📥 書き出す</button><button class="saveBtn" data-import>📂 読み込む</button></div>
+    <div class="saveNote">進行はこの端末に自動セーブ。心配なら書き出してファイル(iCloud Drive等)に保存してね</div>
+    <button class="resetBtn" data-reset>🗑 最初からはじめる</button>`;
   sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
 function openAnimalShop(){ const nc=game.animals.filter(a=>a.type!=="cow").length, nk=game.animals.filter(a=>a.type==="cow").length;
   let h=`<h2>🐔 どうぶつ屋さん</h2><div class="saveNote">🌾 えさをあげた動物だけ、翌朝おとしものを産むよ</div>`;
@@ -1766,6 +1797,8 @@ function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>d
   sheet.querySelectorAll("[data-equip]").forEach(b=>b.onclick=()=>equipItem(b.dataset.equip));
   sheet.querySelectorAll("[data-expand]").forEach(b=>b.onclick=()=>buyExpansion(+b.dataset.expand));
   sheet.querySelectorAll("[data-reset]").forEach(b=>b.onclick=resetGame);
+  sheet.querySelectorAll("[data-export]").forEach(b=>b.onclick=exportSave);
+  sheet.querySelectorAll("[data-import]").forEach(b=>b.onclick=importSave);
   sheet.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeSheet); }
 overlay.addEventListener("click",e=>{ if(e.target===overlay)closeSheet(); });
 
