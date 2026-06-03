@@ -272,10 +272,18 @@ const CROPS={
   strawberry:{name:"いちご",emoji:"🍓",seed:150,days:4,sell:360,leaf:"#4f9a3a",fruit:"#e8473f",fruit2:"#ffffff",seasons:["spring"]},
   corn:{name:"トウモロコシ",emoji:"🌽",seed:120,days:5,sell:400,leaf:"#6cbf3a",fruit:"#f5d23b",fruit2:"#e8a92b",seasons:["summer","autumn"]},
   watermelon:{name:"すいか",emoji:"🍉",seed:300,days:6,sell:780,leaf:"#5aa83a",fruit:"#46b85a",fruit2:"#2f7d3c",seasons:["summer"]},
+  // ===== 2年目から解禁の作物（y2:true）=====
+  onion:{name:"たまねぎ",emoji:"🧅",seed:90,days:3,sell:240,leaf:"#6cae3a",fruit:"#d9b072",fruit2:"#f0e0bc",seasons:["spring","autumn"],y2:true},
+  eggplant:{name:"なす",emoji:"🍆",seed:110,days:4,sell:320,leaf:"#4f9a3a",fruit:"#6a3a8f",fruit2:"#9a5fc0",seasons:["summer"],y2:true},
+  pineapple:{name:"パイナップル",emoji:"🍍",seed:360,days:7,sell:980,leaf:"#5cb350",fruit:"#e0a92b",fruit2:"#f5d23b",seasons:["summer"],y2:true},
+  pumpkin:{name:"かぼちゃ",emoji:"🎃",seed:200,days:6,sell:640,leaf:"#5aa83a",fruit:"#d2742a",fruit2:"#f0a14a",seasons:["autumn"],y2:true},
+  grape:{name:"ぶどう",emoji:"🍇",seed:260,days:5,sell:720,leaf:"#4f9a3a",fruit:"#7a3f9a",fruit2:"#a86fcf",seasons:["autumn"],y2:true},
+  broccoli:{name:"ブロッコリー",emoji:"🥦",seed:140,days:4,sell:360,leaf:"#4d8a2c",fruit:"#3f8a3a",fruit2:"#5cb350",seasons:["winter"],y2:true},
+  carrot:{name:"にんじん",emoji:"🥕",seed:100,days:3,sell:270,leaf:"#5fbf4f",fruit:"#e07b2a",fruit2:"#f0a14a",seasons:["winter"],y2:true},
   // 黄金作物：ショップでは買えず、ダンジョン10階ボスの宝箱からのみ。全季節で育つ
   golden:{name:"おうごんカブ",emoji:"🌟",seed:0,days:5,sell:1800,leaf:"#5fbf4f",fruit:"#ffd84d",fruit2:"#fff6b0",special:true,seasons:["spring","summer","autumn","winter"]},
 };
-const CROP_IDS=["turnip","potato","tomato","strawberry","corn","watermelon","golden"];
+const CROP_IDS=["turnip","potato","tomato","strawberry","corn","watermelon","onion","eggplant","pineapple","pumpkin","grape","broccoli","carrot","golden"];
 const GOLDEN_SEED_REWARD=3;   // ボスの宝箱でもらえる黄金の種の数
 // ===== 四季 =====
 const SEASON_LEN=10;          // 1季節の日数
@@ -289,6 +297,7 @@ function curSeason(){ return seasonOf(game.day); }
 function yearOf(day){ return Math.floor((day-1)/(SEASON_LEN*4))+1; }
 function dayInSeason(day){ return ((day-1)%SEASON_LEN)+1; }
 function cropInSeason(crop,sk){ const cf=CROPS[crop]; return !!cf&&cf.seasons&&cf.seasons.indexOf(sk)>=0; }
+function cropUnlocked(crop){ const cf=CROPS[crop]; return !!cf&&(!cf.y2||yearOf(game.day)>=2); }
 function farmBg(){ return SEASON_BG[curSeason().key]||"#6ea83f"; }
 // ===== 天候 =====
 const WEATHER={ sunny:{name:"はれ",emoji:"☀️"}, cloudy:{name:"くもり",emoji:"⛅"},
@@ -672,7 +681,8 @@ function drawPlantC(x,crop,stage){ const cf=CROPS[crop], p=(a,b,w,h,c)=>rc(x,a,b
     else if(crop==="strawberry"){ p(5,7,6,2,cf.leaf); p(4,8,2,2,cf.leaf); p(10,8,2,2,cf.leaf); p(5,10,3,4,cf.fruit); p(9,10,3,4,cf.fruit); p(6,11,1,1,cf.fruit2); p(10,12,1,1,cf.fruit2); }
     else if(crop==="watermelon"){ p(4,7,2,2,cf.leaf); p(5,8,7,6,cf.fruit); p(6,8,1,6,cf.fruit2); p(8,8,1,6,cf.fruit2); p(10,8,1,6,cf.fruit2); p(6,8,2,1,"#7fd98e"); }
     else if(crop==="golden"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf);
-      p(6,5,5,7,cf.fruit); p(6,5,5,1,cf.fruit2); p(6,5,1,7,cf.fruit2); p(7,7,1,1,"#ffffff"); p(9,9,1,1,"#fffef0"); p(5,4,1,1,"#fffef0"); p(11,6,1,1,"#fffef0"); } } }
+      p(6,5,5,7,cf.fruit); p(6,5,5,1,cf.fruit2); p(6,5,1,7,cf.fruit2); p(7,7,1,1,"#ffffff"); p(9,9,1,1,"#fffef0"); p(5,4,1,1,"#fffef0"); p(11,6,1,1,"#fffef0"); }
+    else { p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(5,5,4,4,cf.fruit); p(8,7,3,3,cf.fruit); p(5,5,1,1,cf.fruit2); p(8,7,1,1,cf.fruit2); } } }
 function drawTreeC(x,season){ const t1="#7a5230",t2="#8a6038";
   if(season==="winter"){ rc(x,7,16,2,8,t1); rc(x,7,16,1,8,t2);
     rc(x,5,9,6,2,t1); rc(x,4,11,8,1,t1); rc(x,6,7,3,2,t2);
@@ -1271,6 +1281,7 @@ function ensureActiveSeed(){ const sk=curSeason().key;
   if(activeSeed&&game.seeds[activeSeed]>0&&cropInSeason(activeSeed,sk))return;
   activeSeed=CROP_IDS.find(c=>game.seeds[c]>0&&cropInSeason(c,sk)) || CROP_IDS.find(c=>game.seeds[c]>0) || null; }
 function buy(crop){ const cf=CROPS[crop];
+  if(!cropUnlocked(crop)){ toast(`${cf.name}は2年目から売り出すよ✨`); SFX.error(); return; }
   if(cf.special||!cropInSeason(crop,curSeason().key)){ toast(`${cf.name}は今は売ってないよ${curSeason().emoji}`); SFX.error(); return; }
   if(game.money<cf.seed){ toast("おかねが足りないよ💸"); SFX.error(); setSpeech(pick(LINES_BROKE),2200); return; }
   game.money-=cf.seed; game.seeds[crop]++; activeSeed=crop; SFX.buy(); openShop(); renderSeedBar(); toast(`${cf.name}の種を買った！`); saveGame(); }
@@ -1335,11 +1346,12 @@ function drawIcon(cv,crop){ const x=cv.getContext("2d"); x.clearRect(0,0,cv.widt
 function openShop(){ const s=curSeason();
   let h=`<h2>🛒 ショップ</h2><div class="saveNote">いまの季節：${s.emoji}${s.name}　旬の種だけ植えられるよ</div><div class="sectionTtl">🌱 たね</div>`;
   CROP_IDS.forEach(c=>{ const cf=CROPS[c]; if(cf.special)return;
-    const inSeason=cropInSeason(c,s.key), ok=inSeason&&game.money>=cf.seed;
+    const unlocked=cropUnlocked(c), inSeason=cropInSeason(c,s.key), ok=unlocked&&inSeason&&game.money>=cf.seed;
     const tags=cf.seasons.map(k=>SEASON_BY[k].emoji).join("");
-    h+=`<div class="item" style="${inSeason?"":"opacity:.55"}"><canvas width="64" height="64" data-icon="${c}"></canvas><div class="info"><div class="nm">${cf.name} <span style="font-size:11px">${tags}</span></div>
-      <div class="sub">種 ${cf.seed}円 ・ ${cf.days}日 ・ 売値 ${cf.sell}円</div><div class="own">手持ち：${game.seeds[c]}こ</div></div>
-      <button class="act" data-buy="${c}" ${ok?"":"disabled"}>${inSeason?"買う":"季節外"}</button></div>`; });
+    const lock=unlocked?"":"🔒";
+    h+=`<div class="item" style="${(unlocked&&inSeason)?"":"opacity:.55"}"><canvas width="64" height="64" data-icon="${c}"></canvas><div class="info"><div class="nm">${lock}${cf.name} <span style="font-size:11px">${tags}</span></div>
+      <div class="sub">種 ${cf.seed}円 ・ ${cf.days}日 ・ 売値 ${cf.sell}円</div><div class="own">${unlocked?`手持ち：${game.seeds[c]}こ`:"2年目から売り出すよ✨"}</div></div>
+      <button class="act" data-buy="${c}" ${ok?"":"disabled"}>${!unlocked?"2年目":(inSeason?"買う":"季節外")}</button></div>`; });
   h+=`<div class="sectionTtl">🌾 畑をひろげる</div>`; const cur=game.cols*game.rows; const next=EXPANSIONS.filter(e=>e.cols*e.rows>cur);
   if(next.length===0) h+=`<div class="item"><div class="ico">🌾</div><div class="info"><div class="nm">最大サイズ！</div><div class="sub">これ以上は広げられないよ</div></div></div>`;
   else next.forEach(ex=>{ const idx=EXPANSIONS.indexOf(ex),ok=game.money>=ex.cost;
