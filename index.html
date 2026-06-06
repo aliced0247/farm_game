@@ -1493,7 +1493,7 @@ function openHostClub(){ curHost=null;
   HOSTS.forEach(ho=>{ const st=game.hosts[ho.id], rank=hostRank(st.spent);
     h+=`<div class="item" data-hostpick="${ho.id}" style="cursor:pointer">
       <canvas width="56" height="56" data-host="${ho.id}" style="image-rendering:pixelated;border-radius:10px;background:#2a1d38;flex:none"></canvas>
-      <div class="info"><div class="nm">${ho.name} <span style="color:#9a8aa6;font-size:12px">${ho.title}</span> ${isTopCustomer(ho.id)?'<span style="color:#e0559a">👑本命</span>':`<span style="color:#c0392b">No.${rivalRank(ho.id)}</span>`}</div>
+      <div class="info"><div class="nm">${ho.name} <span style="color:#9a8aa6;font-size:12px">${ho.title}</span> ${st.spent<=0?'<span style="color:#9a8aa6">ー</span>':(isTopCustomer(ho.id)?'<span style="color:#e0559a">👑本命</span>':`<span style="color:#c0392b">No.${rivalRank(ho.id)}</span>`)}</div>
       <div class="sub">${st.lover?'<span style="color:#e0559a">❤️恋人</span>':`${rank.emoji}${rank.name}`}・貢ぎ ${st.spent.toLocaleString()}円${st.dates?`・同伴${st.dates}回`:""}</div></div>
       <button class="act" data-hostpick="${ho.id}">会う</button></div>`; });
   h+=`<button class="act" data-opensns style="width:calc(100% - 8px);margin:6px 4px;background:linear-gradient(180deg,#5fb0ff,#3a8fce)">📱 推し活SNSを見る</button>`;
@@ -1522,7 +1522,8 @@ function openHostDetail(id){ curHost=id; const ho=HOSTById[id], st=game.hosts[id
     <div class="sub">${DOUHAN_FEE.toLocaleString()}円・1日1回・たいりょく全回復⚡・恋ごころ+${LOVE_DATE}</div></div>
     <button class="act" data-douhan ${(doneDate||game.money<DOUHAN_FEE)?"disabled":""}>${doneDate?"また明日♡":"さそう"}</button></div>`;
   h+=`<div class="sectionTtl">👑 太客ランキング</div>`;
-  if(isTopCustomer(id))h+=`<div class="saveNote" style="background:#fff0c2;color:#a85f17">👑 あなたは ${ho.name} の<b>本命客</b>！この座を守ろう♡</div>`;
+  if(st.spent<=0)h+=`<div class="saveNote" style="color:#9a8aa6">まだ${ho.name}に貢いでないよ。通って上位を目指そう💸</div>`;
+  else if(isTopCustomer(id))h+=`<div class="saveNote" style="background:#fff0c2;color:#a85f17">👑 あなたは ${ho.name} の<b>本命客</b>！この座を守ろう♡</div>`;
   else h+=`<div class="saveNote" style="color:#c0392b">あなたは No.${rivalRank(id)}… 貢いで本命を奪い返そう💸</div>`;
   const board=[{name:"あなた",spent:st.spent,me:true}].concat((st.rivals||[]).map(r=>({name:r.name,spent:r.spent}))).sort((a,b)=>b.spent-a.spent);
   board.forEach((b,i)=>{ h+=`<div class="item" style="${b.me?"background:#fff0f6;border-color:#ff8fc0":""}"><div class="ico">${i===0?"👑":"#"+(i+1)}</div>
