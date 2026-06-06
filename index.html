@@ -354,6 +354,11 @@ const RIVAL_NAMES={ leo:["れな","さやか"], shun:["ほのか","まり"], kai
 function freshRivals(id){ return (RIVAL_NAMES[id]||["A","B"]).map(n=>({name:n,spent:500+Math.floor(Math.random()*1800)})); }
 function rivalRank(id){ const st=game.hosts[id]; if(!st||!st.rivals)return 1; return 1+st.rivals.filter(r=>r.spent>st.spent).length; }
 function isTopCustomer(id){ return rivalRank(id)===1; }
+// 店内ナンバー：そのホストの総売上（あなた＋ライバル全員の貢ぎ）で全ホストを順位付け（客がいなくても常にある）
+function hostSales(id){ const st=game.hosts[id]; if(!st)return 0; return st.spent+(st.rivals||[]).reduce((a,r)=>a+r.spent,0); }
+function hostNumber(id){ const my=hostSales(id); return 1+HOSTS.filter(h=>h.id!==id&&hostSales(h.id)>my).length; }
+function hostBadge(id){ const n=hostNumber(id), st=game.hosts[id], top=st&&st.spent>0&&isTopCustomer(id);
+  return `<span style="color:${n===1?"#d4a017":"#c0392b"};font-weight:800">${n===1?"👑":""}No.${n}</span>`+(top?' <span style="color:#e0559a;font-size:11px">❤️本命</span>':""); }
 const HOST_GIFTS=[ {key:"drink",name:"ドリンク",emoji:"🥃",cost:300},
   {key:"champ",name:"シャンパン",emoji:"🍾",cost:1000},
   {key:"tower",name:"シャンパンタワー",emoji:"🗼",cost:5000} ];
@@ -1493,7 +1498,7 @@ function openHostClub(){ curHost=null;
   HOSTS.forEach(ho=>{ const st=game.hosts[ho.id], rank=hostRank(st.spent);
     h+=`<div class="item" data-hostpick="${ho.id}" style="cursor:pointer">
       <canvas width="56" height="56" data-host="${ho.id}" style="image-rendering:pixelated;border-radius:10px;background:#2a1d38;flex:none"></canvas>
-      <div class="info"><div class="nm">${ho.name} <span style="color:#9a8aa6;font-size:12px">${ho.title}</span> ${st.spent<=0?'<span style="color:#9a8aa6">ー</span>':(isTopCustomer(ho.id)?'<span style="color:#e0559a">👑本命</span>':`<span style="color:#c0392b">No.${rivalRank(ho.id)}</span>`)}</div>
+      <div class="info"><div class="nm">${ho.name} <span style="color:#9a8aa6;font-size:12px">${ho.title}</span> ${hostBadge(ho.id)}</div>
       <div class="sub">${st.lover?'<span style="color:#e0559a">❤️恋人</span>':`${rank.emoji}${rank.name}`}・貢ぎ ${st.spent.toLocaleString()}円${st.dates?`・同伴${st.dates}回`:""}</div></div>
       <button class="act" data-hostpick="${ho.id}">会う</button></div>`; });
   h+=`<button class="act" data-opensns style="width:calc(100% - 8px);margin:6px 4px;background:linear-gradient(180deg,#5fb0ff,#3a8fce)">📱 推し活SNSを見る</button>`;
@@ -1506,7 +1511,7 @@ function openHostDetail(id){ curHost=id; const ho=HOSTById[id], st=game.hosts[id
   const canDate = idx>=1, doneDate = st.dateDay===game.day, hearts=Math.round(st.love/20);
   let h=`<h2>🍾 ${ho.name}</h2>`;
   h+=`<div class="item"><canvas width="72" height="72" data-host="${id}" style="image-rendering:pixelated;border-radius:12px;background:#2a1d38;flex:none"></canvas>
-    <div class="info"><div class="nm">${ho.name} ${st.lover?'<span style="color:#e0559a">❤️恋人</span>':`<span style="color:#ff5fa2">${rank.emoji}${rank.name}</span>`}</div>
+    <div class="info"><div class="nm">${ho.name} ${hostBadge(id)} ${st.lover?'<span style="color:#e0559a">❤️恋人</span>':`<span style="color:#ff5fa2">${rank.emoji}${rank.name}</span>`}</div>
     <div class="sub">「${st.line||pool[0]}」</div>
     <div class="own">${"❤️".repeat(hearts)}${"🤍".repeat(5-hearts)} 恋ごころ ${st.love}/100 ・ 同伴 ${st.dates}回</div>
     <div class="sub">🎂 ${SEASON_BY[ho.bday.season].emoji}${ho.bday.day}日 ・ 好物 ${ho.fav.map(c=>CROPS[c].emoji).join("")}🌟</div></div></div>`;
