@@ -449,6 +449,11 @@ const FISH_BY=Object.fromEntries(FISH.map(f=>[f.key,f]));
 FISH.forEach(f=>{ PRODUCTS[f.key]={name:f.name,emoji:f.emoji,sell:f.sell}; });
 function catchFish(){ const rain=isRaining(); let tot=0; const ws=FISH.map(f=>{ const w=f.w+(rain?f.rain:0); tot+=w; return w; });
   let r=Math.random()*tot; for(let i=0;i<FISH.length;i++){ r-=ws[i]; if(r<=0)return FISH[i]; } return FISH[0]; }
+const FISHDEX_REWARD=5000;
+function fishdexCount(){ return FISH.filter(f=>game.fishdex&&game.fishdex[f.key]>0).length; }
+function checkFishdexComplete(){ if(game.fishdexDone)return; if(fishdexCount()<FISH.length)return;
+  game.fishdexDone=true; game.money+=FISHDEX_REWARD;
+  setTimeout(()=>{ SFX.coin&&SFX.coin(); setSpeech(`おさかな図鑑コンプリート🎉🐟 ぜんぶ釣ったよ！ごほうび +${FISHDEX_REWARD.toLocaleString()}円💰`,4000); },900); }
 // 加工レシピ（材料は倉庫から消費、翌朝に完成して倉庫へ）
 const RECIPES=[
   {key:"omelet", out:"omelet", emoji:"🍳", name:"オムレツ", need:{egg:1}},
@@ -570,7 +575,7 @@ function newTile(){ return {state:"empty",crop:null,growth:0,watered:false}; }
 function freshGame(){ return { day:1,money:500,stamina:15,maxStamina:15,level:1,exp:0,cols:4,rows:4,
   seeds:Object.fromEntries(CROP_IDS.map(c=>[c,0])), tiles:Array.from({length:16},newTile), shipping:[], animals:[], drops:[],
   storage:{}, feed:0, cooking:[], seedmaking:[], weather:"sunny", fairy:{appeared:false,greeted:false,affection:0},
-  hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0, lastEventDay:0, bag:{}, partner:null, sns:null,
+  hp:BASE_HP, maxHp:BASE_HP, weapon:"fist", armor:"cloth", accessory:"none", mats:{}, items:{}, crafted:{}, dungeonMax:0, lastEventDay:0, bag:{}, partner:null, sns:null, fishdex:{}, fishdexDone:false,
   hosts:Object.fromEntries(HOSTS.map(h=>[h.id,{spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false,bday:0,rivals:freshRivals(h.id)}])) }; }
 let game=loadGame()||freshGame();
 let activeSeed=null;
@@ -592,6 +597,7 @@ function loadGame(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(!raw)retu
   if(g.accessory==null||!ACC_BY[g.accessory])g.accessory="none";
   if(!g.mats||typeof g.mats!=="object")g.mats={}; if(!g.items||typeof g.items!=="object")g.items={};
   if(!g.crafted||typeof g.crafted!=="object")g.crafted={}; if(g.dungeonMax==null)g.dungeonMax=0; if(g.lastEventDay==null)g.lastEventDay=0; if(g.partner===undefined)g.partner=null; if(g.sns===undefined)g.sns=null;
+  if(!g.fishdex||typeof g.fishdex!=="object")g.fishdex={}; if(g.fishdexDone==null)g.fishdexDone=false;
   g.maxHp=BASE_HP+ARMOR_BY[g.armor].hp+ACC_BY[g.accessory].hp; if(g.hp==null||g.hp>g.maxHp||g.hp<0)g.hp=g.maxHp;
   if(!g.hosts)g.hosts={};
   HOSTS.forEach(h=>{ if(!g.hosts[h.id])g.hosts[h.id]={spent:0,lineDay:0,line:"",dates:0,dateDay:0,love:0,lover:false,bday:0};
@@ -999,11 +1005,12 @@ class Farm extends Phaser.Scene{
     this.fishTimer=this.time.delayedCall(1400,()=>this.failFish()); }
   reelFish(){ if(this.fishState!=="biting")return; const f=catchFish();
     game.storage[f.key]=(game.storage[f.key]||0)+1; this.endFishing(); SFX.harvest();
-    const p=playerTile(); this.fxBurst(p.x,p.y,["#9fd0ff","#5cb6e8","#ffffff","#ffd84d"]); this.fxFloat(p.x,p.y,f.emoji+" "+f.name,"#3a8fce");
+    const isNew=!(game.fishdex[f.key]>0); game.fishdex[f.key]=(game.fishdex[f.key]||0)+1;
+    const p=playerTile(); this.fxBurst(p.x,p.y,["#9fd0ff","#5cb6e8","#ffffff","#ffd84d"]); this.fxFloat(p.x,p.y,(isNew?"NEW! ":"")+f.emoji+" "+f.name,isNew?"#e0559a":"#3a8fce");
     if(f.key==="nushi")setSpeech("でた〜〜！🐉 ぬしさま！！とんでもない大物！✨",3400);
     else if(f.key==="boot")setSpeech("…ながぐつ釣れた🥾 まあそんな日もあるよね",2400);
-    else setSpeech(`${f.emoji} ${f.name}が釣れた！加工小屋(🍳)で売れるよ`,2400);
-    saveGame(); }
+    else setSpeech(`${isNew?"はじめての":""}${f.emoji} ${f.name}が釣れた！${isNew?"図鑑に登録📖✨":"加工小屋(🍳)で売れるよ"}`,2400);
+    checkFishdexComplete(); saveGame(); }
   failFish(){ if(this.fishState!=="biting")return; this.endFishing(); SFX.error(); setSpeech("にげられた〜！🎣💨 もう一回ねらお",2000); }
   endFishing(){ this.fishState=null; if(this.fishTimer){ this.fishTimer.remove(); this.fishTimer=null; }
     if(this.bobberTween){ this.bobberTween.stop(); this.bobberTween=null; } if(this.bobberSpr){ this.bobberSpr.destroy(); this.bobberSpr=null; } }
@@ -1451,6 +1458,7 @@ function openKitchen(){ let h=`<h2>🍳 加工小屋</h2>`;
         <div class="sub">売値 ${prodInfo(k).sell}円</div><div class="own">在庫：${game.storage[k]}こ</div></div>
         <button class="act" data-sell="${k}">売る</button></div>`; });
     h+=`<button class="act buyx" data-sellall style="width:calc(100% - 8px);margin:6px 4px">ぜんぶ売る💰</button>`; }
+  h+=`<button class="act" data-fishdex style="width:calc(100% - 8px);margin:6px 4px;background:linear-gradient(180deg,#5fb0ff,#3a8fce)">🐟 おさかな図鑑（${fishdexCount()}/${FISH.length}）</button>`;
   h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
 function cookRecipe(key){ const r=RECIPES.find(x=>x.key===key); if(!r)return;
   if(!Object.entries(r.need).every(([k,v])=>(game.storage[k]||0)>=v)){ toast("材料が足りないよ"); SFX.error(); return; }
@@ -1461,6 +1469,16 @@ function sellStorage(k){ if(!(game.storage[k]>0))return; const s=prodInfo(k).sel
   SFX.coin(); toast(`${prodInfo(k).name}を売った +${s}円`); openKitchen(); saveGame(); }
 function sellAllStorage(){ let total=0; Object.keys(game.storage).forEach(k=>{ total+=prodInfo(k).sell*game.storage[k]; });
   if(total<=0)return; game.money+=total; game.storage={}; SFX.coin(); setSpeech(`まとめて出荷〜！💰 +${total.toLocaleString()}円`,2200); openKitchen(); saveGame(); }
+function openFishdex(){ const got=fishdexCount(), tot=FISH.length;
+  let h=`<h2>🐟 おさかな図鑑</h2>`;
+  h+=`<div class="saveNote">コンプリート：${got} / ${tot}${game.fishdexDone?" 🏆達成済み":""}</div>`;
+  FISH.forEach(f=>{ const n=(game.fishdex&&game.fishdex[f.key])||0, hint=f.rain>0?"☔雨の日に釣れやすい":(f.w<0.5?"✨めったに釣れない伝説":"");
+    if(n>0) h+=`<div class="item"><div class="ico">${f.emoji}</div><div class="info"><div class="nm">${f.name}</div>
+      <div class="sub">売値 ${f.sell}円${hint?" ・ "+hint:""}</div><div class="own">釣った数：${n}こ</div></div></div>`;
+    else h+=`<div class="item" style="opacity:.6"><div class="ico">❔</div><div class="info"><div class="nm">？？？</div>
+      <div class="sub">${hint||"まだ釣ってないよ"}</div></div></div>`; });
+  if(!game.fishdexDone) h+=`<div class="saveNote">ぜんぶ釣ると ごほうび +${FISHDEX_REWARD.toLocaleString()}円💰</div>`;
+  h+=`<button class="closeBtn" data-close>とじる</button>`; sheet.innerHTML=h; mountSheet(); overlay.classList.add("show"); }
 function openCook(){ let h=`<h2>🍳 おうちで料理</h2>`;
   h+=`<div class="saveNote">材料は🎒バッグの野菜＆倉庫の加工品から。食べると⚡たいりょく回復！</div>`;
   h+=`<div class="saveNote">いまの たいりょく：⚡${game.stamina} / ${game.maxStamina}</div>`;
@@ -1820,6 +1838,7 @@ function mountSheet(){ sheet.querySelectorAll("canvas[data-icon]").forEach(cv=>d
   sheet.querySelectorAll("[data-equip]").forEach(b=>b.onclick=()=>equipItem(b.dataset.equip));
   sheet.querySelectorAll("[data-expand]").forEach(b=>b.onclick=()=>buyExpansion(+b.dataset.expand));
   sheet.querySelectorAll("[data-reset]").forEach(b=>b.onclick=resetGame);
+  sheet.querySelectorAll("[data-fishdex]").forEach(b=>b.onclick=openFishdex);
   sheet.querySelectorAll("[data-export]").forEach(b=>b.onclick=exportSave);
   sheet.querySelectorAll("[data-import]").forEach(b=>b.onclick=importSave);
   sheet.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeSheet); }
