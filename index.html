@@ -169,6 +169,11 @@
       padding:0 calc(16px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
       align-items:flex-end; pointer-events:none; }
     #dpad{ pointer-events:none; } #dpad .dbtn{ pointer-events:auto; } #actionBtn{ pointer-events:auto; }
+    /* 十字キーは半透明にして下の畑を透けさせる（押すと濃くなる） */
+    #dpad .dbtn{ background:linear-gradient(180deg,rgba(255,247,230,.42),rgba(236,214,166,.42));
+      box-shadow:0 3px 0 rgba(183,140,79,.5); text-shadow:0 1px 2px rgba(255,255,255,.7); }
+    #dpad .dbtn:active,#dpad .dbtn.on{ background:linear-gradient(180deg,rgba(255,233,184,.92),rgba(224,193,132,.92)); }
+    #dpadMid{ background:transparent; }
     /* シート（ショップ等）は横では詰めて1画面に多く表示 */
     #overlay .sheet{ max-width:560px; max-height:94vh; padding-top:12px; }
     #overlay .sheet h2{ font-size:17px; margin:0 0 7px; }
