@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>きせかえマーケット 〜ファンタジー市場ものがたり〜</title>
+<style>
+  /* ===== カラーパレット（くすみピンク・安っぽさ防止仕様） ===== */
+  :root{
+    --bg:        #f3e3e9;   /* 画面背景 */
+    --bg2:       #ecd6df;
+    --panel:     #fbf3f6;   /* パネル */
+    --panel2:    #f6e9ee;
+    --pink:      #d18aa1;   /* メインピンク S<70% */
+    --pink-d:    #b56e87;   /* 濃いめ */
+    --rose:      #8f5366;   /* ヘッダー/重要 */
+    --gold:      #c6a667;   /* アクセント1色のみ */
+    --text:      #4a3a40;   /* ダークブラウン（真っ黒禁止） */
+    --text-soft: #7d6670;
+    --line:      #e2cbd4;
+    --good:      #6f9a78;
+    --bad:       #c0707f;
+    --r:         8px;       /* 角丸固定 */
+    --gap:       8px;       /* 8pxグリッド */
+    --shadow:    0 2px 8px rgba(143,83,102,.12);
+  }
+  /* 属性色 */
+  :root{
+    --at-pastel:  #e6a9c4;
+    --at-gothic:  #5b4a66;
+    --at-natural: #9fb083;
+    --at-cool:    #7fa6cc;
+    --at-fairy:   #c2a9e0;
+    --at-marine:  #6fc1c8;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+  }
+  #app{
+    max-width:480px;
+    margin:0 auto;
+    height:100vh;
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    background:var(--bg);
+    position:relative;
+  }
+
+  /* ===== ヘッダー ===== */
+  header{
+    background:linear-gradient(180deg,var(--rose),#7d4759);
+    color:#fbeef3;
+    padding:10px var(--gap);
+    display:flex;
+    align-items:center;
+    gap:var(--gap);
+    box-shadow:var(--shadow);
+    z-index:5;
+  }
+  header .title{font-size:13px;font-weight:700;letter-spacing:.02em;flex:1;}
+  header .title small{display:block;font-size:9px;opacity:.8;font-weight:400;letter-spacing:.04em;}
+  .stat{
+    background:rgba(251,243,246,.16);
+    border:1px solid rgba(251,243,246,.25);
+    border-radius:var(--r);
+    padding:4px 8px;
+    text-align:center;
+    min-width:62px;
+  }
+  .stat b{display:block;font-size:13px;color:var(--gold);letter-spacing:.02em;}
+  .stat span{font-size:9px;opacity:.85;}
+
+  /* ===== コンテンツ ===== */
+  main{flex:1;overflow-y:auto;overflow-x:hidden;padding:var(--gap);scrollbar-width:thin;scrollbar-color:var(--pink) transparent;}
+  main::-webkit-scrollbar{width:6px;}
+  main::-webkit-scrollbar-thumb{background:var(--pink);border-radius:3px;}
+  .screen{display:none;animation:fade .25s ease;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    padding:var(--gap);
+    margin-bottom:var(--gap);
+    box-shadow:var(--shadow);
+  }
+  .panel h2{margin:0 0 8px;font-size:13px;color:var(--rose);display:flex;align-items:center;gap:6px;}
+  .panel h2 .ic{font-size:15px;}
+  .muted{color:var(--text-soft);font-size:11px;}
+
+  /* ===== ボタン ===== */
+  button{font-family:inherit;cursor:pointer;border:none;color:var(--text);}
+  .btn{
+    background:var(--pink);color:#fff;border-radius:var(--r);
+    padding:10px 14px;font-size:13px;font-weight:700;border:1px solid var(--pink-d);
+    transition:filter .12s,transform .05s;letter-spacing:.02em;
+  }
+  .btn:hover{filter:brightness(1.05);}
+  .btn:active{transform:translateY(1px);filter:brightness(.95);}
+  .btn:disabled{background:#d9c6cd;border-color:#cdb6bf;color:#fff;cursor:not-allowed;filter:none;}
+  .btn.gold{background:var(--gold);border-color:#b08f50;}
+  .btn.ghost{background:var(--panel2);color:var(--rose);border:1px solid var(--line);}
+  .btn.sm{padding:6px 10px;font-size:11px;}
+  .btn.full{width:100%;}
+
+  /* ===== キャラ表示 ===== */
+  #charStage{
+    position:relative;width:100%;aspect-ratio:1/1.05;
+    background:
+      radial-gradient(circle at 50% 38%, #fbf3f6 0%, #f2dbe5 70%, #ead0db 100%);
+    border-radius:var(--r);border:1px solid var(--line);overflow:hidden;
+    image-rendering:pixelated;
+  }
+  #charSvg{width:100%;height:100%;display:block;}
+  .floor{position:absolute;left:0;right:0;bottom:0;height:22%;
+    background:linear-gradient(180deg,rgba(143,83,102,.04),rgba(143,83,102,.1));}
+
+  /* ===== 着せ替えスロット ===== */
+  .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap);}
+  .slot{
+    background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);
+    padding:6px;text-align:center;cursor:pointer;transition:border-color .12s,background .12s;
+  }
+  .slot:hover{border-color:var(--pink);}
+  .slot .lbl{font-size:9px;color:var(--text-soft);}
+  .slot .val{font-size:11px;font-weight:700;margin-top:2px;min-height:14px;}
+  .slot .ic{font-size:18px;}
+
+  /* ===== アイテムカード ===== */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:var(--gap);}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+    padding:8px 6px;text-align:center;position:relative;overflow:hidden;
+  }
+  .card .thumb{font-size:30px;line-height:1;margin:2px 0 4px;display:block;}
+  .card .nm{font-size:11px;font-weight:700;min-height:28px;display:flex;align-items:center;justify-content:center;}
+  .card .meta{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin:4px 0;}
+  .tag{font-size:8px;padding:2px 5px;border-radius:6px;font-weight:700;color:#fff;letter-spacing:.02em;}
+  .rar{font-size:9px;font-weight:900;padding:2px 6px;border-radius:6px;color:#fff;letter-spacing:.04em;}
+  .rar.N{background:#a99aa0;}
+  .rar.R{background:#7fa6cc;}
+  .rar.SR{background:#c39bd6;}
+  .rar.SSR{background:linear-gradient(120deg,#e6a9c4,#c6a667,#7fc1c8);}
+  .price{font-size:12px;font-weight:800;color:var(--rose);}
+  .price .c{font-size:9px;color:var(--gold);}
+  .qty{position:absolute;top:4px;right:4px;background:var(--rose);color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 6px;}
+  .arrow{font-size:9px;font-weight:800;margin-left:3px;}
+  .up{color:var(--good);}
+  .down{color:var(--bad);}
+
+  /* 属性タグ色 */
+  .at-pastel{background:var(--at-pastel);}
+  .at-gothic{background:var(--at-gothic);}
+  .at-natural{background:var(--at-natural);}
+  .at-cool{background:var(--at-cool);}
+  .at-fairy{background:var(--at-fairy);}
+  .at-marine{background:var(--at-marine);}
+
+  /* ===== チャート ===== */
+  #chartWrap{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:6px;}
+  #chart{width:100%;height:140px;display:block;}
+  .legend{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+  .leg{font-size:9px;padding:3px 7px;border-radius:6px;border:1px solid var(--line);cursor:pointer;display:flex;align-items:center;gap:4px;background:var(--panel);}
+  .leg .dot{width:8px;height:8px;border-radius:50%;}
+  .leg.off{opacity:.4;}
+
+  /* ===== ニュース ===== */
+  .news{display:flex;gap:6px;align-items:flex-start;padding:6px;border-radius:var(--r);background:var(--panel2);margin-bottom:6px;border-left:3px solid var(--gold);}
+  .news.omen{border-left-color:var(--pink);}
+  .news.spike{border-left-color:var(--bad);}
+  .news .ic{font-size:15px;}
+  .news .tx{font-size:11px;}
+  .news .tx b{color:var(--rose);}
+
+  /* ===== タブバー ===== */
+  nav{
+    display:flex;background:var(--panel);border-top:1px solid var(--line);
+    box-shadow:0 -2px 8px rgba(143,83,102,.08);z-index:5;
+  }
+  nav button{
+    flex:1;background:none;border:none;padding:7px 2px 6px;
+    display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--text-soft);
+    font-size:9px;position:relative;transition:color .12s;
+  }
+  nav button .ic{font-size:18px;}
+  nav button.active{color:var(--rose);font-weight:700;}
+  nav button.active::after{content:"";position:absolute;top:0;left:18%;right:18%;height:2px;background:var(--pink);border-radius:2px;}
+
+  /* ===== モーダル ===== */
+  .overlay{position:fixed;inset:0;background:rgba(74,58,64,.5);display:none;align-items:center;justify-content:center;z-index:30;padding:16px;}
+  .overlay.show{display:flex;animation:fade .2s;}
+  .modal{background:var(--panel);border-radius:12px;max-width:380px;width:100%;max-height:86vh;overflow-y:auto;box-shadow:0 8px 30px rgba(74,58,64,.35);border:1px solid var(--line);}
+  .modal .mhead{padding:12px;background:linear-gradient(180deg,var(--rose),#7d4759);color:#fbeef3;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:space-between;border-radius:12px 12px 0 0;}
+  .modal .mbody{padding:12px;}
+  .modal .x{background:rgba(255,255,255,.18);border-radius:6px;width:26px;height:26px;color:#fff;font-size:16px;}
+
+  /* ===== ガチャ演出 ===== */
+  #gachaFx{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:radial-gradient(circle,#3a2630,#241820);overflow:hidden;}
+  #gachaFx.show{display:flex;}
+  .gx-star{position:absolute;font-size:20px;animation:rise 1.4s linear infinite;opacity:0;}
+  @keyframes rise{0%{transform:translateY(40px) scale(.5);opacity:0;}20%{opacity:1;}100%{transform:translateY(-120px) scale(1.2);opacity:0;}}
+  .gx-reveal{text-align:center;transform:scale(.4);opacity:0;transition:all .5s cubic-bezier(.2,1.4,.4,1);z-index:2;}
+  .gx-reveal.in{transform:scale(1);opacity:1;}
+  .gx-reveal .ring{width:140px;height:140px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:64px;position:relative;}
+  .gx-reveal .nm{color:#fff;font-size:18px;font-weight:800;}
+  .gx-reveal .sub{font-size:13px;font-weight:800;letter-spacing:.1em;margin-bottom:6px;}
+  .rainbow{background:linear-gradient(90deg,#ff9ec4,#c6a667,#7fc1c8,#c2a9e0,#ff9ec4);-webkit-background-clip:text;background-clip:text;color:transparent;animation:hue 2s linear infinite;}
+  @keyframes hue{to{filter:hue-rotate(360deg);}}
+  .burst{position:absolute;inset:0;pointer-events:none;}
+  .gx-multi{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:320px;}
+  .gx-multi .mini{width:64px;background:rgba(255,255,255,.08);border-radius:8px;padding:6px 2px;color:#fff;font-size:9px;}
+  .gx-multi .mini .t{font-size:26px;}
+
+  /* セレクト行 */
+  .row{display:flex;gap:var(--gap);align-items:center;}
+  .row.wrap{flex-wrap:wrap;}
+  select,input{font-family:inherit;font-size:12px;padding:7px 8px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);color:var(--text);}
+  .seg{display:flex;gap:4px;flex-wrap:wrap;}
+  .seg button{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:5px 9px;font-size:11px;color:var(--text-soft);}
+  .seg button.on{background:var(--pink);color:#fff;border-color:var(--pink-d);}
+
+  .empty{text-align:center;padding:24px 8px;color:var(--text-soft);font-size:12px;}
+  .empty .ic{font-size:34px;display:block;margin-bottom:6px;opacity:.5;}
+
+  .toast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%) translateY(20px);background:var(--rose);color:#fff;padding:9px 16px;border-radius:20px;font-size:12px;font-weight:700;opacity:0;transition:.25s;z-index:50;box-shadow:var(--shadow);white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .codeSlot{display:flex;align-items:center;gap:8px;padding:7px;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);margin-bottom:6px;cursor:pointer;}
+  .codeSlot .ic{font-size:24px;width:32px;text-align:center;}
+  .codeSlot .info{flex:1;}
+  .codeSlot .info .nm{font-size:12px;font-weight:700;}
+  .scorebar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:4px;}
+  .scorebar i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--gold));}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="title">きせかえマーケット<small>ファンタジー市場ものがたり</small></div>
+    <div class="stat"><b id="hCoin">0</b><span>🪙 リル</span></div>
+    <div class="stat"><b id="hDay">1</b><span>📅 日目</span></div>
+  </header>
+
+  <main id="main">
+
+    <!-- ===== メイン（着せ替え） ===== -->
+    <section class="screen active" id="scr-home">
+      <div class="panel">
+        <div id="charStage">
+          <svg id="charSvg" viewBox="0 0 200 230" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="floor"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2><span class="ic">👗</span>きせかえ</h2>
+        <div class="slots" id="slotGrid"></div>
+        <div class="row" style="margin-top:8px;">
+          <button class="btn ghost sm" id="btnRandom">🎲 おまかせ</button>
+          <button class="btn ghost sm" id="btnStrip">🧺 ぜんぶ外す</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2><span class="ic">📰</span>街のうわさ</h2>
+        <div id="newsFeed"></div>
+        <button class="btn gold full" id="btnNextDay" style="margin-top:6px;">🌙 つぎの日へすすむ</button>
+      </div>
+    </section>
+
+    <!-- ===== マーケット ===== -->
+    <section class="screen" id="scr-market">
+      <div class="panel">
+        <h2><span class="ic">📈</span>属性トレンド</h2>
+        <div id="chartWrap"><canvas id="chart"></canvas></div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="panel">
+        <h2><span class="ic">🛒</span>仕入れ（マーケット）</h2>
+        <p class="muted">安いときに買って、高くなったら売ろう。出品は毎日入れ替わるよ。</p>
+        <div class="grid" id="buyGrid"></div>
+      </div>
+      <div class="panel">
+        <h2><span class="ic">💰</span>売却（手持ち）</h2>
+        <p class="muted">売却手数料 <b id="feeLbl">15</b>%。トレンドが高いときが売り時！</p>
+        <div class="grid" id="sellGrid"></div>
+      </div>
+    </section>
+
+    <!-- ===== ガチャ ===== -->
+    <section class="screen" id="scr-gacha">
+      <div class="panel" style="text-align:center;">
+        <h2 style="justify-content:center;"><span class="ic">✨</span>きらめきガチャ</h2>
+        <div style="font-size:54px;margin:6px 0;">🎀</div>
+        <p class="muted">N 60% / R 25% / SR 12% / SSR 3%<br>天井：<b id="ceilLbl">0</b>/60 回（SSR確定）</p>
+        <div class="row" style="justify-content:center;margin-top:10px;">
+          <button class="btn full" id="btnGacha1">1回まわす<br><small>120 🪙</small></button>
+          <button class="btn gold full" id="btnGacha10">10連まわす<br><small>1,100 🪙</small></button>
+        </div>
+        <p class="muted" style="margin-top:8px;">ガチャ限定アイテムはクラフトでは作れないよ。</p>
+      </div>
+      <div class="panel">
+        <h2><span class="ic">🎁</span>ピックアップ</h2>
+        <div class="grid" id="puGrid"></div>
+      </div>
+    </section>
+
+    <!-- ===== クラフト ===== -->
+    <section class="screen" id="scr-craft">
+      <div class="panel">
+        <h2><span class="ic">🧵</span>クラフト工房</h2>
+        <p class="muted">素材を市場で安く仕入れて、可愛いアイテムに加工して売ろう。レシピは審査報酬などで増えるよ。</p>
+      </div>
+      <div class="panel">
+        <h2><span class="ic">📜</span>覚えたレシピ</h2>
+        <div id="recipeList"></div>
+      </div>
+      <div class="panel">
+        <h2><span class="ic">🧶</span>手持ちの素材</h2>
+        <div class="grid" id="matGrid"></div>
+      </div>
+    </section>
+
+    <!-- ===== 審査 ===== -->
+    <section class="screen" id="scr-code">
+      <div class="panel" id="codePanel"></div>
+    </section>
+
+    <!-- ===== 図鑑/持ち物 ===== -->
+    <section class="screen" id="scr-bag">
+      <div class="panel">
+        <h2><span class="ic">👜</span>もちもの図鑑</h2>
+        <div class="seg" id="bagFilter">
+          <button class="on" data-f="all">ぜんぶ</button>
+          <button data-f="hair">髪</button>
+          <button data-f="tops">トップス</button>
+          <button data-f="bottoms">ボトムス</button>
+          <button data-f="shoes">くつ</button>
+          <button data-f="acc">小物</button>
+          <button data-f="bg">背景</button>
+        </div>
+        <div class="muted" style="margin:8px 0;">コンプ率：<b id="compRate">0</b>%（<span id="compNum">0/0</span>）</div>
+        <div class="grid" id="bagGrid"></div>
+      </div>
+      <div class="panel">
+        <h2><span class="ic">⚙️</span>データ</h2>
+        <div class="row wrap">
+          <button class="btn ghost sm" id="btnSave">💾 セーブ</button>
+          <button class="btn ghost sm" id="btnReset">🗑 リセット</button>
+        </div>
+        <p class="muted" style="margin-top:6px;">進行は自動でブラウザに保存されます。</p>
+      </div>
+    </section>
+
+  </main>
+
+  <nav>
+    <button class="active" data-scr="home"><span class="ic">🏠</span>メイン</button>
+    <button data-scr="market"><span class="ic">📈</span>市場</button>
+    <button data-scr="gacha"><span class="ic">✨</span>ガチャ</button>
+    <button data-scr="craft"><span class="ic">🧵</span>クラフト</button>
+    <button data-scr="code"><span class="ic">🏆</span>審査</button>
+    <button data-scr="bag"><span class="ic">👜</span>図鑑</button>
+  </nav>
+</div>
+
+<!-- モーダル -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="mhead"><span id="mTitle">title</span><button class="x" id="mClose">×</button></div>
+    <div class="mbody" id="mBody"></div>
+  </div>
+</div>
+
+<!-- ガチャ演出 -->
+<div id="gachaFx">
+  <div id="gxInner"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   きせかえマーケット  —  単一HTMLゲーム
+   設計書：ファンタジー市場ゲーム（着せ替え×市場売買）
+   ========================================================= */
+
+/* ---------- 属性 ---------- */
+const ATTRS = {
+  pastel:  {jp:"パステル",  color:"#e6a9c4", cls:"at-pastel",  season:"summer"},
+  gothic:  {jp:"ゴシック",  color:"#5b4a66", cls:"at-gothic",  season:"winter"},
+  natural: {jp:"ナチュラル",color:"#9fb083", cls:"at-natural", season:"spring"},
+  cool:    {jp:"クール",    color:"#7fa6cc", cls:"at-cool",    season:"winter"},
+  fairy:   {jp:"フェアリー",color:"#c2a9e0", cls:"at-fairy",   season:"spring"},
+  marine:  {jp:"マリン",    color:"#6fc1c8", cls:"at-marine",  season:"summer"},
+};
+const ATTR_KEYS = Object.keys(ATTRS);
+
+/* ---------- レアリティ ---------- */
+const RARITY = {
+  N:  {mult:1.0,  rate:60, color:"#a99aa0"},
+  R:  {mult:1.8,  rate:25, color:"#7fa6cc"},
+  SR: {mult:3.5,  rate:12, color:"#c39bd6"},
+  SSR:{mult:7.0,  rate:3,  color:"#c6a667"},
+};
+
+/* ---------- スロット ---------- */
+const SLOTS = {
+  hair:    {jp:"髪型",     ic:"💇"},
+  tops:    {jp:"トップス", ic:"👚"},
+  bottoms: {jp:"ボトムス", ic:"👖"},
+  shoes:   {jp:"シューズ", ic:"👟"},
+  acc:     {jp:"小物",     ic:"💍"},
+  bg:      {jp:"背景小物", ic:"🪴"},
+};
+const SLOT_KEYS = Object.keys(SLOTS);
+
+/* ---------- アイテムカタログ ----------
+   id, name, slot, attr, rarity, base(基準価格), variant(見た目), thumb, src(gacha/craft) */
+let _id=0; const ITEMS=[];
+function add(name,slot,attr,rar,base,variant,thumb,src){
+  ITEMS.push({id:"i"+(_id++),name,slot,attr,rarity:rar,base,variant,thumb,src});
+}
+// --- 髪型 ---
+add("ふわリボンツイン","hair","pastel","R",260,0,"🎀","gacha");
+add("ナイトレイヴン","hair","gothic","SR",520,1,"🦇","gacha");
+add("もりのおさげ","hair","natural","N",120,2,"🌿","gacha");
+add("アイスショート","hair","cool","R",240,3,"❄️","gacha");
+add("ようせいロング","hair","fairy","SSR",1400,4,"🧚","gacha");
+add("しおかぜボブ","hair","marine","N",110,5,"🌊","craft");
+// --- トップス ---
+add("いちごブラウス","tops","pastel","N",130,0,"🍓","gacha");
+add("くろレースドレス","tops","gothic","SSR",1500,1,"🖤","gacha");
+add("リネンシャツ","tops","natural","R",250,2,"🌾","craft");
+add("スターニット","tops","cool","SR",560,3,"⭐","gacha");
+add("ゆめいろケープ","tops","fairy","SR",540,4,"💫","gacha");
+add("セーラーカラー","tops","marine","R",260,5,"⚓","craft");
+// --- ボトムス ---
+add("ふんわりスカート","bottoms","pastel","R",240,0,"🌸","gacha");
+add("ゴシックパニエ","bottoms","gothic","SR",520,1,"🕸️","gacha");
+add("コットンロング","bottoms","natural","N",110,2,"🍃","craft");
+add("クールデニム","bottoms","cool","N",120,3,"🩳","gacha");
+add("はねつきスカート","bottoms","fairy","SSR",1450,4,"🪶","gacha");
+add("マリンショーツ","bottoms","marine","R",230,5,"🐚","craft");
+// --- シューズ ---
+add("りぼんパンプス","shoes","pastel","R",230,0,"👠","gacha");
+add("ブーツノワール","shoes","gothic","R",250,1,"🥾","gacha");
+add("くさはらサンダル","shoes","natural","N",100,2,"👡","craft");
+add("グレイシアブーツ","shoes","cool","SR",510,3,"🧊","gacha");
+add("ガラスのくつ","shoes","fairy","SSR",1600,4,"👑","gacha");
+add("なみうちサンダル","shoes","marine","N",95,5,"🩴","craft");
+// --- 小物 ---
+add("いちごバッグ","acc","pastel","N",115,0,"🍰","gacha");
+add("コウモリチョーカー","acc","gothic","SR",530,1,"🦇","gacha");
+add("おはなかんむり","acc","natural","R",240,2,"🌼","craft");
+add("こおりイヤリング","acc","cool","R",235,3,"💎","gacha");
+add("ようせいのつえ","acc","fairy","SSR",1550,4,"🪄","gacha");
+add("ひとでピアス","acc","marine","N",100,5,"⭐","craft");
+// --- 背景小物 ---
+add("ゆめかわベッド","bg","pastel","R",220,0,"🛏️","gacha");
+add("シャンデリア","bg","gothic","SR",500,1,"🕯️","gacha");
+add("もりのきのこ","bg","natural","N",90,2,"🍄","craft");
+add("ゆきのまど","bg","cool","R",225,3,"🪟","gacha");
+add("ほしぞらドーム","bg","fairy","SR",560,4,"🌌","gacha");
+add("すいそうランプ","bg","marine","R",230,5,"🐠","craft");
+
+const ITEM_BY_ID = Object.fromEntries(ITEMS.map(i=>[i.id,i]));
+
+/* ---------- 素材 ---------- */
+const MATERIALS = {
+  m_cloth: {name:"やわらか布",  base:40, thumb:"🧵"},
+  m_lace:  {name:"レース",      base:70, thumb:"🪡"},
+  m_shell: {name:"きれいな貝",  base:55, thumb:"🐚"},
+  m_leaf:  {name:"つやはっぱ",  base:35, thumb:"🍃"},
+  m_gem:   {name:"こな宝石",    base:90, thumb:"💎"},
+  m_thread:{name:"きんの糸",    base:80, thumb:"🧶"},
+};
+const MAT_KEYS = Object.keys(MATERIALS);
+
+/* ---------- レシピ ---------- (output は craft 由来の itemId) */
+function itemIdByName(n){ const it=ITEMS.find(i=>i.name===n); return it?it.id:null; }
+const RECIPES = [
+  {id:"r1", out:itemIdByName("リネンシャツ"),    inputs:{m_cloth:2,m_leaf:1}, known:true},
+  {id:"r2", out:itemIdByName("セーラーカラー"),  inputs:{m_cloth:1,m_shell:2}, known:true},
+  {id:"r3", out:itemIdByName("おはなかんむり"),  inputs:{m_leaf:2,m_thread:1}, known:false},
+  {id:"r4", out:itemIdByName("マリンショーツ"),  inputs:{m_cloth:1,m_shell:1,m_gem:1}, known:false},
+  {id:"r5", out:itemIdByName("コットンロング"),  inputs:{m_cloth:2}, known:false},
+  {id:"r6", out:itemIdByName("すいそうランプ"),  inputs:{m_shell:2,m_gem:1}, known:false},
+  {id:"r7", out:itemIdByName("しおかぜボブ"),    inputs:{m_thread:1,m_shell:1}, known:false},
+  {id:"r8", out:itemIdByName("なみうちサンダル"),inputs:{m_cloth:1,m_shell:1}, known:false},
+];
+
+/* ---------- 審査テーマ ---------- */
+const CODE_THEMES = [
+  {name:"雨の日デート",   attr:"cool",    ic:"☔"},
+  {name:"パーティーナイト",attr:"gothic", ic:"🌃"},
+  {name:"森のお散歩",     attr:"natural", ic:"🌳"},
+  {name:"ゆめの女の子",   attr:"fairy",   ic:"🌙"},
+  {name:"なつの海辺",     attr:"marine",  ic:"🏖️"},
+  {name:"あまいティータイム",attr:"pastel",ic:"🍮"},
+];
+
+/* =========================================================
+   ステート
+   ========================================================= */
+const FEE = 0.15;
+let S = null;
+
+function newGame(){
+  return {
+    coin: 800,
+    day: 1,
+    inv: {},                 // itemId -> qty
+    mats: {},                // matId -> qty
+    equip: {hair:null,tops:null,bottoms:null,shoes:null,acc:null,bg:null},
+    seen: {},                // itemId -> true（図鑑）
+    trend: {},               // attr -> 現在値
+    phase: {},               // attr -> macro位相オフセット
+    history: {},             // attr -> [値,...]
+    events: [],              // {attr,mult,daysLeft,name}
+    news: [],                // 表示用 {type,text,ic}
+    omen: null,              // 予兆 {attr,up,name}
+    ceil: 0,                 // 天井カウンタ
+    pickup: null,            // ピックアップ itemId
+    code: null,              // 進行中審査 {theme,done,sel:{slot:itemId}}
+    nextCodeDay: 4,
+    legendOff: {},           // チャート非表示属性
+    chartSel: "all",
+  };
+}
+
+function initTrends(){
+  ATTR_KEYS.forEach((a,i)=>{
+    S.phase[a] = i*4; // ばらけさせる
+    S.trend[a] = 1.0;
+    S.history[a] = [];
+  });
+  // 初期履歴を数日分
+  for(let d=0; d<8; d++){
+    ATTR_KEYS.forEach(a=>{
+      const v = macroVal(a, d) * (1 + (Math.random()-0.5)*0.1);
+      S.history[a].push(v);
+    });
+  }
+  ATTR_KEYS.forEach(a=> S.trend[a]=S.history[a][S.history[a].length-1]);
+}
+
+/* =========================================================
+   市場ロジック（3層変動）
+   ========================================================= */
+function macroVal(attr, day){
+  const period = 22;
+  const amp = 0.22;
+  return 1 + amp*Math.sin(2*Math.PI*(day + S.phase[attr])/period);
+}
+function eventMult(attr){
+  let m=1;
+  S.events.forEach(e=>{ if(e.attr===attr) m*=e.mult; });
+  return m;
+}
+function recomputeTrend(){
+  ATTR_KEYS.forEach(a=>{
+    const macro = macroVal(a, S.day);
+    const noise = 1 + (Math.random()-0.5)*0.22; // ±11%
+    let v = macro * noise * eventMult(a);
+    v = Math.max(0.45, Math.min(2.3, v));
+    S.trend[a] = v;
+    S.history[a].push(v);
+    if(S.history[a].length>20) S.history[a].shift();
+  });
+}
+
+/* アイテムの現在市場価格 */
+function itemPrice(it){
+  const r = RARITY[it.rarity].mult;
+  const t = S.trend[it.attr];
+  const p = it.base * t / 1.0; // base に既にレアリティ織り込み済みなので係数は控えめ
+  return Math.round(p);
+}
+function matPrice(mid){
+  // 素材は布=natural寄りなど緩い連動。ここでは全体平均トレンドで揺らす
+  const avg = ATTR_KEYS.reduce((s,a)=>s+S.trend[a],0)/ATTR_KEYS.length;
+  const noise = 0.9 + Math.random()*0.2;
+  return Math.round(MATERIALS[mid].base * avg * noise);
+}
+
+/* 出品（毎日入れ替え） */
+let marketBuy = [];   // [{kind:'item'|'mat', id, price, stock}]
+let matMarket = {};   // mid -> price
+function refreshMarket(){
+  marketBuy = [];
+  // アイテム出品：8〜10種ランダム
+  const pool = ITEMS.slice();
+  shuffle(pool);
+  const n = 9;
+  for(let i=0;i<n;i++){
+    const it = pool[i];
+    marketBuy.push({kind:"item", id:it.id, price:itemPrice(it), stock:1+Math.floor(Math.random()*2)});
+  }
+  // 素材価格
+  matMarket = {};
+  MAT_KEYS.forEach(m=> matMarket[m]=matPrice(m));
+}
+
+/* =========================================================
+   ニュース / イベント
+   ========================================================= */
+function genNews(){
+  S.news = [];
+  // 予兆が当たり/外れ判定
+  if(S.omen){
+    if(Math.random()<0.65){
+      // 確定！
+      const a = S.omen.attr;
+      const up = S.omen.up;
+      const mult = up ? (1.3+Math.random()*0.2) : (0.7-Math.random()*0.1);
+      S.events.push({attr:a, mult, daysLeft:2+Math.floor(Math.random()*2),
+        name:(up?ATTRS[a].jp+"フェス開催！":ATTRS[a].jp+"ブームに陰り")});
+      S.news.push({type:"spike", ic: up?"🎉":"📉",
+        text:`<b>${ATTRS[a].jp}</b>${up?"フェス開催！価格が急上昇📈":"人気が急降下📉 価格ダウン"}`});
+    } else {
+      S.news.push({type:"omen", ic:"🍃", text:`${ATTRS[S.omen.attr].jp}の噂は<b>ハズレ</b>だったみたい…`});
+    }
+    S.omen = null;
+  }
+  // 新たな予兆（30%）
+  if(!S.omen && Math.random()<0.32){
+    const a = ATTR_KEYS[Math.floor(Math.random()*ATTR_KEYS.length)];
+    const up = Math.random()<0.6;
+    S.omen = {attr:a, up};
+    S.news.push({type:"omen", ic:"👂",
+      text:`<b>${ATTRS[a].jp}</b>${up?"フェスの噂が…？📈かも":"離れの噂が…？📉かも"}（確定じゃないよ）`});
+  }
+  // 季節フレーバー
+  const seasons=["はる","なつ","あき","ふゆ"];
+  const sIdx = Math.floor(((S.day-1)/6))%4;
+  if((S.day-1)%6===0){
+    S.news.push({type:"info", ic:"🗓️", text:`季節は<b>${seasons[sIdx]}</b>。旬の属性が上がりやすいよ。`});
+  }
+  if(S.news.length===0){
+    S.news.push({type:"info", ic:"🌤️", text:"今日はおだやかな相場。じっくりトレンドを読もう。"});
+  }
+}
+function tickEvents(){
+  S.events = S.events.filter(e=>{ e.daysLeft--; return e.daysLeft>0; });
+}
+
+/* =========================================================
+   日付進行
+   ========================================================= */
+function nextDay(){
+  S.day++;
+  tickEvents();
+  genNews();
+  recomputeTrend();
+  refreshMarket();
+  maybeStartCode();
+  save();
+  renderAll();
+  toast("🌙 "+S.day+"日目の朝。市場が更新されたよ");
+}
+
+/* =========================================================
+   審査イベント
+   ========================================================= */
+function maybeStartCode(){
+  if(S.day>=S.nextCodeDay && !S.code){
+    const t = CODE_THEMES[Math.floor(Math.random()*CODE_THEMES.length)];
+    S.code = {theme:t, done:false, sel:{...S.equip}};
+    toast("🏆 コーデ審査が始まったよ！「"+t.name+"」");
+  }
+}
+function codeScore(sel){
+  const t = S.code.theme;
+  let attrMatch=0, rarPts=0, filled=0, seriesAttr={};
+  SLOT_KEYS.forEach(sl=>{
+    const id = sel[sl]; if(!id) return;
+    const it = ITEM_BY_ID[id]; filled++;
+    if(it.attr===t.attr) attrMatch+=20;
+    rarPts += RARITY[it.rarity].mult*4;
+    seriesAttr[it.attr]=(seriesAttr[it.attr]||0)+1;
+  });
+  // セットボーナス：同属性統一
+  let setBonus=0;
+  Object.values(seriesAttr).forEach(c=>{ if(c>=3) setBonus+=15; if(c>=5) setBonus+=25; });
+  const fillBonus = filled*5;
+  const total = Math.round(attrMatch + rarPts + setBonus + fillBonus);
+  return {total, attrMatch, rarPts:Math.round(rarPts), setBonus, fillBonus, filled};
+}
+function submitCode(){
+  const sc = codeScore(S.code.sel);
+  // 報酬
+  const coinR = 200 + sc.total*8;
+  S.coin += coinR;
+  let extra = "";
+  // ボーナス：高得点でレシピ解放 or 素材
+  if(sc.total>=120){
+    const locked = RECIPES.filter(r=>!r.known);
+    if(locked.length){ locked[0].known=true; extra="📜 新レシピ「"+ITEM_BY_ID[locked[0].out].name+"」を発見！"; }
+  }
+  if(!extra){
+    // 素材ごほうび
+    const m = MAT_KEYS[Math.floor(Math.random()*MAT_KEYS.length)];
+    const q = 2+Math.floor(Math.random()*3);
+    S.mats[m]=(S.mats[m]||0)+q; extra="🧶 素材「"+MATERIALS[m].name+"」×"+q+"をゲット！";
+  }
+  S.code.done=true;
+  S.nextCodeDay = S.day + 4;
+  save();
+  openModal("🏆 審査けっか","<div style='text-align:center'>"+
+    "<div style='font-size:40px'>"+(sc.total>=120?"🌟":sc.total>=70?"✨":"💗")+"</div>"+
+    "<div style='font-size:22px;font-weight:800;color:var(--rose)'>スコア "+sc.total+"</div>"+
+    "<p class='muted'>属性マッチ +"+sc.attrMatch+" / レア +"+sc.rarPts+" / セット +"+sc.setBonus+" / 着用 +"+sc.fillBonus+"</p>"+
+    "<hr style='border:none;border-top:1px solid var(--line)'>"+
+    "<p>🪙 <b>"+coinR.toLocaleString()+"</b> リル獲得！</p>"+
+    "<p>"+extra+"</p>"+
+    "<button class='btn full' onclick='closeModal();go(\"home\")' style='margin-top:8px'>とじる</button></div>");
+  renderAll();
+}
+
+/* =========================================================
+   ガチャ
+   ========================================================= */
+function pickRarity(forceSSR){
+  if(forceSSR) return "SSR";
+  const r = Math.random()*100; let acc=0;
+  for(const k of ["N","R","SR","SSR"]){ acc+=RARITY[k].rate; if(r<acc) return k; }
+  return "N";
+}
+function pullOne(forceSSR){
+  let rar = pickRarity(forceSSR);
+  // ピックアップ：SSRのとき30%で確定PU
+  let pool = ITEMS.filter(i=>i.src==="gacha" && i.rarity===rar);
+  if(rar==="SSR" && S.pickup && Math.random()<0.4){
+    const pu = ITEM_BY_ID[S.pickup]; if(pu) return pu;
+  }
+  if(pool.length===0) pool = ITEMS.filter(i=>i.src==="gacha");
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function doGacha(count){
+  const cost = count===1?120:1100;
+  if(S.coin<cost){ toast("🪙 リルが足りないよ"); return; }
+  S.coin -= cost;
+  const results=[];
+  for(let i=0;i<count;i++){
+    S.ceil++;
+    let force=false;
+    if(S.ceil>=60){ force=true; S.ceil=0; }
+    const it = pullOne(force);
+    if(it.rarity==="SSR") S.ceil=0;
+    S.inv[it.id]=(S.inv[it.id]||0)+1;
+    S.seen[it.id]=true;
+    results.push(it);
+  }
+  save();
+  playGachaFx(results);
+}
+function playGachaFx(results){
+  const fx=document.getElementById("gachaFx");
+  const inner=document.getElementById("gxInner");
+  const best = results.reduce((b,it)=> RARITY[it.rarity].mult>RARITY[b.rarity].mult?it:b, results[0]);
+  fx.classList.add("show");
+  // 星エフェクト
+  let stars="";
+  const isHi = best.rarity==="SSR"||best.rarity==="SR";
+  const starN = best.rarity==="SSR"?26:best.rarity==="SR"?16:8;
+  for(let i=0;i<starN;i++){
+    const e=["✨","⭐","💫","🌟","💗"][i%5];
+    stars+=`<span class="gx-star" style="left:${Math.random()*100}%;bottom:${Math.random()*30}%;animation-delay:${Math.random()*1.4}s;font-size:${14+Math.random()*16}px">${e}</span>`;
+  }
+  if(results.length===1){
+    const it=results[0]; const rc=RARITY[it.rarity].color;
+    inner.innerHTML = stars + `<div class="gx-reveal" id="gxR">
+      <div class="sub ${it.rarity==='SSR'?'rainbow':''}" style="color:${rc}">${it.rarity}</div>
+      <div class="ring" style="background:radial-gradient(circle,${rc}55,transparent 70%);box-shadow:0 0 40px ${rc}">${it.thumb}</div>
+      <div class="nm">${it.name}</div>
+      <div class="sub" style="font-size:11px;color:#d9c2cd">${SLOTS[it.slot].jp} / ${ATTRS[it.attr].jp}</div>
+      <div style="color:#bda7b1;font-size:11px;margin-top:8px">タップでとじる</div></div>`;
+  } else {
+    let minis="";
+    results.forEach(it=>{ const rc=RARITY[it.rarity].color;
+      minis+=`<div class="mini" style="border:1px solid ${rc}"><div class="t">${it.thumb}</div>
+        <div style="color:${rc};font-weight:800">${it.rarity}</div>${it.name}</div>`;});
+    inner.innerHTML = stars + `<div class="gx-reveal" id="gxR">
+      <div class="sub ${best.rarity==='SSR'?'rainbow':''}" style="color:${RARITY[best.rarity].color}">10連けっか</div>
+      <div class="gx-multi" style="margin-top:8px">${minis}</div>
+      <div style="color:#bda7b1;font-size:11px;margin-top:10px">タップでとじる</div></div>`;
+  }
+  setTimeout(()=>document.getElementById("gxR").classList.add("in"),60);
+  fx.onclick=()=>{ fx.classList.remove("show"); renderAll(); };
+}
+
+/* =========================================================
+   クラフト
+   ========================================================= */
+function canCraft(r){
+  return Object.entries(r.inputs).every(([m,q])=> (S.mats[m]||0)>=q );
+}
+function craft(r){
+  if(!canCraft(r)){ toast("素材が足りないよ"); return; }
+  Object.entries(r.inputs).forEach(([m,q])=> S.mats[m]-=q);
+  const it=ITEM_BY_ID[r.out];
+  S.inv[it.id]=(S.inv[it.id]||0)+1;
+  S.seen[it.id]=true;
+  save(); renderAll();
+  toast("🧵 「"+it.name+"」をクラフトしたよ！");
+}
+
+/* =========================================================
+   売買
+   ========================================================= */
+function buyItem(listing){
+  if(listing.stock<=0){ toast("売り切れだよ"); return; }
+  if(S.coin<listing.price){ toast("🪙 リルが足りないよ"); return; }
+  S.coin-=listing.price; listing.stock--;
+  const it=ITEM_BY_ID[listing.id];
+  S.inv[it.id]=(S.inv[it.id]||0)+1; S.seen[it.id]=true;
+  save(); renderMarket(); renderHeader();
+  toast("🛒 「"+it.name+"」を仕入れた！");
+}
+function sellItem(id){
+  if((S.inv[id]||0)<=0) return;
+  const it=ITEM_BY_ID[id];
+  const gross=itemPrice(it);
+  const net=Math.round(gross*(1-FEE));
+  S.inv[id]--;
+  if(S.inv[id]<=0){ delete S.inv[id];
+    SLOT_KEYS.forEach(sl=>{ if(S.equip[sl]===id) S.equip[sl]=null; });
+  }
+  S.coin+=net;
+  save(); renderMarket(); renderHeader(); renderHome();
+  toast("💰 "+net.toLocaleString()+" リルで売却（手数料引後）");
+}
+function buyMat(mid){
+  const p=matMarket[mid];
+  if(S.coin<p){ toast("🪙 リルが足りないよ"); return; }
+  S.coin-=p; S.mats[mid]=(S.mats[mid]||0)+1;
+  save(); renderMarket(); renderCraft(); renderHeader();
+  toast("🧶 「"+MATERIALS[mid].name+"」を仕入れた！");
+}
+
+/* =========================================================
+   キャラ描画（SVGレイヤー）
+   ========================================================= */
+function svgBase(){
+  // 肌・顔・体
+  return `
+  <g>
+    <!-- 脚 -->
+    <rect x="84" y="158" width="12" height="46" rx="6" fill="#f3cdb6"/>
+    <rect x="104" y="158" width="12" height="46" rx="6" fill="#f3cdb6"/>
+    <!-- 体 -->
+    <rect x="74" y="120" width="52" height="50" rx="18" fill="#f3cdb6"/>
+    <!-- 腕 -->
+    <rect x="60" y="124" width="12" height="40" rx="6" fill="#f3cdb6"/>
+    <rect x="128" y="124" width="12" height="40" rx="6" fill="#f3cdb6"/>
+    <!-- 頭 -->
+    <circle cx="100" cy="76" r="44" fill="#f6d6bf"/>
+    <!-- ほっぺ -->
+    <circle cx="80" cy="86" r="7" fill="#f3a9b6" opacity=".55"/>
+    <circle cx="120" cy="86" r="7" fill="#f3a9b6" opacity=".55"/>
+    <!-- 目 -->
+    <ellipse cx="86" cy="78" rx="5.5" ry="7" fill="#5a4450"/>
+    <ellipse cx="114" cy="78" rx="5.5" ry="7" fill="#5a4450"/>
+    <circle cx="88" cy="75" r="1.8" fill="#fff"/><circle cx="116" cy="75" r="1.8" fill="#fff"/>
+    <!-- 口 -->
+    <path d="M95 94 Q100 99 105 94" stroke="#c07d86" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  </g>`;
+}
+function partSvg(slot, it){
+  if(!it) return "";
+  const c = ATTRS[it.attr].color;
+  const v = it.variant;
+  switch(slot){
+    case "bg":
+      if(v%3===0) return `<g opacity=".9"><circle cx="40" cy="50" r="22" fill="${c}" opacity=".18"/><circle cx="160" cy="60" r="26" fill="${c}" opacity=".16"/><text x="158" y="190" font-size="26" text-anchor="middle">${it.thumb}</text><text x="40" y="195" font-size="22" text-anchor="middle">${it.thumb}</text></g>`;
+      return `<g opacity=".85"><rect x="0" y="0" width="200" height="230" fill="${c}" opacity=".08"/><text x="160" y="60" font-size="30" text-anchor="middle">${it.thumb}</text><text x="34" y="120" font-size="24" text-anchor="middle">${it.thumb}</text></g>`;
+    case "hair":
+      if(v%2===0) return `<g><path d="M56 74 Q56 24 100 24 Q144 24 144 74 Q144 50 100 46 Q56 50 56 74Z" fill="${c}"/><circle cx="60" cy="70" r="14" fill="${c}"/><circle cx="140" cy="70" r="14" fill="${c}"/><text x="62" y="64" font-size="14" text-anchor="middle">${it.thumb}</text></g>`;
+      return `<g><path d="M54 80 Q52 26 100 24 Q148 26 146 80 L142 120 Q140 96 100 92 Q60 96 58 120Z" fill="${c}"/><text x="100" y="40" font-size="13" text-anchor="middle">${it.thumb}</text></g>`;
+    case "tops":
+      return `<g><path d="M70 120 Q100 110 130 120 L134 158 Q100 166 66 158Z" fill="${c}"/><rect x="58" y="124" width="14" height="40" rx="7" fill="${c}"/><rect x="128" y="124" width="14" height="40" rx="7" fill="${c}"/><text x="100" y="146" font-size="14" text-anchor="middle">${it.thumb}</text></g>`;
+    case "bottoms":
+      if(v%2===0) return `<g><path d="M72 156 Q100 150 128 156 L138 196 Q100 206 62 196Z" fill="${c}"/><text x="100" y="186" font-size="13" text-anchor="middle">${it.thumb}</text></g>`;
+      return `<g><rect x="80" y="156" width="16" height="48" rx="5" fill="${c}"/><rect x="104" y="156" width="16" height="48" rx="5" fill="${c}"/><rect x="74" y="154" width="52" height="14" rx="6" fill="${c}"/></g>`;
+    case "shoes":
+      return `<g><ellipse cx="90" cy="206" rx="11" ry="7" fill="${c}"/><ellipse cx="110" cy="206" rx="11" ry="7" fill="${c}"/><text x="100" y="222" font-size="11" text-anchor="middle">${it.thumb}</text></g>`;
+    case "acc":
+      return `<g><text x="138" y="120" font-size="22" text-anchor="middle">${it.thumb}</text><circle cx="100" cy="112" r="5" fill="${c}"/></g>`;
+  }
+  return "";
+}
+function renderChar(){
+  const svg=document.getElementById("charSvg");
+  let html = partSvg("bg",ITEM_BY_ID[S.equip.bg]);
+  html += svgBase();
+  // レイヤー順
+  html += partSvg("bottoms",ITEM_BY_ID[S.equip.bottoms]);
+  html += partSvg("shoes",ITEM_BY_ID[S.equip.shoes]);
+  html += partSvg("tops",ITEM_BY_ID[S.equip.tops]);
+  html += partSvg("hair",ITEM_BY_ID[S.equip.hair]);
+  html += partSvg("acc",ITEM_BY_ID[S.equip.acc]);
+  svg.innerHTML=html;
+}
+
+/* =========================================================
+   描画：各画面
+   ========================================================= */
+function renderHeader(){
+  document.getElementById("hCoin").textContent = S.coin.toLocaleString();
+  document.getElementById("hDay").textContent = S.day;
+  document.getElementById("ceilLbl").textContent = S.ceil;
+  document.getElementById("feeLbl").textContent = Math.round(FEE*100);
+}
+
+function renderHome(){
+  renderChar();
+  // スロット
+  const g=document.getElementById("slotGrid"); g.innerHTML="";
+  SLOT_KEYS.forEach(sl=>{
+    const id=S.equip[sl]; const it=id?ITEM_BY_ID[id]:null;
+    const d=document.createElement("div"); d.className="slot";
+    d.innerHTML=`<div class="lbl">${SLOTS[sl].jp}</div>
+      <div class="ic">${it?it.thumb:SLOTS[sl].ic}</div>
+      <div class="val">${it?it.name:"なし"}</div>`;
+    d.onclick=()=>openEquipPicker(sl);
+    g.appendChild(d);
+  });
+  // ニュース
+  const nf=document.getElementById("newsFeed"); nf.innerHTML="";
+  S.news.forEach(n=>{
+    const d=document.createElement("div"); d.className="news "+(n.type||"info");
+    d.innerHTML=`<span class="ic">${n.ic}</span><span class="tx">${n.text}</span>`;
+    nf.appendChild(d);
+  });
+}
+
+function trendArrow(attr){
+  const h=S.history[attr]; if(h.length<2) return "";
+  const d=h[h.length-1]-h[h.length-2];
+  if(Math.abs(d)<0.02) return "";
+  return d>0?`<span class="arrow up">▲</span>`:`<span class="arrow down">▼</span>`;
+}
+function attrTag(attr){
+  return `<span class="tag ${ATTRS[attr].cls}">${ATTRS[attr].jp}</span>`;
+}
+function rarTag(r){ return `<span class="rar ${r}">${r}</span>`; }
+
+function renderMarket(){
+  // buy grid
+  const bg=document.getElementById("buyGrid"); bg.innerHTML="";
+  marketBuy.forEach(L=>{
+    const it=ITEM_BY_ID[L.id];
+    const c=document.createElement("div"); c.className="card";
+    c.innerHTML=`<span class="thumb">${it.thumb}</span>
+      <div class="nm">${it.name}</div>
+      <div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div>
+      <div class="price"><span class="c">🪙</span>${L.price.toLocaleString()}${trendArrow(it.attr)}</div>
+      <button class="btn sm full" style="margin-top:6px" ${L.stock<=0?'disabled':''}>${L.stock<=0?'売切':'仕入れる'}</button>`;
+    c.querySelector("button").onclick=()=>buyItem(L);
+    bg.appendChild(c);
+  });
+  // sell grid
+  const sg=document.getElementById("sellGrid"); sg.innerHTML="";
+  const owned=Object.keys(S.inv);
+  if(owned.length===0){ sg.innerHTML=`<div class="empty" style="grid-column:1/-1"><span class="ic">👜</span>売れるアイテムがないよ。ガチャやクラフトで集めよう！</div>`; }
+  owned.forEach(id=>{
+    const it=ITEM_BY_ID[id]; const q=S.inv[id];
+    const gross=itemPrice(it); const net=Math.round(gross*(1-FEE));
+    const c=document.createElement("div"); c.className="card";
+    c.innerHTML=`<span class="qty">×${q}</span><span class="thumb">${it.thumb}</span>
+      <div class="nm">${it.name}</div>
+      <div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div>
+      <div class="price"><span class="c">🪙</span>${net.toLocaleString()}${trendArrow(it.attr)}</div>
+      <button class="btn sm full ghost" style="margin-top:6px">売る</button>`;
+    c.querySelector("button").onclick=()=>sellItem(id);
+    sg.appendChild(c);
+  });
+  drawChart();
+  renderLegend();
+}
+
+function renderLegend(){
+  const lg=document.getElementById("legend"); lg.innerHTML="";
+  ATTR_KEYS.forEach(a=>{
+    const off=S.legendOff[a];
+    const d=document.createElement("div"); d.className="leg"+(off?" off":"");
+    d.innerHTML=`<span class="dot" style="background:${ATTRS[a].color}"></span>${ATTRS[a].jp} ${S.trend[a].toFixed(2)}`;
+    d.onclick=()=>{ S.legendOff[a]=!off; drawChart(); renderLegend(); };
+    lg.appendChild(d);
+  });
+}
+
+function drawChart(){
+  const cv=document.getElementById("chart");
+  const dpr=window.devicePixelRatio||1;
+  const w=cv.clientWidth, h=140;
+  cv.width=w*dpr; cv.height=h*dpr;
+  const ctx=cv.getContext("2d"); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  // 軸範囲
+  const minV=0.4,maxV=2.4;
+  const pad=6, plotH=h-pad*2;
+  // グリッド
+  ctx.strokeStyle="#e2cbd4"; ctx.lineWidth=1;
+  [0.5,1,1.5,2].forEach(v=>{
+    const y=pad+plotH*(1-(v-minV)/(maxV-minV));
+    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();
+    ctx.fillStyle="#b89aa4";ctx.font="9px sans-serif";ctx.fillText(v.toFixed(1),2,y-2);
+  });
+  // 1.0 基準線
+  const y0=pad+plotH*(1-(1-minV)/(maxV-minV));
+  ctx.strokeStyle="#c6a667";ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(0,y0);ctx.lineTo(w,y0);ctx.stroke();ctx.setLineDash([]);
+  // 各属性ライン
+  ATTR_KEYS.forEach(a=>{
+    if(S.legendOff[a]) return;
+    const hist=S.history[a]; const n=hist.length; if(n<2) return;
+    ctx.strokeStyle=ATTRS[a].color; ctx.lineWidth=2.2; ctx.beginPath();
+    hist.forEach((v,i)=>{
+      const x=(w-12)*i/(n-1)+6;
+      const y=pad+plotH*(1-(Math.max(minV,Math.min(maxV,v))-minV)/(maxV-minV));
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    });
+    ctx.stroke();
+    // 端点
+    const lv=hist[n-1];
+    const lx=w-6, ly=pad+plotH*(1-(Math.max(minV,Math.min(maxV,lv))-minV)/(maxV-minV));
+    ctx.fillStyle=ATTRS[a].color;ctx.beginPath();ctx.arc(lx,ly,3,0,7);ctx.fill();
+  });
+}
+
+function renderGacha(){
+  document.getElementById("btnGacha1").disabled = S.coin<120;
+  document.getElementById("btnGacha10").disabled = S.coin<1100;
+  const pu=document.getElementById("puGrid"); pu.innerHTML="";
+  if(!S.pickup) S.pickup = ITEMS.filter(i=>i.src==="gacha"&&i.rarity==="SSR")[ Math.floor(Math.random()*ITEMS.filter(i=>i.src==="gacha"&&i.rarity==="SSR").length) ].id;
+  // SSR・SR を数点見せる
+  const show = ITEMS.filter(i=>i.src==="gacha" && (i.rarity==="SSR"||i.rarity==="SR")).slice(0,6);
+  // pickup を先頭に
+  const puItem=ITEM_BY_ID[S.pickup];
+  [puItem,...show.filter(i=>i.id!==S.pickup)].slice(0,6).forEach((it,idx)=>{
+    const c=document.createElement("div"); c.className="card";
+    c.innerHTML=`${idx===0?'<span class="qty" style="background:var(--gold)">PU</span>':''}
+      <span class="thumb">${it.thumb}</span>
+      <div class="nm">${it.name}</div>
+      <div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div>`;
+    pu.appendChild(c);
+  });
+}
+
+function renderCraft(){
+  const rl=document.getElementById("recipeList"); rl.innerHTML="";
+  const known=RECIPES.filter(r=>r.known);
+  if(known.length===0) rl.innerHTML=`<div class="empty"><span class="ic">📜</span>レシピがまだないよ</div>`;
+  known.forEach(r=>{
+    const out=ITEM_BY_ID[r.out];
+    const inputs=Object.entries(r.inputs).map(([m,q])=>{
+      const have=S.mats[m]||0; const ok=have>=q;
+      return `<span style="color:${ok?'var(--good)':'var(--bad)'}">${MATERIALS[m].thumb}${MATERIALS[m].name}×${q}(${have})</span>`;
+    }).join(" ＋ ");
+    const can=canCraft(r);
+    const d=document.createElement("div"); d.className="panel"; d.style.margin="0 0 8px"; d.style.padding="8px";
+    d.innerHTML=`<div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:26px">${out.thumb}</span>
+      <div style="flex:1">
+        <div style="font-weight:700">${out.name} ${rarTag(out.rarity)}${attrTag(out.attr)}</div>
+        <div class="muted" style="margin-top:2px">${inputs}</div>
+      </div>
+      <button class="btn sm" ${can?'':'disabled'}>作る</button></div>`;
+    d.querySelector("button").onclick=()=>craft(r);
+    rl.appendChild(d);
+  });
+  // 素材グリッド
+  const mg=document.getElementById("matGrid"); mg.innerHTML="";
+  MAT_KEYS.forEach(m=>{
+    const q=S.mats[m]||0;
+    const c=document.createElement("div"); c.className="card";
+    c.innerHTML=`${q>0?`<span class="qty">×${q}</span>`:''}
+      <span class="thumb">${MATERIALS[m].thumb}</span>
+      <div class="nm">${MATERIALS[m].name}</div>
+      <div class="muted">手持ち ${q}</div>`;
+    mg.appendChild(c);
+  });
+}
+
+function renderCode(){
+  const p=document.getElementById("codePanel");
+  if(!S.code){
+    p.innerHTML=`<h2><span class="ic">🏆</span>コーデ審査</h2>
+      <div class="empty"><span class="ic">🗓️</span>次の審査は <b>${S.nextCodeDay}日目</b> ごろ。<br>「つぎの日へ」を進めて待とう！</div>`;
+    return;
+  }
+  if(S.code.done){
+    p.innerHTML=`<h2><span class="ic">🏆</span>コーデ審査</h2>
+      <div class="empty"><span class="ic">✅</span>「${S.code.theme.name}」は提出ずみ！<br>次は <b>${S.nextCodeDay}日目</b> ごろ。</div>`;
+    return;
+  }
+  const t=S.code.theme;
+  const sc=codeScore(S.code.sel);
+  let slotsHtml="";
+  SLOT_KEYS.forEach(sl=>{
+    const id=S.code.sel[sl]; const it=id?ITEM_BY_ID[id]:null;
+    const match = it && it.attr===t.attr;
+    slotsHtml+=`<div class="codeSlot" data-sl="${sl}">
+      <span class="ic">${it?it.thumb:SLOTS[sl].ic}</span>
+      <div class="info"><div class="nm">${SLOTS[sl].jp}：${it?it.name:'<span class="muted">えらぶ</span>'}</div>
+        ${it?`<div>${rarTag(it.rarity)}${attrTag(it.attr)}${match?' <span style="color:var(--good);font-size:10px;font-weight:700">★テーマ一致</span>':''}</div>`:''}
+      </div>
+      <span style="font-size:18px;color:var(--text-soft)">›</span></div>`;
+  });
+  p.innerHTML=`<h2><span class="ic">${t.ic}</span>お題「${t.name}」</h2>
+    <p class="muted">テーマ属性：${attrTag(t.attr)} を多く取り入れると高得点！同属性3つ以上でセットボーナス。</p>
+    ${slotsHtml}
+    <div class="scorebar"><i style="width:${Math.min(100,sc.total/2)}%"></i></div>
+    <div style="text-align:right;font-weight:800;color:var(--rose);margin-top:4px">よそうスコア ${sc.total}</div>
+    <button class="btn gold full" id="btnSubmitCode" style="margin-top:8px">この衣装で提出する</button>
+    <button class="btn ghost full sm" id="btnUseEquip" style="margin-top:6px">いま着てる服をコピー</button>`;
+  p.querySelectorAll(".codeSlot").forEach(el=>{
+    el.onclick=()=>openCodePicker(el.dataset.sl);
+  });
+  document.getElementById("btnSubmitCode").onclick=submitCode;
+  document.getElementById("btnUseEquip").onclick=()=>{ S.code.sel={...S.equip}; renderCode(); };
+}
+
+function renderBag(){
+  const f=document.querySelector("#bagFilter .on").dataset.f;
+  const grid=document.getElementById("bagGrid"); grid.innerHTML="";
+  const list = ITEMS.filter(i=> f==="all"||i.slot===f);
+  list.forEach(it=>{
+    const owned = S.seen[it.id];
+    const q=S.inv[it.id]||0;
+    const c=document.createElement("div"); c.className="card";
+    if(!owned){
+      c.innerHTML=`<span class="thumb" style="filter:grayscale(1);opacity:.3">❔</span>
+        <div class="nm muted">？？？</div>
+        <div class="meta">${rarTag(it.rarity)}</div>`;
+    } else {
+      c.innerHTML=`${q>0?`<span class="qty">×${q}</span>`:''}
+        <span class="thumb">${it.thumb}</span>
+        <div class="nm">${it.name}</div>
+        <div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div>
+        <div class="muted">${SLOTS[it.slot].jp}・${it.src==="gacha"?"ガチャ":"クラフト"}</div>`;
+    }
+    grid.appendChild(c);
+  });
+  const seenN=Object.keys(S.seen).length;
+  document.getElementById("compRate").textContent=Math.round(seenN/ITEMS.length*100);
+  document.getElementById("compNum").textContent=seenN+"/"+ITEMS.length;
+}
+
+function renderAll(){
+  renderHeader(); renderHome(); renderMarket(); renderGacha(); renderCraft(); renderCode(); renderBag();
+}
+
+/* =========================================================
+   ピッカー（モーダル）
+   ========================================================= */
+function ownedInSlot(slot){
+  return Object.keys(S.inv).map(id=>ITEM_BY_ID[id]).filter(it=>it.slot===slot);
+}
+function openEquipPicker(slot){
+  const list=ownedInSlot(slot);
+  let body=`<div class="seg" style="margin-bottom:8px"><button class="btn ghost sm" onclick="setEquip('${slot}',null)">このスロットを外す</button></div>`;
+  if(list.length===0){ body+=`<div class="empty"><span class="ic">${SLOTS[slot].ic}</span>この種類のアイテムをまだ持ってないよ</div>`; }
+  body+=`<div class="grid">`;
+  list.forEach(it=>{
+    const on=S.equip[slot]===it.id;
+    body+=`<div class="card" style="${on?'border-color:var(--pink);border-width:2px':''}" onclick="setEquip('${slot}','${it.id}')">
+      <span class="thumb">${it.thumb}</span><div class="nm">${it.name}</div>
+      <div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div></div>`;
+  });
+  body+=`</div>`;
+  openModal(SLOTS[slot].ic+" "+SLOTS[slot].jp+"をえらぶ", body);
+}
+function setEquip(slot,id){ S.equip[slot]=id; save(); renderHome(); closeModal(); }
+
+function openCodePicker(slot){
+  const list=ownedInSlot(slot);
+  let body=`<div class="seg" style="margin-bottom:8px"><button class="btn ghost sm" onclick="setCodeSel('${slot}',null)">外す</button></div><div class="grid">`;
+  list.forEach(it=>{
+    const on=S.code.sel[slot]===it.id;
+    body+=`<div class="card" style="${on?'border-color:var(--pink);border-width:2px':''}" onclick="setCodeSel('${slot}','${it.id}')">
+      <span class="thumb">${it.thumb}</span><div class="nm">${it.name}</div>
+      <div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div></div>`;
+  });
+  if(list.length===0) body+=`<div class="empty" style="grid-column:1/-1"><span class="ic">${SLOTS[slot].ic}</span>持ってないよ</div>`;
+  body+=`</div>`;
+  openModal(SLOTS[slot].ic+" "+SLOTS[slot].jp,body);
+}
+function setCodeSel(slot,id){ S.code.sel[slot]=id; renderCode(); closeModal(); }
+
+/* =========================================================
+   モーダル / トースト / ナビ
+   ========================================================= */
+function openModal(title,html){
+  document.getElementById("mTitle").innerHTML=title;
+  document.getElementById("mBody").innerHTML=html;
+  document.getElementById("overlay").classList.add("show");
+}
+function closeModal(){ document.getElementById("overlay").classList.remove("show"); }
+let toastT;
+function toast(msg){
+  const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1900);
+}
+function go(scr){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById("scr-"+scr).classList.add("active");
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.scr===scr));
+  if(scr==="market"){ drawChart(); }
+  document.getElementById("main").scrollTop=0;
+}
+
+/* =========================================================
+   セーブ / ロード
+   ========================================================= */
+const SAVE_KEY="fantasy_market_save_v1";
+function save(){
+  // RECIPES.known を保存
+  const recKnown=RECIPES.map(r=>r.known);
+  const data={S, recKnown};
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(data)); }catch(e){}
+}
+function load(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(!raw) return false;
+    const data=JSON.parse(raw);
+    S=data.S;
+    if(data.recKnown) RECIPES.forEach((r,i)=> r.known=data.recKnown[i]);
+    // 後方互換チェック
+    if(!S.history||!S.trend) return false;
+    return true;
+  }catch(e){ return false; }
+}
+function resetGame(){
+  localStorage.removeItem(SAVE_KEY);
+  RECIPES.forEach(r=> r.known=(r.id==="r1"||r.id==="r2"));
+  bootstrap(true);
+  closeModal();
+  toast("🗑 はじめからスタート！");
+}
+
+/* =========================================================
+   ユーティリティ
+   ========================================================= */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+/* =========================================================
+   起動
+   ========================================================= */
+function bootstrap(fresh){
+  if(fresh || !load()){
+    S=newGame();
+    initTrends();
+    // スタートプレゼント：各スロット N を少し
+    const starter=["もりのおさげ","いちごブラウス","クールデニム","くさはらサンダル","いちごバッグ","もりのきのこ"];
+    starter.forEach(nm=>{ const it=ITEMS.find(i=>i.name===nm); if(it){S.inv[it.id]=1;S.seen[it.id]=true;S.equip[it.slot]=it.id;} });
+    S.mats={m_cloth:4,m_leaf:2,m_shell:3};
+    refreshMarket();
+    genNews();
+    save();
+  } else {
+    // ロード後は当日の市場を復元（出品はセーブ外なので再生成）
+    refreshMarket();
+  }
+  renderAll();
+}
+
+/* イベント結線 */
+document.querySelectorAll("nav button").forEach(b=> b.onclick=()=>go(b.dataset.scr));
+document.getElementById("mClose").onclick=closeModal;
+document.getElementById("overlay").onclick=e=>{ if(e.target.id==="overlay") closeModal(); };
+document.getElementById("btnNextDay").onclick=nextDay;
+document.getElementById("btnGacha1").onclick=()=>doGacha(1);
+document.getElementById("btnGacha10").onclick=()=>doGacha(10);
+document.getElementById("btnRandom").onclick=()=>{
+  SLOT_KEYS.forEach(sl=>{ const l=ownedInSlot(sl); if(l.length) S.equip[sl]=l[Math.floor(Math.random()*l.length)].id; });
+  save(); renderHome(); toast("🎲 おまかせコーデ！");
+};
+document.getElementById("btnStrip").onclick=()=>{ SLOT_KEYS.forEach(sl=>S.equip[sl]=null); save(); renderHome(); };
+document.getElementById("btnSave").onclick=()=>{ save(); toast("💾 セーブしたよ"); };
+document.getElementById("btnReset").onclick=()=>openModal("リセット確認",
+  "<p>進行データを消してはじめからにする？</p><button class='btn full' style='background:var(--bad);border-color:#a85a68' onclick='resetGame()'>はい、リセット</button><button class='btn ghost full' style='margin-top:6px' onclick='closeModal()'>やめる</button>");
+document.querySelectorAll("#bagFilter button").forEach(b=> b.onclick=()=>{
+  document.querySelectorAll("#bagFilter button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); renderBag();
+});
+window.addEventListener("resize", ()=>{ if(document.getElementById("scr-market").classList.contains("active")) drawChart(); });
+
+bootstrap(false);
+</script>
+</body>
+</html>
