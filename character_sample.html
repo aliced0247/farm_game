@@ -3,511 +3,397 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>きせかえマーケット ─ ビジュアル品質サンプル</title>
+<title>きせかえマーケット ─ キャラエディター（品質サンプル）</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    --pink:    #E8B4C8;  /* メインピンク */
-    --subpink: #F5E0E8;  /* サブ（背景・パネル） */
-    --darkpink:#8B5E6B;  /* ヘッダー・強調 */
-    --accent:  #D4A574;  /* ゴールドベージュ */
-    --text:    #5C3D4A;  /* ダークローズ */
-    --bg:      #FFF5F8;  /* 背景 */
-    --line:    #E7CBD6;
-    --shadow:  0 2px 8px rgba(139,94,107,.15);
-    --r:       12px;
-    --gap:     8px;
+    --pink:#E8B4C8; --subpink:#F5E0E8; --darkpink:#8B5E6B; --accent:#D4A574;
+    --text:#5C3D4A; --bg:#FFF5F8; --line:#E7CBD6;
+    --shadow:0 2px 8px rgba(139,94,107,.15); --r:12px; --gap:8px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
-  body{
-    font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN",sans-serif;
-    background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;
-    -webkit-font-smoothing:antialiased;
-  }
+  body{font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN",sans-serif;
+    background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;}
   #app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);}
 
-  /* ===== ヘッダー ===== */
-  header{
-    background:linear-gradient(180deg,var(--darkpink),#79505c);
-    color:#FBEDF2;padding:12px var(--gap);display:flex;align-items:center;gap:var(--gap);
-    box-shadow:var(--shadow);position:sticky;top:0;z-index:5;
-  }
+  header{background:linear-gradient(180deg,var(--darkpink),#79505c);color:#FBEDF2;
+    padding:12px var(--gap);display:flex;align-items:center;gap:var(--gap);box-shadow:var(--shadow);
+    position:sticky;top:0;z-index:5;}
   header .title{font-size:14px;font-weight:700;flex:1;letter-spacing:.02em;}
   header .title small{display:block;font-size:9px;opacity:.85;font-weight:400;}
-  .stat{
-    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
-    border-radius:var(--r);padding:5px 9px;display:flex;align-items:center;gap:5px;
-  }
+  .stat{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
+    border-radius:var(--r);padding:5px 9px;display:flex;align-items:center;gap:5px;}
   .stat .ico{width:16px;height:16px;color:var(--accent);}
   .stat b{font-size:13px;color:#FBEDF2;font-weight:700;}
 
   main{padding:var(--gap);}
-  .note{
-    background:var(--subpink);border:1px dashed var(--accent);border-radius:var(--r);
-    padding:10px 12px;font-size:11px;margin-bottom:var(--gap);color:var(--darkpink);
-  }
-  .panel{
-    background:var(--subpink);border:1px solid var(--line);border-radius:var(--r);
-    padding:12px;margin-bottom:var(--gap);box-shadow:var(--shadow);
-  }
+  .panel{background:var(--subpink);border:1px solid var(--line);border-radius:var(--r);
+    padding:12px;margin-bottom:var(--gap);box-shadow:var(--shadow);}
   .panel h2{margin:0 0 10px;font-size:13px;color:var(--darkpink);font-weight:700;
     display:flex;align-items:center;gap:6px;}
   .panel h2 .ico{width:18px;height:18px;}
   .muted{color:#9A7C88;font-size:11px;}
+  .lbl{font-size:10px;color:#9A7C88;margin:10px 0 4px;font-weight:500;}
+  .lbl:first-child{margin-top:0;}
 
-  /* ===== キャラステージ ===== */
-  #stage{
-    position:relative;width:100%;aspect-ratio:1/1.18;border-radius:var(--r);overflow:hidden;
-    background:
-      radial-gradient(120% 90% at 50% 24%, #FFFFFF 0%, #FCEAF1 46%, #F6DCE7 100%);
-    border:1px solid var(--line);
-  }
-  #stage::after{
-    content:"";position:absolute;left:0;right:0;bottom:0;height:26%;
-    background:linear-gradient(180deg, rgba(139,94,107,0) 0%, rgba(139,94,107,.06) 100%);
-  }
-  /* やわらかい背景の光 */
+  #stage{position:relative;width:100%;aspect-ratio:1/1.12;border-radius:var(--r);overflow:hidden;
+    background:radial-gradient(120% 90% at 50% 22%, #FFFFFF 0%, #FCEAF1 46%, #F6DCE7 100%);
+    border:1px solid var(--line);}
+  #stage::after{content:"";position:absolute;left:0;right:0;bottom:0;height:24%;
+    background:linear-gradient(180deg, rgba(139,94,107,0), rgba(139,94,107,.06));}
   .glow{position:absolute;border-radius:50%;filter:blur(2px);opacity:.5;}
   #charSvg{position:relative;width:100%;height:100%;display:block;z-index:1;}
 
-  .row{display:flex;gap:var(--gap);flex-wrap:wrap;align-items:center;}
-  .swatchRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
-  .sw{
-    width:38px;height:38px;border-radius:10px;border:2px solid transparent;cursor:pointer;
-    box-shadow:var(--shadow);position:relative;transition:transform .1s;
-  }
+  /* チップ */
+  .chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:6px 12px;
+    font-size:11px;font-weight:500;color:var(--text);cursor:pointer;font-family:inherit;
+    transition:all .12s;}
+  .chip:active{transform:scale(.95);}
+  .chip.on{background:var(--darkpink);border-color:var(--darkpink);color:#fff;font-weight:700;}
+  .chip.preset{background:var(--pink);border-color:#d99fb6;color:#fff;font-weight:700;}
+  .chip.preset.on{background:var(--darkpink);border-color:var(--darkpink);}
+
+  /* スウォッチ */
+  .swatchRow{display:flex;gap:8px;flex-wrap:wrap;}
+  .sw{width:38px;height:38px;border-radius:10px;border:2px solid transparent;cursor:pointer;
+    box-shadow:var(--shadow);position:relative;transition:transform .1s;}
   .sw:active{transform:scale(.94);}
   .sw.on{border-color:var(--darkpink);}
   .sw.on::after{content:"";position:absolute;inset:0;border-radius:8px;border:2px solid #fff;}
-  .lbl{font-size:10px;color:#9A7C88;margin:8px 0 2px;font-weight:500;}
 
-  /* ===== ボタン4ステート ===== */
+  /* スライダー */
+  .slider{display:flex;align-items:center;gap:10px;margin:6px 0;}
+  .slider .nm{font-size:11px;width:62px;color:var(--text);font-weight:500;}
+  .slider .val{font-size:11px;width:34px;text-align:right;color:var(--darkpink);font-weight:700;}
+  input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:6px;border-radius:3px;
+    background:linear-gradient(90deg,var(--pink),var(--accent));outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+    background:#fff;border:2px solid var(--darkpink);box-shadow:var(--shadow);cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;
+    border:2px solid var(--darkpink);cursor:pointer;}
+
   button{font-family:inherit;cursor:pointer;border:none;}
-  .btn{
-    background:var(--darkpink);color:#fff;border:1px solid var(--darkpink);
-    border-radius:var(--r);padding:10px 16px;font-size:13px;font-weight:700;
-    font-family:inherit;box-shadow:var(--shadow);transition:filter .12s,transform .06s,box-shadow .12s;
-    letter-spacing:.02em;
-  }
-  .btn:hover{filter:brightness(1.08);}
-  .btn:active{transform:translateY(1px);filter:brightness(.92);box-shadow:0 1px 4px rgba(139,94,107,.2);}
-  .btn:disabled{background:#D9C3CB;border-color:#D9C3CB;color:#fff;cursor:not-allowed;filter:none;box-shadow:none;}
+  .btn{background:var(--darkpink);color:#fff;border:1px solid var(--darkpink);border-radius:var(--r);
+    padding:9px 14px;font-size:12px;font-weight:700;box-shadow:var(--shadow);
+    transition:filter .12s,transform .06s;}
+  .btn:hover{filter:brightness(1.08);} .btn:active{transform:translateY(1px);filter:brightness(.92);}
   .btn.outline{background:transparent;color:var(--darkpink);border:2px solid var(--darkpink);box-shadow:none;}
-  .btn.outline:hover{background:rgba(139,94,107,.06);}
-  .btn.outline:disabled{color:#C9AEB8;border-color:#E0CAD3;background:transparent;}
-  .btn.gold{background:var(--accent);border-color:#bf9460;}
-  .btn.sm{padding:7px 12px;font-size:12px;}
-
-  /* ===== カード見本 ===== */
-  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap);}
-  .card{
-    background:#fff;border:1px solid var(--line);border-radius:var(--r);
-    padding:10px 6px;text-align:center;box-shadow:var(--shadow);
-  }
-  .card .ico{width:30px;height:30px;margin:0 auto 4px;color:var(--darkpink);}
-  .card .nm{font-size:11px;font-weight:700;}
-  .card .pr{font-size:12px;font-weight:700;color:var(--darkpink);margin-top:3px;
-    display:flex;align-items:center;justify-content:center;gap:3px;}
-  .card .pr .ico{width:13px;height:13px;margin:0;color:var(--accent);}
-
-  /* ===== アイコン見本（ナビ風） ===== */
-  .iconbar{display:flex;justify-content:space-around;background:#fff;border:1px solid var(--line);
-    border-radius:var(--r);padding:8px 4px;box-shadow:var(--shadow);}
-  .iconbar .it{display:flex;flex-direction:column;align-items:center;gap:3px;color:#9A7C88;font-size:9px;font-weight:500;}
-  .iconbar .it.on{color:var(--darkpink);font-weight:700;}
-  .iconbar .it .ico{width:22px;height:22px;}
-  .icoGallery{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px;}
-  .icoGallery .g{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9px;color:#9A7C88;}
-  .icoGallery .g .ico{width:26px;height:26px;color:var(--darkpink);}
+  .btn.sm{padding:7px 11px;font-size:11px;}
+  .row{display:flex;gap:var(--gap);flex-wrap:wrap;align-items:center;}
+  .note{background:var(--subpink);border:1px dashed var(--accent);border-radius:var(--r);
+    padding:10px 12px;font-size:11px;margin-bottom:var(--gap);color:var(--darkpink);}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="title">きせかえマーケット<small>ビジュアル品質サンプル v2</small></div>
+    <div class="title">きせかえマーケット<small>キャラエディター（品質サンプル v3）</small></div>
     <div class="stat"><span class="ico" data-ico="coin"></span><b>12,480</b></div>
-    <div class="stat"><span class="ico" data-ico="calendar"></span><b>7</b></div>
   </header>
 
   <main>
-    <div class="note">📌 これは品質確認用の<b>1キャラ・サンプル</b>です。新パレット／Zen Maru Gothic／カスタムSVGアイコン／グラデーション・ハイライト・陰影入りSVGキャラを実装。OKであればゲーム全体に展開します。</div>
+    <div class="note">📌 顔の雰囲気プリセット・パーツ別選択・<b>パーツ位置の微調整</b>を試せます。OKならこの仕組みを本体に展開します。</div>
 
-    <!-- キャラ -->
     <div class="panel">
-      <h2><span class="ico" data-ico="home"></span>キャラクター（SVG・グループ分離／色替え対応）</h2>
       <div id="stage">
         <div class="glow" style="width:120px;height:120px;background:#FBD6E4;left:8%;top:12%;"></div>
-        <div class="glow" style="width:90px;height:90px;background:#F4E2C7;right:6%;top:28%;"></div>
-        <svg id="charSvg" viewBox="0 0 280 330" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="glow" style="width:90px;height:90px;background:#F4E2C7;right:6%;top:26%;"></div>
+        <svg id="charSvg" viewBox="0 0 280 314" preserveAspectRatio="xMidYMid meet"></svg>
       </div>
-
-      <div class="lbl">髪色（root→tip グラデーション／束ハイライト）</div>
-      <div class="swatchRow" id="hairSw"></div>
-
-      <div class="lbl">衣装色（folds陰影＋&lt;pattern&gt;柄／グループswap）</div>
-      <div class="swatchRow" id="dressSw"></div>
-
-      <div class="row" style="margin-top:12px;">
-        <button class="btn sm" id="btnBlink">👁 まばたき</button>
-        <button class="btn outline sm" id="btnPattern">柄 ON / OFF</button>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn outline sm" id="btnBlink">まばたき</button>
+        <button class="btn outline sm" id="btnPattern">柄 ON/OFF</button>
+        <button class="btn outline sm" id="btnRandom">ランダム</button>
       </div>
     </div>
 
-    <!-- アイコン -->
+    <!-- 顔の雰囲気プリセット -->
     <div class="panel">
-      <h2><span class="ico" data-ico="bag"></span>カスタムSVGアイコン（絵文字全廃）</h2>
-      <div class="iconbar">
-        <div class="it on"><span class="ico" data-ico="home"></span>メイン</div>
-        <div class="it"><span class="ico" data-ico="market"></span>市場</div>
-        <div class="it"><span class="ico" data-ico="gacha"></span>ガチャ</div>
-        <div class="it"><span class="ico" data-ico="craft"></span>クラフト</div>
-        <div class="it"><span class="ico" data-ico="trophy"></span>審査</div>
-        <div class="it"><span class="ico" data-ico="bag"></span>図鑑</div>
-      </div>
-      <div class="icoGallery">
-        <div class="g"><span class="ico" data-ico="market"></span>天秤</div>
-        <div class="g"><span class="ico" data-ico="gacha"></span>宝箱</div>
-        <div class="g"><span class="ico" data-ico="craft"></span>金床</div>
-        <div class="g"><span class="ico" data-ico="trophy"></span>トロフィー</div>
-        <div class="g"><span class="ico" data-ico="coin"></span>通貨</div>
-        <div class="g"><span class="ico" data-ico="calendar"></span>日付</div>
-        <div class="g"><span class="ico" data-ico="sparkle"></span>レア</div>
-        <div class="g"><span class="ico" data-ico="heart"></span>お気に入り</div>
-      </div>
+      <h2><span class="ico" data-ico="heart"></span>顔の雰囲気</h2>
+      <div class="chips" id="presetChips"></div>
     </div>
 
-    <!-- ボタン -->
+    <!-- パーツ選択 -->
     <div class="panel">
-      <h2><span class="ico" data-ico="craft"></span>ボタン4ステート</h2>
-      <div class="lbl">メイン（通常 / ホバー / プレス / 無効）</div>
-      <div class="row">
-        <button class="btn">通常</button>
-        <button class="btn" style="filter:brightness(1.08)">ホバー</button>
-        <button class="btn" style="transform:translateY(1px);filter:brightness(.92)">プレス</button>
-        <button class="btn" disabled>無効</button>
-      </div>
-      <div class="lbl">セカンダリ（アウトライン）</div>
-      <div class="row">
-        <button class="btn outline">通常</button>
-        <button class="btn outline" style="background:rgba(139,94,107,.06)">ホバー</button>
-        <button class="btn outline" disabled>無効</button>
-        <button class="btn gold">ゴールド</button>
-      </div>
+      <h2><span class="ico" data-ico="sparkle"></span>パーツを選ぶ</h2>
+      <div class="lbl">目の形</div><div class="chips" id="eyeChips"></div>
+      <div class="lbl">眉の形</div><div class="chips" id="browChips"></div>
+      <div class="lbl">口の形</div><div class="chips" id="mouthChips"></div>
+      <div class="slider"><span class="nm">目の大きさ</span><input type="range" id="sEyeSize" min="0.8" max="1.3" step="0.05"><span class="val" id="vEyeSize"></span></div>
+      <div class="slider"><span class="nm">目の間隔</span><input type="range" id="sEyeGap" min="22" max="36" step="1"><span class="val" id="vEyeGap"></span></div>
+      <div class="lbl">髪色</div><div class="swatchRow" id="hairSw"></div>
+      <div class="lbl">衣装色</div><div class="swatchRow" id="dressSw"></div>
     </div>
 
-    <!-- カード -->
+    <!-- 位置の微調整 -->
     <div class="panel">
-      <h2><span class="ico" data-ico="market"></span>カード / パネル（角丸12px・影1種統一）</h2>
-      <div class="cards">
-        <div class="card"><span class="ico" data-ico="gacha"></span><div class="nm">きらめきガチャ</div><div class="pr"><span class="ico" data-ico="coin"></span>120</div></div>
-        <div class="card"><span class="ico" data-ico="trophy"></span><div class="nm">コーデ審査</div><div class="pr"><span class="ico" data-ico="sparkle"></span>開催中</div></div>
-        <div class="card"><span class="ico" data-ico="craft"></span><div class="nm">クラフト工房</div><div class="pr"><span class="ico" data-ico="coin"></span>—</div></div>
+      <h2><span class="ico" data-ico="craft"></span>パーツ位置の微調整</h2>
+      <div class="chips" id="partChips"></div>
+      <div class="slider" style="margin-top:10px;"><span class="nm">左右(X)</span><input type="range" id="sPosX" min="-24" max="24" step="1"><span class="val" id="vPosX"></span></div>
+      <div class="slider"><span class="nm">上下(Y)</span><input type="range" id="sPosY" min="-24" max="24" step="1"><span class="val" id="vPosY"></span></div>
+      <div class="row" style="margin-top:6px;">
+        <button class="btn outline sm" id="btnResetPart">この部位をリセット</button>
+        <button class="btn outline sm" id="btnResetAll">全部リセット</button>
       </div>
     </div>
   </main>
 </div>
 
 <script>
-/* ============================================================
-   カスタムSVGアイコン（stroke統一 2px / round / currentColor）
-   ============================================================ */
-const ICONS = {
-  home:`<path d="M3 11 12 3l9 8" /><path d="M5 10v10h14V10" /><path d="M10 20v-6h4v6" />`,
-  market:`<path d="M12 3v16" /><path d="M6 20h12" /><path d="M5 7h14" /><path d="M5 7 3 13a3 3 0 0 0 6 0L7 7" fill="none"/><path d="M17 7l-2 6a3 3 0 0 0 6 0l-2-6" fill="none"/>`,
-  gacha:`<path d="M4 10a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" /><path d="M4 8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3" /><path d="M4 12h16" /><path d="M12 12v3" /><circle cx="12" cy="11" r="1.3" fill="currentColor" stroke="none"/>`,
-  craft:`<path d="M4 18h10" /><path d="M5 18v-2a4 4 0 0 1 4-4h4" /><path d="M13 7l5-3 2 3-5 3z" /><path d="M13 7l-2 4" />`,
-  trophy:`<path d="M7 4h10v4a5 5 0 0 1-10 0z" /><path d="M7 6H4a2 2 0 0 0 2 4" /><path d="M17 6h3a2 2 0 0 1-2 4" /><path d="M12 13v3" /><path d="M8 20h8" /><path d="M9 20a3 3 0 0 1 6 0" />`,
-  bag:`<path d="M5 8h14l-1 12H6z" /><path d="M9 8a3 3 0 0 1 6 0" /><path d="M9 12v1" /><path d="M15 12v1" />`,
-  coin:`<circle cx="12" cy="12" r="8.5" /><path d="M12 7.5l1.4 2.9 3.1.4-2.3 2.2.6 3.1L12 16.6 9.2 18l.6-3.1L7.5 12.7l3.1-.4z" fill="currentColor" stroke="none"/>`,
-  calendar:`<rect x="4" y="5" width="16" height="15" rx="2" /><path d="M4 9h16" /><path d="M8 3v4" /><path d="M16 3v4" /><path d="M8 13h3" /><path d="M8 16h6" />`,
-  sparkle:`<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6z" /><path d="M18 15l.7 2 .7-2 2-.7-2-.7-.7-2-.7 2-2 .7z" fill="currentColor" stroke="none"/>`,
-  heart:`<path d="M12 20S4 14.5 4 9.2A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 8 2.2C20 14.5 12 20 12 20z" />`,
+/* ===== カスタムSVGアイコン ===== */
+const ICONS={
+  coin:`<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5l1.4 2.9 3.1.4-2.3 2.2.6 3.1L12 16.6 9.2 18l.6-3.1L7.5 12.7l3.1-.4z" fill="currentColor" stroke="none"/>`,
+  heart:`<path d="M12 20S4 14.5 4 9.2A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 8 2.2C20 14.5 12 20 12 20z"/>`,
+  sparkle:`<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6z"/>`,
+  craft:`<path d="M4 18h10"/><path d="M5 18v-2a4 4 0 0 1 4-4h4"/><path d="M13 7l5-3 2 3-5 3z"/><path d="M13 7l-2 4"/>`,
 };
-function injectIcons(){
-  document.querySelectorAll("[data-ico]").forEach(el=>{
-    const k=el.dataset.ico; if(!ICONS[k]) return;
-    el.innerHTML=`<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none"
-      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</svg>`;
-  });
-}
+function injectIcons(){document.querySelectorAll("[data-ico]").forEach(el=>{const k=el.dataset.ico;if(!ICONS[k])return;
+  el.innerHTML=`<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</svg>`;});}
 
-/* ============================================================
-   色ユーティリティ
-   ============================================================ */
-function shade(hex,p){ // p: -1(暗)〜+1(明)
-  const n=parseInt(hex.slice(1),16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
-  const t=p<0?0:255, a=Math.abs(p);
-  r=Math.round((t-r)*a+r); g=Math.round((t-g)*a+g); b=Math.round((t-b)*a+b);
-  return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
-}
+/* ===== 色ユーティリティ ===== */
+function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  const t=p<0?0:255,a=Math.abs(p);r=Math.round((t-r)*a+r);g=Math.round((t-g)*a+g);b=Math.round((t-b)*a+b);
+  return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 
-/* ============================================================
-   髪・衣装テーマ（パレット内・色替え対応）
-   ============================================================ */
-const HAIR = {
-  rose:  {root:"#A86A82", tip:"#E8B4C8", sw:"#D38AA4"},
-  honey: {root:"#B0855A", tip:"#E6C58F", sw:"#D4A574"},
-  ash:   {root:"#6E5A66", tip:"#A98FA0", sw:"#8C7585"},
-  cocoa: {root:"#6B4A3A", tip:"#A8806A", sw:"#8A5E48"},
+/* ===== テーマ ===== */
+const HAIR={rose:{root:"#A86A82",tip:"#E8B4C8"},honey:{root:"#B0855A",tip:"#E6C58F"},
+  ash:{root:"#6E5A66",tip:"#A98FA0"},cocoa:{root:"#6B4A3A",tip:"#A8806A"},mint:{root:"#6FA39A",tip:"#AED9CE"}};
+const DRESS={pastel:{base:"#E8B4C8"},rose:{base:"#C97D96"},plum:{base:"#7E6486"},
+  marine:{base:"#7FBEC4"},sage:{base:"#9DB389"}};
+
+/* ===== パーツ定義 ===== */
+const EYE_STYLES={round:"ぱっちり",sparkle:"きらきら",sharp:"つり目",droopy:"たれ目",sleepy:"ねむそう"};
+const BROW_STYLES={soft:"やわらか",straight:"まっすぐ",angled:"りりしい",worried:"こまり"};
+const MOUTH_STYLES={smile:"にこっ",line:"すまし",smirk:"にやり",open:"あーん",pout:"むぅ"};
+const PRESETS={
+  おっとり:{eye:"droopy",brow:"soft",mouth:"smile",eyeSize:1.05,eyeGap:29},
+  クール:  {eye:"sharp", brow:"angled",mouth:"line",eyeSize:0.95,eyeGap:28},
+  げんき:  {eye:"sparkle",brow:"soft",mouth:"open",eyeSize:1.1,eyeGap:28},
+  ねむねむ:{eye:"sleepy",brow:"worried",mouth:"pout",eyeSize:1.0,eyeGap:28},
+  すまし:  {eye:"round", brow:"straight",mouth:"smirk",eyeSize:1.0,eyeGap:28},
 };
-const DRESS = {
-  pastel:{base:"#E8B4C8", sw:"#E8B4C8"},
-  rose:  {base:"#C97D96", sw:"#C97D96"},
-  plum:  {base:"#7E6486", sw:"#7E6486"},
-  marine:{base:"#7FBEC4", sw:"#7FBEC4"},
-  sage:  {base:"#9DB389", sw:"#9DB389"},
-};
+const PART_LABELS={eyes:"目",brows:"眉",mouth:"口",hairFront:"前髪",hairAcc:"髪かざり"};
 
-let state={hair:"rose", dress:"pastel", pattern:true, blink:false};
+let state={
+  hair:"rose",dress:"pastel",pattern:true,blink:false,
+  eye:"round",brow:"soft",mouth:"smile",eyeSize:1.05,eyeGap:29,
+  preset:"おっとり",
+  selPart:"eyes",
+  offsets:{eyes:{x:0,y:0},brows:{x:0,y:0},mouth:{x:0,y:0},hairFront:{x:0,y:0},hairAcc:{x:0,y:0}},
+};
 let uid=0;
 
-/* ============================================================
-   キャラ生成（グループ分離 / グラデ / ハイライト / 陰影）
-   ============================================================ */
+/* ===== 目 ===== */
+function eye(cx,dir,id,h){
+  const st=state.eye,s=state.eyeSize;
+  if(state.blink){
+    return `<g transform="translate(${cx},112) scale(${s})"><path d="M-15 -2 q15 9 30 0" stroke="#5C3D4A" stroke-width="3" fill="none" stroke-linecap="round"/></g>`;
+  }
+  const iris=`url(#iris_${id})`;
+  let base=`
+    <ellipse cx="0" cy="0" rx="16" ry="19" fill="#FFFBFC"/>
+    <ellipse cx="0" cy="2" rx="14.5" ry="17" fill="${iris}"/>
+    <ellipse cx="0" cy="4" rx="6.5" ry="8.5" fill="#3A2230"/>
+    <ellipse cx="0" cy="11" rx="9" ry="4" fill="${shade(h.tip,0.4)}" opacity=".55"/>
+    <ellipse cx="-5" cy="-6" rx="5" ry="6.5" fill="#fff" opacity=".95"/>
+    <circle cx="5" cy="8" r="2.6" fill="#fff" opacity=".9"/>`;
+  let extra="",lid="",topLash,flick="";
+  if(st==="sparkle") extra=`<path d="M7 -2 l1.1 2.8 2.8 1.1 -2.8 1.1 -1.1 2.8 -1.1 -2.8 -2.8 -1.1 2.8 -1.1z" fill="#fff" opacity=".95"/>`;
+  if(st==="round"||st==="sparkle"){
+    topLash=`<path d="M-16 -4 Q0 -20 16 -4" stroke="#5C3D4A" stroke-width="3.2" fill="none" stroke-linecap="round"/>`;
+    flick=`<path d="M${14*dir} -4 q${4*dir} -3 ${7*dir} 0" stroke="#5C3D4A" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  }else if(st==="sharp"){
+    topLash=`<path d="M${-16*dir} 0 Q0 -18 ${16*dir} -8" stroke="#5C3D4A" stroke-width="3.4" fill="none" stroke-linecap="round"/>`;
+    flick=`<path d="M${14*dir} -8 q${5*dir} -5 ${9*dir} -3" stroke="#5C3D4A" stroke-width="2.8" fill="none" stroke-linecap="round"/>`;
+  }else if(st==="droopy"){
+    topLash=`<path d="M${-16*dir} -8 Q0 -18 ${16*dir} 2" stroke="#5C3D4A" stroke-width="3.2" fill="none" stroke-linecap="round"/>`;
+    flick=`<path d="M${14*dir} 2 q${4*dir} 4 ${8*dir} 4" stroke="#5C3D4A" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  }else{ // sleepy
+    lid=`<path d="M-17 -3 Q0 -10 17 -3 L17 -20 L-17 -20 Z" fill="url(#skin_${id})"/>`;
+    topLash=`<path d="M-16 -3 Q0 -9 16 -3" stroke="#5C3D4A" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  }
+  const lower=`<path d="M-9 14 q9 4 18 0" stroke="#8B5E6B" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".6"/>`;
+  return `<g transform="translate(${cx},112) scale(${s})">${base}${extra}${lid}${topLash}${flick}${lower}</g>`;
+}
+
+/* ===== 眉 ===== */
+function brow(cx,dir,h){
+  const col=shade(h.root,-0.15);let p;
+  switch(state.brow){
+    case "soft":     p="M-13 0 Q0 -6 13 -2"; break;
+    case "straight": p="M-13 -1 L13 -2"; break;
+    case "angled":   p="M-13 2 L13 -5"; break;   // 外側が上がる
+    case "worried":  p="M-13 -4 L13 3"; break;   // 内側が上がる
+  }
+  return `<g transform="translate(${cx},88) scale(${dir},1)"><path d="${p}" stroke="${col}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".85"/></g>`;
+}
+
+/* ===== 口 ===== */
+function mouthSvg(){
+  const o=state.offsets.mouth;let m="";
+  switch(state.mouth){
+    case "smile": m=`<path d="M-10 0 Q0 11 10 0 Q0 5 -10 0 Z" fill="#E58598" stroke="#C36E80" stroke-width="2" stroke-linejoin="round"/><path d="M-6 3 Q0 6 6 3" stroke="#fff" stroke-width="1.8" fill="none" opacity=".5" stroke-linecap="round"/>`; break;
+    case "line":  m=`<path d="M-7 0 Q0 4 7 0" stroke="#C36E80" stroke-width="2.4" fill="none" stroke-linecap="round"/>`; break;
+    case "smirk": m=`<path d="M-8 1 Q1 7 9 -3" stroke="#C36E80" stroke-width="2.6" fill="none" stroke-linecap="round"/>`; break;
+    case "open":  m=`<ellipse cx="0" cy="1" rx="6.5" ry="7.5" fill="#C8546A" stroke="#A8435A" stroke-width="2"/><path d="M-5 4 Q0 8 5 4 Q0 2 -5 4 Z" fill="#F08099"/>`; break;
+    case "pout":  m=`<path d="M-5 -1 Q0 -4 5 -1 Q0 5 -5 -1 Z" fill="#E58598" stroke="#C36E80" stroke-width="2" stroke-linejoin="round"/>`; break;
+  }
+  return `<g id="mouth" transform="translate(${140+o.x},${140+o.y})">${m}</g>`;
+}
+
+/* ===== キャラ本体 ===== */
 function buildChar(){
   const id="c"+(uid++);
-  const h=HAIR[state.hair], d=DRESS[state.dress];
-  // 派生色
-  const skin0="#FCE4D6", skin1="#F6C9B2";
-  const lineSkin="#B88A6E";       // 肌の輪郭（黒禁止）
-  const lineHair=shade(h.root,-0.35);
-  const dBase=d.base, dShadow=shade(dBase,-0.20), dHi=shade(dBase,0.20), dDeep=shade(dBase,-0.34);
-  const lineDress=shade(dBase,-0.42);
-  const ribbon=DRESS.pastel.base==dBase? "#D4A574":"#D4A574"; // アクセント固定
-  const ribbonSh=shade("#D4A574",-0.22), ribbonHi=shade("#D4A574",0.18);
-  const eyeUp = state.blink;
+  const h=HAIR[state.hair],d=DRESS[state.dress];
+  const skin0="#FCE4D6",skin1="#F6C9B2",lineSkin="#B88A6E",lineHair=shade(h.root,-0.35);
+  const dBase=d.base,dShadow=shade(dBase,-0.20),dHi=shade(dBase,0.20),dDeep=shade(dBase,-0.34),lineDress=shade(dBase,-0.42);
+  const ribbonHi=shade("#D4A574",0.18),ribbonSh=shade("#D4A574",-0.22);
+  const half=state.eyeGap,cxL=140-half,cxR=140+half;
+  const oe=state.offsets.eyes,ob=state.offsets.brows,ohf=state.offsets.hairFront,oha=state.offsets.hairAcc;
 
-  const defs=`
-  <defs>
+  const defs=`<defs>
     <radialGradient id="skin_${id}" cx="50%" cy="42%" r="62%">
-      <stop offset="0%" stop-color="${shade(skin0,0.15)}"/>
-      <stop offset="60%" stop-color="${skin0}"/>
-      <stop offset="100%" stop-color="${skin1}"/>
-    </radialGradient>
+      <stop offset="0%" stop-color="${shade(skin0,0.15)}"/><stop offset="60%" stop-color="${skin0}"/><stop offset="100%" stop-color="${skin1}"/></radialGradient>
     <radialGradient id="cheek_${id}" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#F4A6BC" stop-opacity=".85"/>
-      <stop offset="70%" stop-color="#F4A6BC" stop-opacity=".25"/>
-      <stop offset="100%" stop-color="#F4A6BC" stop-opacity="0"/>
-    </radialGradient>
+      <stop offset="0%" stop-color="#F4A6BC" stop-opacity=".85"/><stop offset="70%" stop-color="#F4A6BC" stop-opacity=".25"/><stop offset="100%" stop-color="#F4A6BC" stop-opacity="0"/></radialGradient>
     <radialGradient id="iris_${id}" cx="50%" cy="38%" r="62%">
-      <stop offset="0%" stop-color="${shade(h.root,0.34)}"/>
-      <stop offset="45%" stop-color="${shade(h.root,-0.05)}"/>
-      <stop offset="100%" stop-color="${shade(h.root,-0.5)}"/>
-    </radialGradient>
-    <linearGradient id="hair_${id}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${h.root}"/>
-      <stop offset="100%" stop-color="${h.tip}"/>
-    </linearGradient>
-    <linearGradient id="dress_${id}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${dHi}"/>
-      <stop offset="55%" stop-color="${dBase}"/>
-      <stop offset="100%" stop-color="${dShadow}"/>
-    </linearGradient>
-    <linearGradient id="ribbon_${id}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${ribbonHi}"/>
-      <stop offset="100%" stop-color="${ribbonSh}"/>
-    </linearGradient>
-    <pattern id="pat_${id}" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
+      <stop offset="0%" stop-color="${shade(h.root,0.34)}"/><stop offset="45%" stop-color="${shade(h.root,-0.05)}"/><stop offset="100%" stop-color="${shade(h.root,-0.5)}"/></radialGradient>
+    <linearGradient id="hair_${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${h.root}"/><stop offset="100%" stop-color="${h.tip}"/></linearGradient>
+    <linearGradient id="dress_${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${dHi}"/><stop offset="55%" stop-color="${dBase}"/><stop offset="100%" stop-color="${dShadow}"/></linearGradient>
+    <linearGradient id="ribbon_${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${ribbonHi}"/><stop offset="100%" stop-color="${ribbonSh}"/></linearGradient>
+    <pattern id="pat_${id}" width="16" height="16" patternUnits="userSpaceOnUse">
       <circle cx="4" cy="4" r="1.8" fill="${dHi}" opacity="${state.pattern?0.9:0}"/>
-      <path d="M11 10c.9-1 2.2-1 2.7 .1c.5-1.1 1.8-1.1 2.7-.1c-.7 1.4-2.7 2.6-2.7 2.6s-2-1.2-2.7-2.6z"
-            fill="${shade(dBase,0.30)}" opacity="${state.pattern?0.75:0}"/>
-    </pattern>
-    <filter id="soft_${id}" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#8B5E6B" flood-opacity="0.22"/>
-    </filter>
+      <path d="M11 10c.9-1 2.2-1 2.7 .1c.5-1.1 1.8-1.1 2.7-.1c-.7 1.4-2.7 2.6-2.7 2.6s-2-1.2-2.7-2.6z" fill="${shade(dBase,0.30)}" opacity="${state.pattern?0.75:0}"/></pattern>
+    <filter id="soft_${id}" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#8B5E6B" flood-opacity="0.22"/></filter>
   </defs>`;
 
-  /* --- 髪（後ろ） --- */
-  const hairBack=`
-  <g id="hairBack_${id}">
-    <path d="M60 96 C50 38 96 14 140 14 C184 14 230 38 220 96
-             L228 214 C228 250 188 262 140 262 C92 262 52 250 52 214 Z"
-          fill="url(#hair_${id})" stroke="${lineHair}" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M70 120 C66 170 70 210 86 244" stroke="${shade(h.tip,0.18)}" stroke-width="4"
-          fill="none" stroke-linecap="round" opacity=".7"/>
-    <path d="M210 120 C214 170 210 210 196 244" stroke="${shade(h.tip,0.18)}" stroke-width="4"
-          fill="none" stroke-linecap="round" opacity=".7"/>
-  </g>`;
+  const hairBack=`<g id="hairBack" transform="translate(0,0)">
+    <path d="M60 96 C50 38 96 14 140 14 C184 14 230 38 220 96 L228 214 C228 250 188 262 140 262 C92 262 52 250 52 214 Z" fill="url(#hair_${id})" stroke="${lineHair}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M70 120 C66 170 70 210 86 244" stroke="${shade(h.tip,0.18)}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>
+    <path d="M210 120 C214 170 210 210 196 244" stroke="${shade(h.tip,0.18)}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/></g>`;
 
-  /* --- 体・脚・靴（グループ） --- */
-  const body=`
-  <g id="body_${id}" filter="url(#soft_${id})">
-    <!-- 首 -->
+  const body=`<g id="body" filter="url(#soft_${id})">
     <path d="M128 168 h24 v18 a12 12 0 0 1 -24 0 z" fill="url(#skin_${id})" stroke="${lineSkin}" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M128 178 q12 8 24 0" fill="none" stroke="${shade(skin1,-0.12)}" stroke-width="2" opacity=".5"/>
-
-    <!-- 脚（サイハイ） -->
-    <g id="legs_${id}">
+    <g id="legs">
       <path d="M118 286 h16 v34 a8 8 0 0 1 -16 0 z" fill="url(#skin_${id})" stroke="${lineSkin}" stroke-width="2" stroke-linejoin="round"/>
       <path d="M146 286 h16 v34 a8 8 0 0 1 -16 0 z" fill="url(#skin_${id})" stroke="${lineSkin}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M117 290 h18 v8 h-18 z" fill="#fff" opacity=".85"/>
-      <path d="M145 290 h18 v8 h-18 z" fill="#fff" opacity=".85"/>
-    </g>
-    <!-- 靴（メリージェーン） -->
-    <g id="shoes_${id}">
+      <path d="M117 290 h18 v8 h-18 z" fill="#fff" opacity=".85"/><path d="M145 290 h18 v8 h-18 z" fill="#fff" opacity=".85"/></g>
+    <g id="shoes">
       <path d="M112 318 q14 -4 24 0 l2 8 q-14 5 -28 0 z" fill="url(#ribbon_${id})" stroke="${ribbonSh}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M144 318 q14 -4 24 0 l2 8 q-14 5 -28 0 z" fill="url(#ribbon_${id})" stroke="${ribbonSh}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M118 318 q8 -3 16 0" stroke="#fff" stroke-width="2" fill="none" opacity=".6"/>
-    </g>
-  </g>`;
+      <path d="M144 318 q14 -4 24 0 l2 8 q-14 5 -28 0 z" fill="url(#ribbon_${id})" stroke="${ribbonSh}" stroke-width="2" stroke-linejoin="round"/></g></g>`;
 
-  /* --- 衣装（ボトム：スカート） --- */
-  const skirt=`
-  <g id="bottom_${id}">
-    <path d="M98 224 q42 -10 84 0 l24 64 q-66 18 -132 0 z"
-          fill="url(#dress_${id})" stroke="${lineDress}" stroke-width="2" stroke-linejoin="round"/>
+  const skirt=`<g id="bottom">
+    <path d="M98 224 q42 -10 84 0 l24 64 q-66 18 -132 0 z" fill="url(#dress_${id})" stroke="${lineDress}" stroke-width="2" stroke-linejoin="round"/>
     <path d="M98 224 q42 -10 84 0 l24 64 q-66 18 -132 0 z" fill="url(#pat_${id})"/>
-    <!-- 折り目（folds） -->
     <path d="M118 230 L108 286" stroke="${dShadow}" stroke-width="3" fill="none" opacity=".55" stroke-linecap="round"/>
     <path d="M140 232 L140 290" stroke="${dShadow}" stroke-width="3" fill="none" opacity=".5" stroke-linecap="round"/>
     <path d="M162 230 L172 286" stroke="${dShadow}" stroke-width="3" fill="none" opacity=".55" stroke-linecap="round"/>
     <path d="M128 230 L122 288" stroke="${dHi}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>
     <path d="M152 230 L158 288" stroke="${dHi}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>
-    <!-- 裾フリル -->
-    <path d="M74 288 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 18 0"
-          fill="none" stroke="${dDeep}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
-  </g>`;
+    <path d="M74 288 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 18 0" fill="none" stroke="${dDeep}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/></g>`;
 
-  /* --- 衣装（トップス＋袖）・腕 --- */
-  const top=`
-  <g id="top_${id}">
-    <!-- 袖（パフ） -->
+  const top=`<g id="top">
     <circle cx="84" cy="206" r="20" fill="url(#dress_${id})" stroke="${lineDress}" stroke-width="2"/>
     <circle cx="196" cy="206" r="20" fill="url(#dress_${id})" stroke="${lineDress}" stroke-width="2"/>
-    <circle cx="84" cy="206" r="20" fill="url(#pat_${id})"/>
-    <circle cx="196" cy="206" r="20" fill="url(#pat_${id})"/>
-    <!-- 腕・手 -->
+    <circle cx="84" cy="206" r="20" fill="url(#pat_${id})"/><circle cx="196" cy="206" r="20" fill="url(#pat_${id})"/>
     <path d="M74 214 q-8 16 -2 30 a7 7 0 0 0 13 -2 q-3 -14 1 -26 z" fill="url(#skin_${id})" stroke="${lineSkin}" stroke-width="2" stroke-linejoin="round"/>
     <path d="M206 214 q8 16 2 30 a7 7 0 0 1 -13 -2 q3 -14 -1 -26 z" fill="url(#skin_${id})" stroke="${lineSkin}" stroke-width="2" stroke-linejoin="round"/>
-    <!-- ボディ -->
     <path d="M96 190 q44 -14 88 0 l-4 40 q-40 12 -80 0 z" fill="url(#dress_${id})" stroke="${lineDress}" stroke-width="2" stroke-linejoin="round"/>
     <path d="M96 190 q44 -14 88 0 l-4 40 q-40 12 -80 0 z" fill="url(#pat_${id})"/>
-    <!-- 襟 -->
     <path d="M118 188 q22 12 44 0 l-6 12 q-16 8 -32 0 z" fill="#fff" stroke="${shade(dBase,-0.3)}" stroke-width="1.6" stroke-linejoin="round" opacity=".95"/>
-    <!-- シワ -->
     <path d="M112 200 q28 8 56 0" stroke="${dShadow}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>
-    <!-- リボン（アクセサリ：別グループ） -->
-    <g id="acc_${id}">
+    <g id="acc">
       <path d="M140 210 l-16 -8 q-4 8 0 16 z" fill="url(#ribbon_${id})" stroke="${ribbonSh}" stroke-width="1.8" stroke-linejoin="round"/>
       <path d="M140 210 l16 -8 q4 8 0 16 z" fill="url(#ribbon_${id})" stroke="${ribbonSh}" stroke-width="1.8" stroke-linejoin="round"/>
-      <circle cx="140" cy="210" r="5" fill="${ribbonHi}" stroke="${ribbonSh}" stroke-width="1.6"/>
-    </g>
-  </g>`;
+      <circle cx="140" cy="210" r="5" fill="${ribbonHi}" stroke="${ribbonSh}" stroke-width="1.6"/></g></g>`;
 
-  /* --- 顔・頭 --- */
-  const head=`
-  <g id="face_${id}">
+  const head=`<g id="face">
     <ellipse cx="140" cy="108" rx="70" ry="74" fill="url(#skin_${id})" stroke="${lineSkin}" stroke-width="2"/>
-    <!-- 耳 -->
     <circle cx="72" cy="116" r="11" fill="url(#skin_${id})" stroke="${lineSkin}" stroke-width="2"/>
     <circle cx="208" cy="116" r="11" fill="url(#skin_${id})" stroke="${lineSkin}" stroke-width="2"/>
-    <!-- 頬の赤み -->
     <ellipse cx="98" cy="130" rx="18" ry="13" fill="url(#cheek_${id})"/>
     <ellipse cx="182" cy="130" rx="18" ry="13" fill="url(#cheek_${id})"/>
-    <!-- 鼻（小さな影） -->
-    <path d="M140 122 q3 4 -1 6" stroke="${shade(skin1,-0.18)}" stroke-width="2" fill="none" stroke-linecap="round" opacity=".6"/>
-    <!-- 口 -->
-    ${eyeUp?
-      `<path d="M130 142 q10 4 20 0" stroke="#C36E80" stroke-width="2.6" fill="none" stroke-linecap="round"/>`:
-      `<path d="M130 140 q10 12 20 0 q-10 4 -20 0 z" fill="#E58598" stroke="#C36E80" stroke-width="2" stroke-linejoin="round"/>
-       <path d="M134 144 q6 4 12 0" stroke="#fff" stroke-width="2" fill="none" opacity=".5" stroke-linecap="round"/>`}
-  </g>`;
+    <path d="M140 122 q3 4 -1 6" stroke="${shade(skin1,-0.18)}" stroke-width="2" fill="none" stroke-linecap="round" opacity=".6"/></g>`;
 
-  /* --- 目（左右） --- */
-  function eye(cx){
-    if(eyeUp){
-      return `<path d="M${cx-15} 112 q15 8 30 0" stroke="#5C3D4A" stroke-width="3" fill="none" stroke-linecap="round"/>`;
-    }
-    return `
-    <g>
-      <!-- 白目 -->
-      <ellipse cx="${cx}" cy="112" rx="16" ry="19" fill="#FFFBFC"/>
-      <!-- 虹彩 -->
-      <ellipse cx="${cx}" cy="114" rx="14.5" ry="17" fill="url(#iris_${id})"/>
-      <!-- 瞳孔 -->
-      <ellipse cx="${cx}" cy="116" rx="6.5" ry="8.5" fill="#3A2230"/>
-      <!-- 下部反射光 -->
-      <ellipse cx="${cx}" cy="123" rx="9" ry="4" fill="${shade(h.tip,0.4)}" opacity=".55"/>
-      <!-- ハイライト大・小 -->
-      <ellipse cx="${cx-5}" cy="106" rx="5" ry="6.5" fill="#fff" opacity=".95"/>
-      <circle cx="${cx+5}" cy="120" r="2.6" fill="#fff" opacity=".9"/>
-      <!-- 上まつ毛 -->
-      <path d="M${cx-16} 104 q16 -12 33 -1" stroke="#5C3D4A" stroke-width="3.2" fill="none" stroke-linecap="round"/>
-      <path d="M${cx+14} 102 q5 -3 9 0" stroke="#5C3D4A" stroke-width="2.6" fill="none" stroke-linecap="round"/>
-      <path d="M${cx-15} 104 q-4 -2 -7 1" stroke="#5C3D4A" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-      <!-- 下まつ毛 薄 -->
-      <path d="M${cx-10} 126 q10 4 20 0" stroke="#8B5E6B" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".7"/>
-    </g>`;
-  }
-  const eyes=`
-  <g id="eyes_${id}">
-    ${eye(112)}${eye(168)}
-    <!-- 眉 -->
-    <path d="M98 92 q14 -5 26 -1" stroke="${shade(h.root,-0.15)}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".85"/>
-    <path d="M156 91 q12 -4 26 1" stroke="${shade(h.root,-0.15)}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".85"/>
-  </g>`;
+  const eyes=`<g id="eyes" transform="translate(${oe.x},${oe.y})">${eye(cxL,-1,id,h)}${eye(cxR,1,id,h)}</g>`;
+  const brows=`<g id="brows" transform="translate(${ob.x},${ob.y})">${brow(cxL,-1,h)}${brow(cxR,1,h)}</g>`;
+  const mouth=mouthSvg();
 
-  /* --- 髪（前・バング） --- */
-  const hairFront=`
-  <g id="hairFront_${id}">
-    <path d="M70 104 C68 44 110 26 140 26 C170 26 212 44 210 104
-             C200 78 176 70 158 78 C150 60 130 60 122 78 C104 70 80 78 70 104 Z"
-          fill="url(#hair_${id})" stroke="${lineHair}" stroke-width="2" stroke-linejoin="round"/>
-    <!-- 横の毛束 -->
+  const hairFront=`<g id="hairFront" transform="translate(${ohf.x},${ohf.y})">
+    <path d="M70 104 C68 44 110 26 140 26 C170 26 212 44 210 104 C200 78 176 70 158 78 C150 60 130 60 122 78 C104 70 80 78 70 104 Z" fill="url(#hair_${id})" stroke="${lineHair}" stroke-width="2" stroke-linejoin="round"/>
     <path d="M70 104 C62 130 64 160 74 184 C66 158 70 128 84 110 Z" fill="url(#hair_${id})" stroke="${lineHair}" stroke-width="2" stroke-linejoin="round"/>
     <path d="M210 104 C218 130 216 160 206 184 C214 158 210 128 196 110 Z" fill="url(#hair_${id})" stroke="${lineHair}" stroke-width="2" stroke-linejoin="round"/>
-    <!-- 束ハイライト線 -->
     <path d="M120 40 C104 56 96 80 96 100" stroke="${shade(h.tip,0.28)}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/>
     <path d="M150 38 C168 54 180 78 182 100" stroke="${shade(h.tip,0.28)}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/>
-    <path d="M140 34 C138 52 138 66 140 76" stroke="${shade(h.tip,0.22)}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".7"/>
-    <!-- 髪リボン（アクセサリ） -->
-    <g id="hairAcc_${id}">
-      <circle cx="182" cy="66" r="6" fill="${ribbonHi}" stroke="${ribbonSh}" stroke-width="1.6"/>
-      <path d="M182 66 l-14 -7 q-4 7 0 14 z" fill="url(#ribbon_${id})" stroke="${ribbonSh}" stroke-width="1.6" stroke-linejoin="round"/>
-      <path d="M182 66 l14 -7 q4 7 0 14 z" fill="url(#ribbon_${id})" stroke="${ribbonSh}" stroke-width="1.6" stroke-linejoin="round"/>
-    </g>
-  </g>`;
+    <path d="M140 34 C138 52 138 66 140 76" stroke="${shade(h.tip,0.22)}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".7"/></g>`;
 
-  return `${defs}${hairBack}${body}${skirt}${top}${head}${eyes}${hairFront}`;
+  const hairAcc=`<g id="hairAcc" transform="translate(${oha.x},${oha.y})">
+    <circle cx="182" cy="66" r="6" fill="${ribbonHi}" stroke="${ribbonSh}" stroke-width="1.6"/>
+    <path d="M182 66 l-14 -7 q-4 7 0 14 z" fill="url(#ribbon_${id})" stroke="${ribbonSh}" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M182 66 l14 -7 q4 7 0 14 z" fill="url(#ribbon_${id})" stroke="${ribbonSh}" stroke-width="1.6" stroke-linejoin="round"/></g>`;
+
+  return `${defs}${hairBack}${body}${skirt}${top}${head}${eyes}${brows}${mouth}${hairFront}${hairAcc}`;
 }
 
-function render(){
-  document.getElementById("charSvg").innerHTML=buildChar();
+function render(){document.getElementById("charSvg").innerHTML=buildChar();}
+
+/* ===== コントロール構築 ===== */
+function chip(label,active){return `<button class="chip${active?' on':''}">${label}</button>`;}
+function buildControls(){
+  // プリセット
+  const pc=document.getElementById("presetChips");pc.innerHTML="";
+  Object.keys(PRESETS).forEach(k=>{const b=document.createElement("button");
+    b.className="chip preset"+(state.preset===k?" on":"");b.textContent=k;
+    b.onclick=()=>{const p=PRESETS[k];Object.assign(state,{preset:k,eye:p.eye,brow:p.brow,mouth:p.mouth,eyeSize:p.eyeSize,eyeGap:p.eyeGap});buildControls();render();};
+    pc.appendChild(b);});
+  // 目/眉/口
+  const mk=(elId,map,key)=>{const el=document.getElementById(elId);el.innerHTML="";
+    Object.entries(map).forEach(([k,v])=>{const b=document.createElement("button");
+      b.className="chip"+(state[key]===k?" on":"");b.textContent=v;
+      b.onclick=()=>{state[key]=k;state.preset="";buildControls();render();};el.appendChild(b);});};
+  mk("eyeChips",EYE_STYLES,"eye");mk("browChips",BROW_STYLES,"brow");mk("mouthChips",MOUTH_STYLES,"mouth");
+  // スライダー値
+  document.getElementById("sEyeSize").value=state.eyeSize;document.getElementById("vEyeSize").textContent=state.eyeSize.toFixed(2);
+  document.getElementById("sEyeGap").value=state.eyeGap;document.getElementById("vEyeGap").textContent=state.eyeGap;
+  // 色
+  const hs=document.getElementById("hairSw");hs.innerHTML="";
+  Object.entries(HAIR).forEach(([k,v])=>{const b=document.createElement("button");
+    b.className="sw"+(state.hair===k?" on":"");b.style.background=`linear-gradient(135deg,${v.root},${v.tip})`;
+    b.onclick=()=>{state.hair=k;buildControls();render();};hs.appendChild(b);});
+  const ds=document.getElementById("dressSw");ds.innerHTML="";
+  Object.entries(DRESS).forEach(([k,v])=>{const b=document.createElement("button");
+    b.className="sw"+(state.dress===k?" on":"");b.style.background=`linear-gradient(135deg,${shade(v.base,0.18)},${shade(v.base,-0.18)})`;
+    b.onclick=()=>{state.dress=k;buildControls();render();};ds.appendChild(b);});
+  // 位置調整パーツ
+  const ptc=document.getElementById("partChips");ptc.innerHTML="";
+  Object.entries(PART_LABELS).forEach(([k,v])=>{const b=document.createElement("button");
+    b.className="chip"+(state.selPart===k?" on":"");b.textContent=v;
+    b.onclick=()=>{state.selPart=k;buildControls();};ptc.appendChild(b);});
+  const o=state.offsets[state.selPart];
+  document.getElementById("sPosX").value=o.x;document.getElementById("vPosX").textContent=o.x;
+  document.getElementById("sPosY").value=o.y;document.getElementById("vPosY").textContent=o.y;
 }
 
-/* スウォッチ生成 */
-function buildSwatches(){
-  const hs=document.getElementById("hairSw"); hs.innerHTML="";
-  Object.entries(HAIR).forEach(([k,v])=>{
-    const b=document.createElement("button");
-    b.className="sw"+(state.hair===k?" on":"");
-    b.style.background=`linear-gradient(135deg,${v.root},${v.tip})`;
-    b.onclick=()=>{state.hair=k; buildSwatches(); render();};
-    hs.appendChild(b);
-  });
-  const ds=document.getElementById("dressSw"); ds.innerHTML="";
-  Object.entries(DRESS).forEach(([k,v])=>{
-    const b=document.createElement("button");
-    b.className="sw"+(state.dress===k?" on":"");
-    b.style.background=`linear-gradient(135deg,${shade(v.base,0.18)},${shade(v.base,-0.18)})`;
-    b.onclick=()=>{state.dress=k; buildSwatches(); render();};
-    ds.appendChild(b);
-  });
-}
+/* ===== イベント ===== */
+document.getElementById("sEyeSize").oninput=e=>{state.eyeSize=parseFloat(e.target.value);document.getElementById("vEyeSize").textContent=state.eyeSize.toFixed(2);render();};
+document.getElementById("sEyeGap").oninput=e=>{state.eyeGap=parseInt(e.target.value);document.getElementById("vEyeGap").textContent=state.eyeGap;render();};
+document.getElementById("sPosX").oninput=e=>{state.offsets[state.selPart].x=parseInt(e.target.value);document.getElementById("vPosX").textContent=e.target.value;render();};
+document.getElementById("sPosY").oninput=e=>{state.offsets[state.selPart].y=parseInt(e.target.value);document.getElementById("vPosY").textContent=e.target.value;render();};
+document.getElementById("btnResetPart").onclick=()=>{state.offsets[state.selPart]={x:0,y:0};buildControls();render();};
+document.getElementById("btnResetAll").onclick=()=>{Object.keys(state.offsets).forEach(k=>state.offsets[k]={x:0,y:0});buildControls();render();};
+document.getElementById("btnPattern").onclick=()=>{state.pattern=!state.pattern;render();};
+document.getElementById("btnBlink").onclick=()=>{state.blink=true;render();setTimeout(()=>{state.blink=false;render();},220);};
+document.getElementById("btnRandom").onclick=()=>{
+  const rk=o=>Object.keys(o)[Math.floor(Math.random()*Object.keys(o).length)];
+  Object.assign(state,{eye:rk(EYE_STYLES),brow:rk(BROW_STYLES),mouth:rk(MOUTH_STYLES),
+    hair:rk(HAIR),dress:rk(DRESS),preset:"",eyeSize:0.9+Math.random()*0.35,eyeGap:24+Math.floor(Math.random()*10)});
+  buildControls();render();};
 
-/* まばたきデモ */
-document.getElementById("btnBlink").onclick=()=>{
-  state.blink=true; render();
-  setTimeout(()=>{state.blink=false; render();},220);
-};
-document.getElementById("btnPattern").onclick=()=>{ state.pattern=!state.pattern; render(); };
-
-injectIcons();
-buildSwatches();
-render();
+injectIcons();buildControls();render();
 </script>
 </body>
 </html>
