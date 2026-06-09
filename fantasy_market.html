@@ -639,6 +639,50 @@ add("しんじゅのくつ","shoes","marine","SSR",1850,5,"","limited");
 add("こおりのティアラ","acc","cool","SSR",1800,3,"","limited");
 add("オーロラの空","bg","fairy","SR",900,4,"","limited");
 
+// === 追加カタログ（第2弾：バリエーション） ===
+// --- 髪型 ---
+add("さくらサイドテール","hair","pastel","R",270,1,"","gacha");
+add("ヴェルヴェットロング","hair","gothic","SR",540,4,"","gacha");
+add("おさんぽポニー","hair","natural","R",230,1,"","craft");
+add("オーシャンウェーブ","hair","marine","SR",530,4,"","gacha");
+add("きらめきツインテ","hair","fairy","SR",580,0,"","gacha");
+add("シルバーボブ","hair","cool","N",120,3,"","gacha");
+// --- トップス ---
+add("りぼんカーデ","tops","pastel","SR",540,0,"","gacha");
+add("ヴァンパイアコート","tops","gothic","R",270,1,"","gacha");
+add("おはなブラウス","tops","natural","SR",520,2,"","gacha");
+add("アイスワンピ","tops","cool","R",250,1,"","gacha");
+add("ようせいビスチェ","tops","fairy","R",260,0,"","gacha");
+add("アンカーパーカー","tops","marine","N",120,2,"","craft");
+// --- ボトムス ---
+add("キャンディスカート","bottoms","pastel","SR",530,0,"","gacha");
+add("ダークレースパンツ","bottoms","gothic","N",130,1,"","gacha");
+add("リーフキュロット","bottoms","natural","R",240,0,"","craft");
+add("スノーパンツ","bottoms","cool","SR",520,1,"","gacha");
+add("ようせいフレア","bottoms","fairy","R",250,0,"","gacha");
+add("タイダルスカート","bottoms","marine","SR",540,0,"","gacha");
+// --- シューズ ---
+add("あめだまヒール","shoes","pastel","SR",520,0,"","gacha");
+add("ノワールロングブーツ","shoes","gothic","SSR",1650,1,"","gacha");
+add("もくめサボ","shoes","natural","R",230,2,"","craft");
+add("フロストヒール","shoes","cool","R",240,0,"","gacha");
+add("シェルパンプス","shoes","marine","SR",510,0,"","gacha");
+add("ようせいバレエ","shoes","fairy","R",250,0,"","gacha");
+// --- 小物 ---
+add("あめんぼリボン","acc","pastel","SR",520,2,"","gacha");
+add("ほねバングル","acc","gothic","R",240,3,"","gacha");
+add("きのみネックレス","acc","natural","SR",510,1,"","craft");
+add("つららピアス","acc","cool","SSR",1700,3,"","gacha");
+add("ようせいリング","acc","fairy","R",250,5,"","gacha");
+add("うずまきシェル","acc","marine","R",230,0,"","gacha");
+// --- 背景小物 ---
+add("ゆめのきもち","bg","pastel","SSR",1500,0,"","gacha");
+add("こうもりのとばり","bg","gothic","SR",540,1,"","gacha");
+add("もりのこみち","bg","natural","R",220,2,"","craft");
+add("ふぶきのまど","bg","cool","SSR",1550,3,"","gacha");
+add("きらきらほし","bg","fairy","R",230,4,"","gacha");
+add("しんかいの泡","bg","marine","SR",540,5,"","gacha");
+
 const ITEM_BY_ID = Object.fromEntries(ITEMS.map(i=>[i.id,i]));
 
 /* ---------- 限定ガチャのバナー（8日ごとに切替、一巡したら復刻） ---------- */
@@ -677,6 +721,12 @@ const RECIPES = [
   {id:"r6", out:itemIdByName("すいそうランプ"),  inputs:{m_shell:2,m_gem:1}, known:false},
   {id:"r7", out:itemIdByName("しおかぜボブ"),    inputs:{m_thread:1,m_shell:1}, known:false},
   {id:"r8", out:itemIdByName("なみうちサンダル"),inputs:{m_cloth:1,m_shell:1}, known:false},
+  {id:"r9", out:itemIdByName("おさんぽポニー"),  inputs:{m_thread:1,m_leaf:1}, known:false},
+  {id:"r10",out:itemIdByName("アンカーパーカー"),inputs:{m_cloth:2,m_shell:1}, known:false},
+  {id:"r11",out:itemIdByName("リーフキュロット"),inputs:{m_cloth:1,m_leaf:2}, known:false},
+  {id:"r12",out:itemIdByName("もくめサボ"),      inputs:{m_leaf:1,m_thread:1}, known:false},
+  {id:"r13",out:itemIdByName("きのみネックレス"),inputs:{m_leaf:2,m_gem:1,m_thread:1}, known:false},
+  {id:"r14",out:itemIdByName("もりのこみち"),    inputs:{m_leaf:2,m_shell:1}, known:false},
 ];
 
 /* ---------- 審査テーマ ---------- */
