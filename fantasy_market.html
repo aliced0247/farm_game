@@ -303,6 +303,7 @@
 
     <!-- ===== メイン（着せ替え） ===== -->
     <section class="screen active" id="scr-home">
+      <div class="panel" id="rankPanel" style="padding:10px 12px;"></div>
       <div class="panel">
         <div id="charStage">
           <svg id="charSvg" viewBox="0 0 280 330" preserveAspectRatio="xMidYMid meet"></svg>
@@ -367,16 +368,21 @@
     <section class="screen" id="scr-gacha">
       <div class="panel" style="text-align:center;">
         <h2 style="justify-content:center;"><span class="ic" data-ico="gacha"></span>きらめきガチャ</h2>
+        <div class="seg" id="bannerTabs" style="justify-content:center;margin-bottom:8px;">
+          <button class="on" data-b="normal">通常</button>
+          <button data-b="limited">限定フェア</button>
+        </div>
+        <div id="bannerInfo"></div>
         <div class="ico" data-ico="gacha" style="width:60px;height:60px;margin:8px auto;color:var(--rose);"></div>
         <p class="muted">N 60% / R 25% / SR 12% / SSR 3%<br>天井：<b id="ceilLbl">0</b>/60 回（SSR確定）</p>
         <div class="row" style="justify-content:center;margin-top:10px;">
-          <button class="btn full" id="btnGacha1">1回まわす<br><small>120 リル</small></button>
-          <button class="btn gold full" id="btnGacha10">10連まわす<br><small>1,100 リル</small></button>
+          <button class="btn full" id="btnGacha1">1回まわす<br><small id="cost1">120 リル</small></button>
+          <button class="btn gold full" id="btnGacha10">10連まわす<br><small id="cost10">1,100 リル</small></button>
         </div>
-        <p class="muted" style="margin-top:8px;">ガチャ限定アイテムはクラフトでは作れないよ。</p>
+        <p class="muted" style="margin-top:8px;">限定アイテムは通常ガチャ・マーケットには出ません。</p>
       </div>
       <div class="panel">
-        <h2><span class="ic" data-ico="gift"></span>ピックアップ</h2>
+        <h2><span class="ic" data-ico="gift"></span><span id="puTitle">ピックアップ</span></h2>
         <div class="grid" id="puGrid"></div>
       </div>
     </section>
@@ -400,6 +406,18 @@
     <!-- ===== 審査 ===== -->
     <section class="screen" id="scr-code">
       <div class="panel" id="codePanel"></div>
+    </section>
+
+    <!-- ===== おへや（マイルーム） ===== -->
+    <section class="screen" id="scr-room">
+      <div class="panel">
+        <h2><span class="ic" data-ico="room"></span>マイルーム</h2>
+        <div id="roomStage" style="position:relative;width:100%;aspect-ratio:1/1.05;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);">
+          <svg id="roomPreview" viewBox="0 0 280 330" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;display:block;"></svg>
+        </div>
+        <p class="muted" style="margin-top:6px;">リルで内装を買って、着せ替えキャラのお部屋を飾ろう。買うほどお店ランクも上がるよ。</p>
+      </div>
+      <div class="panel" id="roomShop"></div>
     </section>
 
     <!-- ===== 図鑑/持ち物 ===== -->
@@ -435,6 +453,7 @@
     <button data-scr="market"><span class="ic" data-ico="market"></span>市場</button>
     <button data-scr="gacha"><span class="ic" data-ico="gacha"></span>ガチャ</button>
     <button data-scr="craft"><span class="ic" data-ico="craft"></span>クラフト</button>
+    <button data-scr="room"><span class="ic" data-ico="room"></span>おへや</button>
     <button data-scr="code"><span class="ic" data-ico="trophy"></span>審査</button>
     <button data-scr="bag"><span class="ic" data-ico="bag"></span>図鑑</button>
   </nav>
@@ -494,6 +513,10 @@ const ICONS={
   sparkle:`<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6z"/>`,
   heart:`<path d="M12 20S4 14.5 4 9.2A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 8 2.2C20 14.5 12 20 12 20z"/>`,
   check:`<path d="M5 12l5 5L20 6"/>`,
+  room:`<path d="M3 11 12 4l9 7"/><path d="M5 20v-7h14v7"/><rect x="8" y="14" width="8" height="6" rx="1"/>`,
+  crown:`<path d="M4 8l4 6 4-8 4 8 4-6 1 11H3z"/><path d="M4 20h16"/>`,
+  tag:`<path d="M4 4h8l8 8-8 8-8-8z"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/>`,
+  lock:`<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>`,
   /* アイテム（スロット別・塗り対応） */
   i_hair:`<path d="M5 13C4 6 8 3 12 3s8 3 7 10c0 0-1-4-4-4l-1 2-2-2-2 2-1-2c-3 0-3 4-3 4z" stroke-width="1.4"/>`,
   i_tops:`<path d="M9 4 5 7l1.5 3L8 9v11h8V9l1.5 1L19 7l-4-3-3 2z" stroke-width="1.4"/>`,
@@ -603,8 +626,29 @@ add("もりのきのこ","bg","natural","N",90,2,"","craft");
 add("ゆきのまど","bg","cool","R",225,3,"","gacha");
 add("ほしぞらドーム","bg","fairy","SR",560,4,"","gacha");
 add("すいそうランプ","bg","marine","R",230,5,"","craft");
+// --- 限定アイテム（ガチャ限定・通常排出/マーケットなし） ---
+add("ほしぞらティアラヘア","hair","fairy","SSR",1800,4,"","limited");
+add("ゆめみるドレス","tops","pastel","SSR",1700,0,"","limited");
+add("よるのバラスカート","bottoms","gothic","SSR",1750,1,"","limited");
+add("しんじゅのくつ","shoes","marine","SSR",1850,5,"","limited");
+add("こおりのティアラ","acc","cool","SSR",1800,3,"","limited");
+add("オーロラの空","bg","fairy","SR",900,4,"","limited");
 
 const ITEM_BY_ID = Object.fromEntries(ITEMS.map(i=>[i.id,i]));
+
+/* ---------- 限定ガチャのバナー（8日ごとに切替、一巡したら復刻） ---------- */
+const LIMITED = ITEMS.filter(i=>i.src==="limited");
+const BANNERS = [
+  {name:"星降る夜フェア",   feat:["ほしぞらティアラヘア","オーロラの空"]},
+  {name:"真夜中のローズ",   feat:["よるのバラスカート","こおりのティアラ"]},
+  {name:"うみのきらめき",   feat:["しんじゅのくつ","ゆめみるドレス"]},
+];
+function currentBanner(){
+  const cycle=Math.floor((S.day-1)/8); const idx=cycle%BANNERS.length;
+  const b=BANNERS[idx];
+  return {name:b.name, idx, revival:cycle>=BANNERS.length,
+    feat:b.feat.map(n=>itemIdByName(n)).filter(Boolean)};
+}
 
 /* ---------- 素材 ---------- */
 const MATERIALS = {
@@ -641,10 +685,74 @@ const CODE_THEMES = [
 ];
 
 /* =========================================================
+   マイルーム（リルで購入する内装）
+   ========================================================= */
+// 部屋カラー
+const RC={cream:"#FBEFE6",wood:"#C9A07A",woodD:"#A87C54",pink:"#E8B4C8",pinkD:"#C97D96",
+  gold:"#D4A574",goldD:"#B8915A",sage:"#9DB389",lav:"#C2A9E0",deep:"#5A4E66",white:"#FFFFFF",ln:"#8B5E6B"};
+function rep(n,fn){let s="";for(let i=0;i<n;i++)s+=fn(i);return s;}
+const ROOM=[
+  // wallpaper
+  {id:"w_plain",name:"むじピンク",zone:"wallpaper",price:0,rank:0,draw:()=>`<rect x="0" y="0" width="280" height="330" fill="#FCEAF1"/>`},
+  {id:"w_stripe",name:"ストライプ",zone:"wallpaper",price:900,rank:0,draw:()=>`<rect x="0" y="0" width="280" height="330" fill="${RC.cream}"/>${rep(10,i=>`<rect x="${i*28}" y="0" width="14" height="250" fill="#F3D9E4"/>`)}`},
+  {id:"w_stars",name:"ほしぞら",zone:"wallpaper",price:2600,rank:1,draw:()=>`<rect x="0" y="0" width="280" height="330" fill="#ECE3F5"/>${rep(16,i=>{const x=(i*53%270)+8,y=(i*37%230)+10;return `<path d="M${x} ${y} l1.6 3.4 3.6.4-2.7 2.4.7 3.6-3.2-1.8-3.2 1.8.7-3.6-2.7-2.4 3.6-.4z" fill="#C2A9E0" opacity=".7"/>`;})}`},
+  {id:"w_damask",name:"ゴシック壁",zone:"wallpaper",price:4200,rank:2,draw:()=>`<rect x="0" y="0" width="280" height="330" fill="#4F4358"/>${rep(12,i=>{const x=(i*47%260)+12,y=(i*61%230)+14;return `<circle cx="${x}" cy="${y}" r="6" fill="#5E5168" opacity=".8"/>`;})}`},
+  // floor
+  {id:"f_wood",name:"ウッド床",zone:"floor",price:0,rank:0,draw:()=>`<rect x="0" y="250" width="280" height="80" fill="${RC.wood}"/>${rep(7,i=>`<rect x="${i*40}" y="250" width="2" height="80" fill="${RC.woodD}" opacity=".6"/>`)}<rect x="0" y="250" width="280" height="3" fill="${RC.woodD}"/>`},
+  {id:"f_tile",name:"タイル床",zone:"floor",price:1300,rank:0,draw:()=>`<rect x="0" y="250" width="280" height="80" fill="#EDE6DE"/>${rep(28,i=>{const c=i%7,r=Math.floor(i/7);return ((c+r)%2)?`<rect x="${c*40}" y="${250+r*40}" width="40" height="40" fill="#DCD2C7"/>`:"";})}`},
+  {id:"f_check",name:"ピンクチェック",zone:"floor",price:3000,rank:1,draw:()=>`<rect x="0" y="250" width="280" height="80" fill="#F7E2EA"/>${rep(28,i=>{const c=i%7,r=Math.floor(i/7);return ((c+r)%2)?`<rect x="${c*40}" y="${250+r*40}" width="40" height="40" fill="#EBC2D3"/>`:"";})}`},
+  // rug
+  {id:"r_round",name:"まるラグ",zone:"rug",price:700,rank:0,draw:()=>`<ellipse cx="140" cy="315" rx="84" ry="20" fill="${RC.pink}"/><ellipse cx="140" cy="315" rx="60" ry="13" fill="#F2CFDD"/>`},
+  {id:"r_heart",name:"ハートラグ",zone:"rug",price:1900,rank:1,draw:()=>`<path d="M140 332 C100 312 86 300 96 290 C104 282 118 286 140 304 C162 286 176 282 184 290 C194 300 180 312 140 332 Z" fill="${RC.pinkD}"/><path d="M140 326 C112 312 100 302 106 295 C112 289 122 292 140 306 C158 292 168 289 174 295 C180 302 168 312 140 326Z" fill="#F2CFDD"/>`},
+  // left furniture
+  {id:"l_bed",name:"ゆめベッド",zone:"left",price:2200,rank:0,draw:()=>`<g><rect x="2" y="288" width="92" height="34" rx="6" fill="${RC.white}" stroke="${RC.ln}" stroke-width="2"/><rect x="0" y="276" width="20" height="46" rx="6" fill="${RC.pinkD}" stroke="${RC.ln}" stroke-width="2"/><rect x="6" y="296" width="46" height="20" rx="6" fill="${RC.pink}"/><rect x="8" y="290" width="22" height="14" rx="5" fill="#FBE3EC" stroke="${RC.ln}" stroke-width="1.4"/></g>`},
+  {id:"l_sofa",name:"ソファ",zone:"left",price:1600,rank:0,draw:()=>`<g><rect x="6" y="296" width="78" height="26" rx="8" fill="${RC.lav}" stroke="${RC.ln}" stroke-width="2"/><rect x="2" y="280" width="16" height="42" rx="7" fill="${RC.lav}" stroke="${RC.ln}" stroke-width="2"/><rect x="72" y="280" width="16" height="42" rx="7" fill="${RC.lav}" stroke="${RC.ln}" stroke-width="2"/><rect x="20" y="292" width="22" height="14" rx="5" fill="#D8C6EC"/></g>`},
+  {id:"l_shelf",name:"ほんだな",zone:"left",price:2800,rank:1,draw:()=>`<g><rect x="8" y="250" width="70" height="72" rx="4" fill="${RC.woodD}" stroke="${RC.ln}" stroke-width="2"/><rect x="12" y="276" width="62" height="3" fill="${RC.wood}"/><rect x="12" y="300" width="62" height="3" fill="${RC.wood}"/>${rep(5,i=>`<rect x="${14+i*12}" y="256" width="9" height="18" rx="1.5" fill="${[RC.pink,RC.sage,RC.gold,RC.lav,RC.pinkD][i]}"/>`)}${rep(4,i=>`<rect x="${16+i*14}" y="282" width="10" height="16" rx="1.5" fill="${[RC.sage,RC.pink,RC.lav,RC.gold][i]}"/>`)}</g>`},
+  // right furniture
+  {id:"rt_table",name:"ティーテーブル",zone:"right",price:1500,rank:0,draw:()=>`<g><ellipse cx="238" cy="296" rx="30" ry="9" fill="${RC.wood}" stroke="${RC.ln}" stroke-width="2"/><rect x="234" y="300" width="8" height="22" fill="${RC.woodD}"/><ellipse cx="238" cy="320" rx="16" ry="5" fill="${RC.woodD}"/><path d="M228 290 h12 v-6 a6 4 0 0 0 -12 0z" fill="${RC.white}" stroke="${RC.ln}" stroke-width="1.4"/><path d="M240 286 q6 -1 6 3 t-6 3" fill="none" stroke="${RC.ln}" stroke-width="1.4"/></g>`},
+  {id:"rt_vanity",name:"ドレッサー",zone:"right",price:2400,rank:1,draw:()=>`<g><rect x="208" y="286" width="60" height="36" rx="4" fill="${RC.pinkD}" stroke="${RC.ln}" stroke-width="2"/><ellipse cx="238" cy="262" rx="22" ry="26" fill="#EAF2F5" stroke="${RC.ln}" stroke-width="2"/><ellipse cx="238" cy="262" rx="22" ry="26" fill="none" stroke="${RC.gold}" stroke-width="3"/><rect x="214" y="298" width="20" height="14" rx="2" fill="#E7A9C2"/><rect x="240" y="298" width="20" height="14" rx="2" fill="#E7A9C2"/></g>`},
+  {id:"rt_plant",name:"かんようしょくぶつ",zone:"right",price:800,rank:0,draw:()=>`<g><path d="M226 322 l4 -22 h16 l4 22z" fill="${RC.gold}" stroke="${RC.ln}" stroke-width="2"/><path d="M238 300 C232 280 220 274 218 262 C232 266 238 276 238 286 C240 272 250 262 264 260 C258 276 248 286 238 298z" fill="${RC.sage}" stroke="${shade(RC.sage,-0.25)}" stroke-width="1.4"/></g>`},
+  // ceiling
+  {id:"c_chand",name:"シャンデリア",zone:"ceiling",price:3600,rank:2,draw:()=>`<g><path d="M140 0 v22" stroke="${RC.goldD}" stroke-width="2"/><path d="M112 28 q28 16 56 0" fill="none" stroke="${RC.gold}" stroke-width="3"/><circle cx="140" cy="24" r="5" fill="${RC.gold}"/>${rep(3,i=>`<circle cx="${118+i*22}" cy="34" r="4" fill="#F6E6C2" stroke="${RC.goldD}" stroke-width="1.2"/>`)}</g>`},
+  {id:"c_garland",name:"スターガーランド",zone:"ceiling",price:1000,rank:0,draw:()=>`<g><path d="M8 14 Q140 40 272 14" fill="none" stroke="${RC.gold}" stroke-width="2"/>${rep(7,i=>{const x=20+i*40,y=18+(i%2)*10;return `<path d="M${x} ${y} l1.8 4 4 .4-3 2.6.8 4-3.6-2-3.6 2 .8-4-3-2.6 4-.4z" fill="${RC.gold}"/>`;})}</g>`},
+  // wall decor
+  {id:"wl_window",name:"まど",zone:"wall",price:1100,rank:0,draw:()=>`<g><rect x="22" y="74" width="52" height="64" rx="4" fill="#CDE3EE" stroke="${RC.white}" stroke-width="4"/><rect x="22" y="74" width="52" height="64" rx="4" fill="none" stroke="${RC.ln}" stroke-width="2"/><path d="M48 74 v64 M22 106 h52" stroke="${RC.white}" stroke-width="3"/><circle cx="60" cy="90" r="6" fill="#FBEFC2"/></g>`},
+  {id:"wl_pic",name:"アートフレーム",zone:"wall",price:1300,rank:0,draw:()=>`<g><rect x="206" y="80" width="50" height="44" rx="3" fill="${RC.gold}"/><rect x="211" y="85" width="40" height="34" fill="#F6E9EF"/><path d="M211 119 l12 -14 8 8 9 -12 11 18z" fill="${RC.sage}" opacity=".8"/><circle cx="220" cy="94" r="4" fill="${RC.pink}"/></g>`},
+  {id:"wl_balloon",name:"ふうせん",zone:"wall",price:700,rank:0,draw:()=>`<g>${rep(3,i=>{const x=210+i*22,y=70+(i%2)*14;const col=[RC.pink,RC.lav,RC.gold][i];return `<ellipse cx="${x}" cy="${y}" rx="11" ry="14" fill="${col}" stroke="${shade(col,-0.2)}" stroke-width="1.2"/><path d="M${x} ${y+14} v18" stroke="${RC.ln}" stroke-width="1"/>`;})}</g>`},
+];
+const ROOM_BY_ID=Object.fromEntries(ROOM.map(r=>[r.id,r]));
+const ROOM_ZONES=["wallpaper","floor","rug","wall","left","right","ceiling"];
+const ZONE_JP={wallpaper:"かべがみ",floor:"ゆか",rug:"ラグ",wall:"かべかざり",left:"左の家具",right:"右の家具",ceiling:"天井"};
+
+/* =========================================================
+   お店ランク＆称号（純資産で上がる）
+   ========================================================= */
+const RANKS=[
+  {min:0,      title:"みならい商人"},
+  {min:3000,   title:"かけだし行商人"},
+  {min:8000,   title:"人気のお店"},
+  {min:20000,  title:"街の名店"},
+  {min:50000,  title:"老舗ブティック"},
+  {min:120000, title:"伝説の商会"},
+];
+function netWorth(){
+  let v=S.coin;
+  Object.entries(S.inv).forEach(([id,q])=>{ const it=ITEM_BY_ID[id]; if(it) v+=itemPrice(it)*q; });
+  Object.entries(S.mats).forEach(([m,q])=>{ if(MATERIALS[m]) v+=MATERIALS[m].base*q; });
+  return Math.round(v);
+}
+function rankInfo(){
+  const nw=netWorth(); let lv=0;
+  RANKS.forEach((r,i)=>{ if(nw>=r.min) lv=i; });
+  return {nw, level:lv, rank:RANKS[lv], next:RANKS[lv+1]||null};
+}
+
+/* =========================================================
    ステート
    ========================================================= */
 const FEE = 0.15;
 let S = null;
+let gachaBanner = "normal";
 
 function newGame(){
   return {
@@ -661,7 +769,10 @@ function newGame(){
     events: [],              // {attr,mult,daysLeft,name}
     news: [],                // 表示用 {type,text,ic}
     omen: null,              // 予兆 {attr,up,name}
-    ceil: 0,                 // 天井カウンタ
+    ceil: 0,                 // 天井カウンタ（通常）
+    ceilL: 0,                // 天井カウンタ（限定）
+    room: {owned:{w_plain:1,f_wood:1},
+           equip:{wallpaper:"w_plain",floor:"f_wood",rug:null,wall:null,left:null,right:null,ceiling:null}},
     pickup: null,            // ピックアップ itemId
     code: null,              // 進行中審査 {theme,done,sel:{slot:itemId}}
     nextCodeDay: 4,
@@ -730,8 +841,8 @@ let marketBuy = [];   // [{kind:'item'|'mat', id, price, stock}]
 let matMarket = {};   // mid -> price
 function refreshMarket(){
   marketBuy = [];
-  // アイテム出品：8〜10種ランダム
-  const pool = ITEMS.slice();
+  // アイテム出品：8〜10種ランダム（限定アイテムは並ばない）
+  const pool = ITEMS.filter(i=>i.src!=="limited");
   shuffle(pool);
   const n = 9;
   for(let i=0;i<n;i++){
@@ -879,17 +990,31 @@ function pullOne(forceSSR){
   if(pool.length===0) pool = ITEMS.filter(i=>i.src==="gacha");
   return pool[Math.floor(Math.random()*pool.length)];
 }
-function doGacha(count){
-  const cost = count===1?120:1100;
+function pullLimited(force,bn){
+  const rar = force?"SSR":pickRarity(false);
+  if(rar==="SSR"){
+    const feats=bn.feat.map(id=>ITEM_BY_ID[id]).filter(i=>i&&i.rarity==="SSR");
+    if(feats.length && Math.random()<0.7) return feats[Math.floor(Math.random()*feats.length)];
+  }
+  let pool=LIMITED.filter(i=>i.rarity===rar);
+  if(pool.length===0) pool=ITEMS.filter(i=>i.src==="gacha"&&i.rarity===rar); // N/Rは通常コモンで埋める
+  if(pool.length===0) pool=ITEMS.filter(i=>i.src==="gacha");
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function doGacha(count, banner){
+  banner=banner||"normal";
+  const limited=banner==="limited";
+  const cost = limited?(count===1?150:1400):(count===1?120:1100);
   if(S.coin<cost){ toast("リルが足りないよ"); return; }
   S.coin -= cost;
+  const bn = limited?currentBanner():null;
   const results=[];
   for(let i=0;i<count;i++){
-    S.ceil++;
     let force=false;
-    if(S.ceil>=60){ force=true; S.ceil=0; }
-    const it = pullOne(force);
-    if(it.rarity==="SSR") S.ceil=0;
+    if(limited){ S.ceilL++; if(S.ceilL>=60){ force=true; S.ceilL=0; } }
+    else      { S.ceil++;  if(S.ceil >=60){ force=true; S.ceil =0; } }
+    const it = limited?pullLimited(force,bn):pullOne(force);
+    if(it.rarity==="SSR"){ if(limited) S.ceilL=0; else S.ceil=0; }
     S.inv[it.id]=(S.inv[it.id]||0)+1;
     S.seen[it.id]=true;
     results.push(it);
@@ -1232,6 +1357,7 @@ function renderChar(){
   const brows=`<g id="brows" transform="translate(${ob.x},${ob.y})">${fBrow(cxL,-1,hc)}${fBrow(cxR,1,hc)}</g>`;
 
   let html=defs;
+  html+=renderRoom();
   html+=bgItem?renderBg(ATTRS[bgItem.attr].color,bgItem.variant):"";
   html+=hair.back;
   html+=body;
@@ -1243,6 +1369,16 @@ function renderChar(){
   html+=hair.front;
   html+=acc.head;
   document.getElementById("charSvg").innerHTML=html;
+  const pv=document.getElementById("roomPreview"); if(pv) pv.innerHTML=html;
+}
+function renderRoom(){
+  const eq=S.room.equip;
+  const dr=z=>{const id=eq[z]; return (id&&ROOM_BY_ID[id])?ROOM_BY_ID[id].draw():"";};
+  let s="";
+  s+= (eq.wallpaper&&ROOM_BY_ID[eq.wallpaper])?dr("wallpaper"):ROOM_BY_ID.w_plain.draw();
+  s+= (eq.floor&&ROOM_BY_ID[eq.floor])?dr("floor"):ROOM_BY_ID.f_wood.draw();
+  s+= dr("wall"); s+= dr("ceiling"); s+= dr("left"); s+= dr("right"); s+= dr("rug");
+  return s;
 }
 
 /* =========================================================
@@ -1276,6 +1412,7 @@ function renderHome(){
     nf.appendChild(d);
   });
   renderEditor();
+  renderRank();
 }
 
 function renderEditor(){
@@ -1403,17 +1540,38 @@ function drawChart(){
 }
 
 function renderGacha(){
-  document.getElementById("btnGacha1").disabled = S.coin<120;
-  document.getElementById("btnGacha10").disabled = S.coin<1100;
+  const limited=gachaBanner==="limited";
+  document.getElementById("cost1").textContent=(limited?150:120)+" リル";
+  document.getElementById("cost10").textContent=(limited?"1,400":"1,100")+" リル";
+  document.getElementById("btnGacha1").disabled = S.coin<(limited?150:120);
+  document.getElementById("btnGacha10").disabled = S.coin<(limited?1400:1100);
+  document.getElementById("ceilLbl").textContent = limited?S.ceilL:S.ceil;
+  document.querySelectorAll("#bannerTabs button").forEach(b=>b.classList.toggle("on",b.dataset.b===gachaBanner));
+  const info=document.getElementById("bannerInfo");
+  if(limited){ const bn=currentBanner();
+    info.innerHTML=`<div style="font-weight:700;color:var(--rose);font-size:13px">${bn.name}${bn.revival?` <span class="tag" style="background:var(--gold)">復刻</span>`:""}</div>
+      <div class="muted">あと ${8-((S.day-1)%8)} 日で次のフェアへ</div>`;
+  } else info.innerHTML="";
+  document.getElementById("puTitle").textContent = limited?"フェア注目アイテム":"ピックアップ";
+
   const pu=document.getElementById("puGrid"); pu.innerHTML="";
-  if(!S.pickup) S.pickup = ITEMS.filter(i=>i.src==="gacha"&&i.rarity==="SSR")[ Math.floor(Math.random()*ITEMS.filter(i=>i.src==="gacha"&&i.rarity==="SSR").length) ].id;
-  // SSR・SR を数点見せる
-  const show = ITEMS.filter(i=>i.src==="gacha" && (i.rarity==="SSR"||i.rarity==="SR")).slice(0,6);
-  // pickup を先頭に
-  const puItem=ITEM_BY_ID[S.pickup];
-  [puItem,...show.filter(i=>i.id!==S.pickup)].slice(0,6).forEach((it,idx)=>{
+  let show, badge;
+  if(limited){
+    const bn=currentBanner();
+    show=bn.feat.map(id=>ITEM_BY_ID[id]).filter(Boolean);
+    LIMITED.forEach(it=>{ if(show.length<6 && show.indexOf(it)<0) show.push(it); });
+    badge="注目";
+  } else {
+    const ssr=ITEMS.filter(i=>i.src==="gacha"&&i.rarity==="SSR");
+    if(!S.pickup) S.pickup = ssr[Math.floor(Math.random()*ssr.length)].id;
+    const list=ITEMS.filter(i=>i.src==="gacha"&&(i.rarity==="SSR"||i.rarity==="SR"));
+    const puItem=ITEM_BY_ID[S.pickup];
+    show=[puItem,...list.filter(i=>i.id!==S.pickup)].slice(0,6);
+    badge="PU";
+  }
+  show.forEach((it,idx)=>{
     const c=document.createElement("div"); c.className="card";
-    c.innerHTML=`${idx===0?'<span class="qty" style="background:var(--gold)">PU</span>':''}
+    c.innerHTML=`${idx===0?`<span class="qty" style="background:var(--gold)">${badge}</span>`:''}
       <span class="thumb">${itemThumb(it,40)}</span>
       <div class="nm">${it.name}</div>
       <div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div>`;
@@ -1521,8 +1679,59 @@ function renderBag(){
   document.getElementById("compNum").textContent=seenN+"/"+ITEMS.length;
 }
 
+function renderRank(){
+  const r=rankInfo(); const p=document.getElementById("rankPanel");
+  let prog;
+  if(r.next){
+    const span=r.next.min-r.rank.min, cur=r.nw-r.rank.min;
+    const pct=Math.max(0,Math.min(100,Math.round(cur/span*100)));
+    prog=`<div class="scorebar" style="margin-top:6px"><i style="width:${pct}%"></i></div>
+      <div class="muted" style="margin-top:3px">次の称号「${r.next.title}」まで ${(r.next.min-r.nw).toLocaleString()} リル</div>`;
+  } else prog=`<div class="muted" style="margin-top:4px">最高ランク達成！街で一番のお店だよ。</div>`;
+  p.innerHTML=`<div style="display:flex;align-items:center;gap:8px">
+     <span class="ic" style="width:24px;height:24px">${ic('crown',24,'var(--gold)')}</span>
+     <div style="flex:1"><div style="font-weight:700;color:var(--rose)">${r.rank.title} <span class="muted">Lv.${r.level+1}</span></div>
+       <div class="muted">純資産 ${r.nw.toLocaleString()} リル</div></div></div>${prog}`;
+}
+
+function renderRoomScreen(){
+  renderChar();
+  const r=rankInfo();
+  const shop=document.getElementById("roomShop");
+  let html=`<h2><span class="ic" data-ico="coin"></span>内装ショップ</h2>
+    <p class="muted">お店ランク <b>${r.rank.title}</b>（Lv.${r.level+1}）で買える家具が増えるよ。</p>`;
+  ROOM_ZONES.forEach(z=>{
+    const items=ROOM.filter(it=>it.zone===z); if(!items.length) return;
+    html+=`<div class="elbl">${ZONE_JP[z]}</div><div class="grid">`;
+    items.forEach(it=>{
+      const owned=S.room.owned[it.id], on=S.room.equip[z]===it.id, locked=it.rank>r.level;
+      let btn;
+      if(owned)      btn=`<button class="btn sm full ${on?'':'ghost'}" data-eq="${z}|${it.id}">${on?'設置中':'設置する'}</button>`;
+      else if(locked)btn=`<button class="btn sm full ghost" disabled>${ic('lock',12)} Lv.${it.rank+1}解放</button>`;
+      else if(it.price===0) btn=`<button class="btn sm full" data-buy="${it.id}">てに入れる</button>`;
+      else           btn=`<button class="btn sm full" data-buy="${it.id}">${ic('coin',12,'#fff')} ${it.price.toLocaleString()}</button>`;
+      html+=`<div class="card" style="${on?'border-color:var(--rose);border-width:2px':''}">
+        <span class="thumb"><svg viewBox="0 0 280 330" width="56" height="50" style="border-radius:6px">${it.draw()}</svg></span>
+        <div class="nm">${it.name}</div>${btn}</div>`;
+    });
+    html+=`</div>`;
+  });
+  shop.innerHTML=html; injectIcons(shop);
+  shop.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>buyRoomItem(b.dataset.buy));
+  shop.querySelectorAll("[data-eq]").forEach(b=>b.onclick=()=>{const a=b.dataset.eq.split("|"); equipRoomItem(a[0],a[1]);});
+}
+function buyRoomItem(id){
+  const it=ROOM_BY_ID[id]; if(!it||S.room.owned[id]) return;
+  if(S.coin<it.price){ toast("リルが足りないよ"); return; }
+  S.coin-=it.price; S.room.owned[id]=1; S.room.equip[it.zone]=id;
+  save(); renderRoomScreen(); renderHeader(); renderRank();
+  toast("「"+it.name+"」を設置したよ！");
+}
+function equipRoomItem(z,id){ S.room.equip[z]=(S.room.equip[z]===id?null:id); save(); renderRoomScreen(); }
+
 function renderAll(){
   renderHeader(); renderHome(); renderMarket(); renderGacha(); renderCraft(); renderCode(); renderBag();
+  renderRank(); renderRoomScreen();
 }
 
 /* =========================================================
@@ -1585,6 +1794,7 @@ function go(scr){
   else if(scr==="market") renderMarket();
   else if(scr==="gacha")  renderGacha();
   else if(scr==="craft")  renderCraft();
+  else if(scr==="room")   renderRoomScreen();
   else if(scr==="code")   renderCode();
   else if(scr==="bag")    renderBag();
   document.getElementById("main").scrollTop=0;
@@ -1614,6 +1824,10 @@ function load(){
     S.face = Object.assign(df, S.face||{});
     if(!S.face.offsets) S.face.offsets=df.offsets;
     ["eyes","brows","mouth","hairFront"].forEach(k=>{ if(!S.face.offsets[k]) S.face.offsets[k]={x:0,y:0}; });
+    if(typeof S.ceilL!=="number") S.ceilL=0;
+    if(!S.room) S.room={owned:{w_plain:1,f_wood:1},equip:{wallpaper:"w_plain",floor:"f_wood",rug:null,wall:null,left:null,right:null,ceiling:null}};
+    if(!S.room.owned) S.room.owned={w_plain:1,f_wood:1};
+    if(!S.room.equip) S.room.equip={wallpaper:"w_plain",floor:"f_wood",rug:null,wall:null,left:null,right:null,ceiling:null};
     return true;
   }catch(e){ return false; }
 }
@@ -1656,8 +1870,9 @@ document.querySelectorAll("nav button").forEach(b=> b.onclick=()=>go(b.dataset.s
 document.getElementById("mClose").onclick=closeModal;
 document.getElementById("overlay").onclick=e=>{ if(e.target.id==="overlay") closeModal(); };
 document.getElementById("btnNextDay").onclick=nextDay;
-document.getElementById("btnGacha1").onclick=()=>doGacha(1);
-document.getElementById("btnGacha10").onclick=()=>doGacha(10);
+document.getElementById("btnGacha1").onclick=()=>doGacha(1,gachaBanner);
+document.getElementById("btnGacha10").onclick=()=>doGacha(10,gachaBanner);
+document.querySelectorAll("#bannerTabs button").forEach(b=>b.onclick=()=>{ gachaBanner=b.dataset.b; renderGacha(); });
 document.getElementById("btnRandom").onclick=()=>{
   SLOT_KEYS.forEach(sl=>{ const l=ownedInSlot(sl); if(l.length) S.equip[sl]=l[Math.floor(Math.random()*l.length)].id; });
   save(); renderHome(); toast("おまかせコーデ！");
