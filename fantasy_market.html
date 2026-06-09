@@ -491,6 +491,20 @@
 function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
   const t=p<0?0:255,a=Math.abs(p);r=Math.round((t-r)*a+r);g=Math.round((t-g)*a+g);b=Math.round((t-b)*a+b);
   return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
+/* 彩度・明度調整（HSL）。レア度で色を“くすみ↔鮮やか”に振るのに使う */
+function _rgb(hex){const n=parseInt(hex.slice(1),16);return [(n>>16)&255,(n>>8)&255,n&255];}
+function adjustHSL(hex,satMul,litAdd){
+  let [r,g,b]=_rgb(hex); r/=255;g/=255;b/=255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn; let h=0,l=(mx+mn)/2,s=0;
+  if(d){ s=l>0.5?d/(2-mx-mn):d/(mx+mn);
+    h=mx===r?((g-b)/d+(g<b?6:0)):mx===g?((b-r)/d+2):((r-g)/d+4); h/=6; }
+  s=Math.max(0,Math.min(1,s*satMul)); l=Math.max(0,Math.min(1,l+(litAdd||0)));
+  const hue=(p,q,t)=>{t=(t+1)%1;return t<1/6?p+(q-p)*6*t:t<1/2?q:t<2/3?p+(q-p)*(2/3-t)*6:p;};
+  let R,G,B; if(!s){R=G=B=l;} else { const q=l<0.5?l*(1+s):l+s-l*s,p=2*l-q; R=hue(p,q,h+1/3);G=hue(p,q,h);B=hue(p,q,h-1/3);}
+  return "#"+((1<<24)+(Math.round(R*255)<<16)+(Math.round(G*255)<<8)+Math.round(B*255)).toString(16).slice(1);
+}
+/* レア度で基準色を補正：N=くすみ気味 → SSR=鮮やか */
+function rarColor(c,t){ return t>=3?adjustHSL(c,1.25,0.03): t===2?adjustHSL(c,1.1,0.01): t===1?c: adjustHSL(c,0.6,0.04); }
 
 const ICONS={
   home:`<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>`,
@@ -1526,6 +1540,25 @@ function gemSVG(x,y,r,c){const hi=shade(c,0.55),dk=shade(c,-0.4);
 function sparkSVG(x,y,s,c){c=c||"#FFFBE6";const e=s*0.3;
   return `<path d="M${x} ${y-s} L${x+e} ${y-e} L${x+s} ${y} L${x+e} ${y+e} L${x} ${y+s} L${x-e} ${y+e} L${x-s} ${y} L${x-e} ${y-e} Z" fill="${c}"/>`;}
 function ssrAura(pts){return pts.map(p=>sparkSVG(p[0],p[1],p[2]||4,p[3])).join("");}
+/* 連続スカラップ（フリル/裾）。x0→x1をn山、振幅ampで描く */
+function scallop(x0,x1,y,n,amp){const step=(x1-x0)/n;let d=`M${x0} ${y}`;for(let i=0;i<n;i++)d+=` q${step/2} ${amp} ${step} 0`;return d;}
+/* テーマ別モチーフ（手描きエンブレム）。(x,y)中心・大きさs・主色c・縁c2 */
+function batSVG(x,y,s,c,c2){return `<g fill="${c}" stroke="${c2}" stroke-width="${s*0.08}" stroke-linejoin="round">
+  <ellipse cx="${x}" cy="${y}" rx="${s*0.2}" ry="${s*0.34}"/>
+  <path d="M${x-s*0.12} ${y-s*0.08} q${-s*0.45} ${-s*0.5} ${-s*0.95} ${-s*0.22} q${s*0.18} ${s*0.18} ${s*0.08} ${s*0.42} q${-s*0.3} ${-s*0.12} ${-s*0.6} ${s*0.18} q${s*0.5} ${s*0.02} ${s*0.78} ${s*0.06} q${s*0.18} ${s*0.0} ${s*0.27} ${-s*0.14} z"/>
+  <path d="M${x+s*0.12} ${y-s*0.08} q${s*0.45} ${-s*0.5} ${s*0.95} ${-s*0.22} q${-s*0.18} ${s*0.18} ${-s*0.08} ${s*0.42} q${s*0.3} ${-s*0.12} ${s*0.6} ${s*0.18} q${-s*0.5} ${s*0.02} ${-s*0.78} ${s*0.06} q${-s*0.18} ${s*0.0} ${-s*0.27} ${-s*0.14} z"/>
+  <path d="M${x-s*0.16} ${y-s*0.3} l${-s*0.06} ${-s*0.2} l${s*0.18} ${s*0.06} M${x+s*0.16} ${y-s*0.3} l${s*0.06} ${-s*0.2} l${-s*0.18} ${s*0.06}"/></g>`;}
+function motif(attr,x,y,s,c,c2){c=c||"#fff";c2=c2||shade(c,-0.35);
+  switch(attr){
+    case "pastel": return `<path d="M${x} ${y+s*0.85} C${x-s*1.25} ${y-s*0.1} ${x-s*0.75} ${y-s} ${x} ${y-s*0.32} C${x+s*0.75} ${y-s} ${x+s*1.25} ${y-s*0.1} ${x} ${y+s*0.85} Z" fill="${c}" stroke="${c2}" stroke-width="${s*0.14}" stroke-linejoin="round"/>`;
+    case "gothic": return batSVG(x,y,s,c,c2);
+    case "natural": return `<path d="M${x} ${y+s} C${x-s} ${y+s*0.1} ${x-s*0.55} ${y-s} ${x} ${y-s} C${x+s*0.55} ${y-s} ${x+s} ${y+s*0.1} ${x} ${y+s} Z" fill="${c}" stroke="${c2}" stroke-width="${s*0.13}" stroke-linejoin="round"/><path d="M${x} ${y+s*0.85} L${x} ${y-s*0.75}" stroke="${c2}" stroke-width="${s*0.13}"/>`;
+    case "cool": {const a=s*0.87;return `<g stroke="${c}" stroke-width="${s*0.16}" stroke-linecap="round" fill="none"><path d="M${x} ${y-s} V${y+s} M${x-a} ${y-s*0.5} L${x+a} ${y+s*0.5} M${x-a} ${y+s*0.5} L${x+a} ${y-s*0.5}"/><path d="M${x} ${y-s} l${-s*0.3} ${s*0.3} M${x} ${y-s} l${s*0.3} ${s*0.3} M${x} ${y+s} l${-s*0.3} ${-s*0.3} M${x} ${y+s} l${s*0.3} ${-s*0.3}"/></g>`;}
+    case "fairy": return `<g fill="${c}" stroke="${c2}" stroke-width="${s*0.1}"><ellipse cx="${x-s*0.42}" cy="${y-s*0.28}" rx="${s*0.46}" ry="${s*0.56}"/><ellipse cx="${x+s*0.42}" cy="${y-s*0.28}" rx="${s*0.46}" ry="${s*0.56}"/><ellipse cx="${x-s*0.36}" cy="${y+s*0.42}" rx="${s*0.34}" ry="${s*0.4}"/><ellipse cx="${x+s*0.36}" cy="${y+s*0.42}" rx="${s*0.34}" ry="${s*0.4}"/></g><path d="M${x} ${y-s*0.5} V${y+s*0.6}" stroke="${c2}" stroke-width="${s*0.16}" stroke-linecap="round"/>`;
+    case "marine": return `<path d="M${x} ${y+s} Q${x-s*1.05} ${y-s*0.2} ${x-s*0.9} ${y-s*0.7} Q${x-s*0.45} ${y-s*0.35} ${x} ${y-s*0.85} Q${x+s*0.45} ${y-s*0.35} ${x+s*0.9} ${y-s*0.7} Q${x+s*1.05} ${y-s*0.2} ${x} ${y+s} Z" fill="${c}" stroke="${c2}" stroke-width="${s*0.12}" stroke-linejoin="round"/><path d="M${x} ${y+s*0.9} L${x} ${y-s*0.8} M${x} ${y+s*0.9} L${x-s*0.5} ${y-s*0.5} M${x} ${y+s*0.9} L${x+s*0.5} ${y-s*0.5}" stroke="${c2}" stroke-width="${s*0.1}" fill="none"/>`;
+    default: return `<circle cx="${x}" cy="${y}" r="${s*0.55}" fill="${c}" stroke="${c2}" stroke-width="${s*0.12}"/>`;
+  }
+}
 
 /* --- トップス（formは variant、書き込みは rarity で段階化） --- */
 function renderTops(c,variant,id,base,rarity,attr){
@@ -1555,8 +1588,8 @@ function renderTops(c,variant,id,base,rarity,attr){
   if(t>=2) trim+=`<path d="M103 195 q37 -9 74 0" stroke="${mt}" stroke-width="2.4" fill="none" opacity=".9"/>
     <path d="M98 226 q42 11 80 0" fill="none" stroke="${ac}" stroke-width="3" opacity=".75"/>
     <path d="M68 214 q-7 12 -1 24 q8 -2 12 -12z" fill="${lc}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
-    <path d="M212 214 q7 12 1 24 q-8 -2 -12 -12z" fill="${lc}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
-    ${gemSVG(140,213,3.4,mt)}`;
+    <path d="M212 214 q7 12 1 24 q-8 -2 -12 -12z" fill="${lc}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>`
+    +motif(attr,140,214,7,mt,ac);
   // SSR：グロー＋二段ペプラム＋大リボン＋宝石多数＋きらめき
   let ssr="";
   if(t>=3){
@@ -1570,7 +1603,8 @@ function renderTops(c,variant,id,base,rarity,attr){
       <path d="M134 196 q6 6 12 0 l-2 13 q-4 3 -8 0z" fill="${shade(ac,-0.22)}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round"/>
       <circle cx="140" cy="198" r="3.6" fill="${mt}" stroke="${ln}" stroke-width="1"/>
       ${gemSVG(116,210,3,mt)}${gemSVG(164,210,3,mt)}
-      <path d="M104 192 q12 -6 24 -3" stroke="${lc}" stroke-width="2" fill="none" opacity=".55" stroke-linecap="round"/>`;
+      <path d="M104 192 q12 -6 24 -3" stroke="${lc}" stroke-width="2" fill="none" opacity=".55" stroke-linecap="round"/>`
+      +motif(attr,140,216,7.5,mt,ac);
     ssr+=ssrAura([[82,182,5,mt],[202,194,4,lc],[150,176,3.6,mt],[94,232,3,lc],[190,230,3,mt]]);
   }
   return `<g id="top">${arms}${bodice}${collar}${trim}${ssr}</g>`;
@@ -1589,29 +1623,39 @@ function renderBottoms(c,variant,id,rarity,attr){
       <path d="M100 224 h80 l-2 64 h-30 l-8 -44 l-8 44 h-30 z" fill="url(#db_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
       <path d="M140 230 v54" stroke="${sh}" stroke-width="2.5" opacity=".5" stroke-linecap="round"/>`;
     if(t>=1) p+=`<path d="M100 226 h80" stroke="${mt}" stroke-width="2" opacity=".8"/>`;
-    if(t>=2) p+=`<path d="M100 230 h80" stroke="${ac}" stroke-width="2.4" opacity=".75"/>`+gemSVG(140,228,3,mt)+`<path d="M102 250 q14 6 28 0 M150 250 q14 6 28 0" stroke="${mt}" stroke-width="1.6" fill="none" opacity=".6"/>`;
-    if(t>=3) p+=`<ellipse cx="140" cy="256" rx="52" ry="40" fill="${mt}" opacity=".12"/><path d="M104 284 h28 M148 284 h28" stroke="${mt}" stroke-width="3" stroke-linecap="round"/>`+gemSVG(116,228,2.6,mt)+gemSVG(164,228,2.6,mt)+ssrAura([[106,300,3.5,mt],[174,300,3.5,lc],[140,318,3,mt]]);
+    if(t>=2) p+=`<path d="M100 230 h80" stroke="${ac}" stroke-width="2.4" opacity=".75"/>`+gemSVG(140,228,3,mt)+`<path d="M102 250 q14 6 28 0 M150 250 q14 6 28 0" stroke="${mt}" stroke-width="1.6" fill="none" opacity=".6"/>`+motif(attr,140,262,7,mt,ac);
+    if(t>=3) p+=`<ellipse cx="140" cy="256" rx="52" ry="40" fill="${mt}" opacity=".12"/><path d="M104 284 h28 M148 284 h28" stroke="${mt}" stroke-width="3" stroke-linecap="round"/>`+gemSVG(116,228,2.6,mt)+gemSVG(164,228,2.6,mt)+motif(attr,116,266,6.5,mt,ac)+motif(attr,164,266,6.5,mt,ac)+ssrAura([[106,300,3.5,mt],[174,300,3.5,lc],[140,318,3,mt]]);
     return p+`</g>`;
   }
+  // スカート：丈・広がり・段数をレア度で段階化（N=短/細 → SSR=ロング/段フリル）
+  const f=20+t*9, drop=58+t*9, hemY=224+drop, hlx=98-f, hrx=182+f, span=84+2*f;
+  const mid=(224+drop*0.5).toFixed(0);
+  const skirtPath=`M98 224 q42 -10 84 0 l${f} ${drop} q${(-span/2).toFixed(0)} ${(drop*0.28).toFixed(0)} ${-span} 0 z`;
   let s=`<g id="bottom">
-    <path d="M98 224 q42 -10 84 0 l24 64 q-66 18 -132 0 z" fill="url(#db_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M98 224 q42 -10 84 0 l24 64 q-66 18 -132 0 z" fill="url(#ptB_${id})"/>`;
-  if(t>=1) s+=`<path d="M118 230 L108 286" stroke="${sh}" stroke-width="3" fill="none" opacity=".55" stroke-linecap="round"/>
-    <path d="M140 232 L140 290" stroke="${sh}" stroke-width="3" fill="none" opacity=".5" stroke-linecap="round"/>
-    <path d="M162 230 L172 286" stroke="${sh}" stroke-width="3" fill="none" opacity=".55" stroke-linecap="round"/>
-    <path d="M128 230 L122 288" stroke="${hi}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>
-    <path d="M152 230 L158 288" stroke="${hi}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>`;
-  s+=`<path d="M74 288 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 18 0" fill="none" stroke="${deep}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>`;
+    <path d="${skirtPath}" fill="url(#db_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="${skirtPath}" fill="url(#ptB_${id})"/>`;
+  if(t>=1) s+=`<path d="M120 232 L${(112-f*0.3).toFixed(0)} ${hemY-7}" stroke="${sh}" stroke-width="3" fill="none" opacity=".5" stroke-linecap="round"/>
+    <path d="M140 234 L140 ${hemY-3}" stroke="${sh}" stroke-width="3" fill="none" opacity=".45" stroke-linecap="round"/>
+    <path d="M160 232 L${(168+f*0.3).toFixed(0)} ${hemY-7}" stroke="${sh}" stroke-width="3" fill="none" opacity=".5" stroke-linecap="round"/>
+    <path d="M130 233 L${(125-f*0.2).toFixed(0)} ${hemY-5}" stroke="${hi}" stroke-width="2.2" fill="none" opacity=".45" stroke-linecap="round"/>
+    <path d="M150 233 L${(155+f*0.2).toFixed(0)} ${hemY-5}" stroke="${hi}" stroke-width="2.2" fill="none" opacity=".45" stroke-linecap="round"/>`;
+  s+=`<path d="${scallop(hlx,hrx,hemY,6,9)}" fill="none" stroke="${deep}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>`;
   if(t>=1) s+=`<path d="M100 226 q40 -8 80 0" fill="none" stroke="${mt}" stroke-width="2.2" opacity=".85"/>`;
   if(t>=2) s+=`<path d="M100 230 q40 -8 80 0" fill="none" stroke="${ac}" stroke-width="2.6" opacity=".75"/>`+gemSVG(140,228,3.4,mt)
-    +`<path d="M70 276 q35 14 70 0 q35 -14 70 0" fill="none" stroke="${ac}" stroke-width="2.4" opacity=".55"/>`
-    +`<path d="M178 224 q15 4 19 17 q-11 2 -17 -5z" fill="${ac}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round"/>`;
-  if(t>=3) s+=`<ellipse cx="140" cy="262" rx="78" ry="46" fill="${mt}" opacity=".12"/>
-    <path d="M68 266 q36 15 72 0 q36 -15 72 0 l7 22 q-74 21 -150 0z" fill="url(#db_${id})" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round" opacity=".96"/>
-    <path d="M66 288 q12 10 21 0 q12 10 21 0 q12 10 21 0 q12 10 21 0 q12 10 21 0 q12 10 19 0" fill="none" stroke="${lc}" stroke-width="2.6" stroke-linecap="round"/>
-    <path d="M120 224 q20 -6 40 0 l-2 9 q-18 -5 -36 0z" fill="${ac}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round"/>
-    <path d="M134 226 q6 7 12 0 l-2 12 q-4 3 -8 0z" fill="${shade(ac,-0.22)}" stroke="${ln}" stroke-width="1.1" stroke-linejoin="round"/>
-    ${gemSVG(120,228,2.6,mt)}${gemSVG(160,228,2.6,mt)}${gemSVG(140,228,3,mt)}`+ssrAura([[72,300,4,mt],[208,296,4,lc],[140,322,3.4,mt],[96,280,2.6,lc],[188,280,2.6,mt]]);
+    +`<path d="${scallop(hlx+10,hrx-10,mid,5,8)}" fill="none" stroke="${ac}" stroke-width="2.2" opacity=".5"/>`
+    +`<path d="M178 224 q15 4 19 17 q-11 2 -17 -5z" fill="${ac}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round"/>`
+    +motif(attr,140,hemY-12,8,mt,ac);
+  if(t>=3){
+    const f2=f+8, drop2=Math.round(drop*0.6), hemY2=224+drop2, hlx2=98-f2, hrx2=182+f2, span2=84+2*f2;
+    s+=`<ellipse cx="140" cy="${mid}" rx="${(span/2+10).toFixed(0)}" ry="${(drop*0.62).toFixed(0)}" fill="${mt}" opacity=".12"/>
+      <path d="M98 224 q42 -10 84 0 l${f2} ${drop2} q${(-span2/2).toFixed(0)} ${(drop2*0.28).toFixed(0)} ${-span2} 0 z" fill="url(#db_${id})" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round" opacity=".96"/>
+      <path d="${scallop(hlx2,hrx2,hemY2,7,9)}" fill="none" stroke="${lc}" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M120 224 q20 -6 40 0 l-2 9 q-18 -5 -36 0z" fill="${ac}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M134 226 q6 7 12 0 l-2 12 q-4 3 -8 0z" fill="${shade(ac,-0.22)}" stroke="${ln}" stroke-width="1.1" stroke-linejoin="round"/>
+      ${gemSVG(120,228,2.6,mt)}${gemSVG(160,228,2.6,mt)}${gemSVG(140,228,3,mt)}
+      ${motif(attr,118,hemY2-4,7.5,mt,ac)}${motif(attr,140,hemY2+3,9,mt,ac)}${motif(attr,162,hemY2-4,7.5,mt,ac)}`
+      +ssrAura([[hlx+4,hemY-8,4,mt],[hrx-4,hemY-12,4,lc],[140,hemY+4,3.4,mt],[104,226,2.6,lc],[176,226,2.6,mt]]);
+  }
   return s+`</g>`;
 }
 function baseBottom(id){
@@ -1698,9 +1742,10 @@ function renderChar(){
   const shoeItem=S.equip.shoes?ITEM_BY_ID[S.equip.shoes]:null;
   const accItem=S.equip.acc?ITEM_BY_ID[S.equip.acc]:null;
   const bgItem=S.equip.bg?ITEM_BY_ID[S.equip.bg]:null;
-  const topC = topsItem?ATTRS[topsItem.attr].color:"#F2D6E0";
-  const botC = botItem?ATTRS[botItem.attr].color:"#E8B4C8";
-  const shoeC= shoeItem?ATTRS[shoeItem.attr].color:"#D4A574";
+  // 基準色にレア度補正（N=くすみ→SSR=鮮やか）。形だけでなく色でもランクを読ませる
+  const topC = topsItem?rarColor(ATTRS[topsItem.attr].color,rtier(topsItem.rarity)):"#F2D6E0";
+  const botC = botItem?rarColor(ATTRS[botItem.attr].color,rtier(botItem.rarity)):"#E8B4C8";
+  const shoeC= shoeItem?rarColor(ATTRS[shoeItem.attr].color,rtier(shoeItem.rarity)):"#D4A574";
 
   const grad=(gid,c0,c1)=>`<linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${c0}"/><stop offset="100%" stop-color="${c1}"/></linearGradient>`;
   const pat=(pid,base)=>`<pattern id="${pid}" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="1.7" fill="${shade(base,0.22)}" opacity=".7"/></pattern>`;
