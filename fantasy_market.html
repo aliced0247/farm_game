@@ -1580,7 +1580,13 @@ function go(scr){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById("scr-"+scr).classList.add("active");
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.scr===scr));
-  if(scr==="market"){ drawChart(); }
+  // 画面を開くたびに最新状態で再描画（所持金変動などの取りこぼし防止）
+  if(scr==="home")        renderHome();
+  else if(scr==="market") renderMarket();
+  else if(scr==="gacha")  renderGacha();
+  else if(scr==="craft")  renderCraft();
+  else if(scr==="code")   renderCode();
+  else if(scr==="bag")    renderBag();
   document.getElementById("main").scrollTop=0;
 }
 
