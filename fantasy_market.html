@@ -1501,8 +1501,8 @@ function renderHair(hc,variant,id,rarity){
   let back;
   if(twin){
     back=`<path d="M62 96 C54 40 98 16 140 16 C182 16 226 40 218 96 L222 176 C222 206 188 214 140 214 C92 214 58 206 58 176 Z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M52 120 q-16 50 6 96 q14 -8 18 -26 q-10 -34 -4 -64z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M228 120 q16 50 -6 96 q-14 -8 -18 -26 q10 -34 4 -64z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M46 96 q-18 56 2 118 q16 -6 22 -26 q-14 -42 -4 -86z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M234 96 q18 56 -2 118 q-16 -6 -22 -26 q14 -42 4 -86z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
       <path d="M56 150 q-10 38 4 70" stroke="${DEEP}" stroke-width="2" fill="none" opacity=".4" stroke-linecap="round"/>
       <path d="M224 150 q10 38 -4 70" stroke="${DEEP}" stroke-width="2" fill="none" opacity=".4" stroke-linecap="round"/>
       <path d="M62 132 q-12 40 0 78" stroke="${HI}" stroke-width="2.6" fill="none" opacity=".55" stroke-linecap="round"/>
@@ -1527,20 +1527,14 @@ function renderHair(hc,variant,id,rarity){
   }else if(variant===2){ bang=`<path d="M70 104 C70 44 110 26 140 26 C170 26 210 44 210 104 C198 78 168 74 142 86 L140 70 L138 86 C112 74 82 78 70 104 Z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
   }else{ bang=`<path d="M70 104 C68 44 110 26 140 26 C170 26 212 44 210 104 C200 78 176 70 158 78 C150 60 130 60 122 78 C104 70 80 78 70 104 Z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`; }
   let buns = twin?`<circle cx="58" cy="92" r="16" fill="${G}" stroke="${LN}" stroke-width="2"/><circle cx="222" cy="92" r="16" fill="${G}" stroke="${LN}" stroke-width="2"/><path d="M49 88 a15 15 0 0 1 16 -9" stroke="${HI}" stroke-width="2.6" fill="none" opacity=".6" stroke-linecap="round"/><path d="M231 88 a15 15 0 0 0 -16 -9" stroke="${HI}" stroke-width="2.6" fill="none" opacity=".6" stroke-linecap="round"/>`:"";
-  // 額に落ちる前髪の影＋毛先のワサ
-  const faceShadow=`<path d="M84 96 C110 85 170 85 196 96 C170 103 110 103 84 96 Z" fill="${DEEP}" opacity=".16"/>`;
-  const wisps=`<path d="M104 92 l-4 16 l8 -5 z" fill="${G}" stroke="${LN}" stroke-width="1.1" stroke-linejoin="round"/>
-    <path d="M140 96 l-4 16 l8 0 z" fill="${G}" stroke="${LN}" stroke-width="1.1" stroke-linejoin="round"/>
-    <path d="M176 92 l4 16 l-8 -5 z" fill="${G}" stroke="${LN}" stroke-width="1.1" stroke-linejoin="round"/>`;
   // レア度ヘアアクセ
   let orn="";
   if(t>=2) orn=`<path d="M150 60 q14 -9 26 -2 q-8 11 -26 6z" fill="${shade(hc.tip,0.42)}" stroke="${LN}" stroke-width="1.2" stroke-linejoin="round"/><circle cx="161" cy="60" r="2.4" fill="${shade(hc.tip,0.6)}"/>`;
   if(t>=3) orn=gemSVG(108,62,4.4,shade(hc.tip,0.58))+gemSVG(176,68,3.6,shade(hc.tip,0.58))+`<path d="M150 58 q16 -10 30 -3 q-9 13 -30 7z" fill="${shade(hc.tip,0.5)}" stroke="${LN}" stroke-width="1.2" stroke-linejoin="round"/>`+ssrAura([[104,54,4],[182,62,3.6],[140,26,3]]);
-  const front=`<g id="hairFront" transform="translate(${S.face.offsets.hairFront.x},${S.face.offsets.hairFront.y})">${faceShadow}${bang}
+  const front=`<g id="hairFront" transform="translate(${S.face.offsets.hairFront.x},${S.face.offsets.hairFront.y})">${bang}
     <path d="M70 104 C62 130 64 160 74 184 C66 158 70 128 84 110 Z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
     <path d="M210 104 C218 130 216 160 206 184 C214 158 210 128 196 110 Z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
-    ${wisps}
-    <ellipse cx="140" cy="58" rx="58" ry="21" fill="url(#hairsheen_${id})"/>
+    <ellipse cx="140" cy="46" rx="52" ry="15" fill="url(#hairsheen_${id})"/>
     <path d="M120 40 C104 56 96 80 96 100" stroke="${HI}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".85"/>
     <path d="M150 38 C168 54 180 78 182 100" stroke="${HI}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".85"/>
     <path d="M140 34 C138 52 138 66 140 76" stroke="${HI}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".75"/>
