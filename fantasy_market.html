@@ -665,6 +665,10 @@ add("すいそうランプ","bg","marine","R",230,5,"","craft");
 // --- 限定アイテム（ガチャ限定・通常排出/マーケットなし） ---
 add("ほしぞらティアラヘア","hair","fairy","SSR",1800,4,"","limited");
 add("ゆめみるドレス","tops","pastel","SSR",1700,0,"","limited");
+add("おおぞらフローラル","tops","natural","SSR",1700,2,"","limited");
+add("スターライトドレス","tops","cool","SSR",1720,3,"","limited");
+add("ようせいのドレス","tops","fairy","SSR",1750,4,"","limited");
+add("マーメイドドレス","tops","marine","SSR",1700,5,"","limited");
 add("よるのバラスカート","bottoms","gothic","SSR",1750,1,"","limited");
 add("しんじゅのくつ","shoes","marine","SSR",1850,5,"","limited");
 add("こおりのティアラ","acc","cool","SSR",1800,3,"","limited");
@@ -778,6 +782,98 @@ function art(name, frame, thumb){
     <circle cx="12" cy="6.2" r="1" fill="${GEM}"/>
     <path d="M18.4 4 l.5 1.4 1.4.5 -1.4.5 -.5 1.4 -.5 -1.4 -1.4 -.5 1.4 -.5z" fill="#F4D58A"/>`;
   art("くろレースドレス", dress, thumb);
+})();
+
+/* ---- 目玉SSRドレス：各テーマ1着ずつ手描き（黒レースドレス級） ---- */
+(function(){
+  const SLV=(M,D,L,cuff)=>`
+    <path d="M86 196 q-26 6 -34 34 q-3 12 2 22 q14 6 26 0 q-6 -16 -2 -30 q3 -14 14 -22z" fill="${M}" stroke="${D}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M194 196 q26 6 34 34 q3 12 -2 22 q-14 6 -26 0 q6 -16 2 -30 q-3 -14 -14 -22z" fill="${M}" stroke="${D}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M54 246 q12 6 24 2 l-2 9 q-12 4 -22 -2z" fill="${cuff}" stroke="${D}" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M226 246 q-12 6 -24 2 l2 9 q12 4 22 -2z" fill="${cuff}" stroke="${D}" stroke-width="1.2" stroke-linejoin="round"/>
+    <ellipse cx="92" cy="196" rx="18" ry="14" fill="${L}" stroke="${D}" stroke-width="2"/>
+    <ellipse cx="188" cy="196" rx="18" ry="14" fill="${L}" stroke="${D}" stroke-width="2"/>`;
+  const BOD=(M,D,L,sheen)=>`
+    <path d="M104 190 q36 -12 72 0 l-6 60 q-30 10 -60 0z" fill="${M}" stroke="${D}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M110 192 q30 -10 60 0 l-4 22 q-26 8 -52 0z" fill="${L}" opacity=".5"/>
+    <path d="M106 196 q34 -10 68 0" stroke="${sheen}" stroke-width="2" fill="none" opacity=".45"/>`;
+  const PEP=(M,D,frill)=>`
+    <path d="M100 240 q40 12 80 0 l4 14 q-44 12 -88 0z" fill="${M}" stroke="${D}" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M98 252 q11 8 20 0 q11 8 20 0 q11 8 20 0 q11 8 20 0 q11 8 20 0" fill="none" stroke="${frill}" stroke-width="2.2" stroke-linecap="round"/>`;
+  const bow=(x,y,s,c,d)=>`<path d="M${x} ${y} q${-s*1.5} ${-s*0.8} ${-s*1.9} ${s*0.4} q0 ${s} ${s*1.9} ${s*0.5}z" fill="${c}" stroke="${d}" stroke-width="1.2" stroke-linejoin="round"/><path d="M${x} ${y} q${s*1.5} ${-s*0.8} ${s*1.9} ${s*0.4} q0 ${s} ${-s*1.9} ${s*0.5}z" fill="${c}" stroke="${d}" stroke-width="1.2" stroke-linejoin="round"/><ellipse cx="${x}" cy="${y+s*0.25}" rx="${s*0.5}" ry="${s*0.62}" fill="${d}"/>`;
+  const flower=(x,y,s,c,c2)=>{let p="";for(let i=0;i<5;i++){const a=i*72*Math.PI/180;p+=`<circle cx="${(x+Math.cos(a)*s).toFixed(1)}" cy="${(y+Math.sin(a)*s).toFixed(1)}" r="${(s*0.64).toFixed(1)}" fill="${c}" stroke="${c2}" stroke-width="1"/>`;}return `${p}<circle cx="${x}" cy="${y}" r="${(s*0.52).toFixed(1)}" fill="${c2}"/>`;};
+  const star=(x,y,s,c,c2)=>{let pts="";for(let i=0;i<10;i++){const r=i%2?s*0.44:s;const a=(-90+i*36)*Math.PI/180;pts+=`${(x+Math.cos(a)*r).toFixed(1)},${(y+Math.sin(a)*r).toFixed(1)} `;}return `<polygon points="${pts.trim()}" fill="${c}" stroke="${c2}" stroke-width="1" stroke-linejoin="round"/>`;};
+  const dth=(M,D,acc,attr)=>`<path d="M9 4 q3 -1 6 0 l1.6 3 q-1 1 -2 1 l1 13 q-4 1.6 -8 0 l1 -13 q-1 0 -2 -1z" fill="${M}" stroke="${D}" stroke-width="1" stroke-linejoin="round"/>${motif(attr,12,12,3.4,acc,D)}`;
+
+  // パステル：ゆめみるドレス（スイートハート襟＋大リボン＋ハート）
+  {
+    const D="#C77FA0",M="#F4B8D0",L="#FBDCEA",LC="#FFF4F8",GD="#F0C987",GM="#E58CA9";
+    const dress=`<g id="top">${SLV(M,D,L,LC)}${BOD(M,D,L,LC)}
+      <path d="M118 183 q22 15 44 0 l-4 11 q-18 11 -36 0z" fill="${LC}" stroke="${D}" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M122 185 q18 9 36 0" stroke="${shade(LC,-0.12)}" stroke-width="1" fill="none"/>
+      ${bow(140,201,7,GM,D)}
+      ${motif("pastel",116,226,6,GM,D)}${motif("pastel",164,226,6,GM,D)}
+      ${PEP(M,D,LC)}${motif("pastel",140,247,6.5,GM,D)}
+      ${gemSVG(140,214,3.2,GD)}
+      ${ssrAura([[96,182,4,"#FFF6D6"],[190,192,3.4,"#FFFFFF"],[150,176,3,"#F4D58A"],[140,236,3,"#FFF6D6"]])}</g>`;
+    art("ゆめみるドレス", dress, dth(M,D,GM,"pastel"));
+  }
+  // ナチュラル：おおぞらフローラル（花びら襟＋花コサージュ＋エプロン）
+  {
+    const D="#6E8A4E",M="#A7C580",L="#C8DFA2",LC="#FBF3E0",GD="#D8B25A";
+    const dress=`<g id="top">${SLV(M,D,L,LC)}${BOD(M,D,L,LC)}
+      <path d="M118 196 q22 -6 44 0 l-3 48 q-19 6 -38 0z" fill="${LC}" opacity=".72" stroke="${D}" stroke-width="1"/>
+      <path d="M114 184 q12 9 0 16 q-8 -2 -10 -10 q4 -6 10 -6z M166 184 q-12 9 0 16 q8 -2 10 -10 q-4 -6 -10 -6z M128 182 q12 10 24 0 q-6 12 -12 12 q-6 0 -12 -12z" fill="${L}" stroke="${D}" stroke-width="1.2" stroke-linejoin="round"/>
+      ${flower(140,200,6,"#EBA6BE",GD)}
+      ${motif("natural",116,228,6,GD,D)}${motif("natural",164,228,6,GD,D)}
+      ${PEP(M,D,LC)}${flower(140,247,5,"#EBA6BE",GD)}
+      ${gemSVG(120,214,2.6,GD)}${gemSVG(160,214,2.6,GD)}
+      ${ssrAura([[96,182,4,"#FFF6D6"],[190,192,3.4,"#FFFFFF"],[150,176,3,"#EFE0A8"],[140,236,3,"#FFF6D6"]])}</g>`;
+    art("おおぞらフローラル", dress, dth(M,D,"#EBA6BE","natural"));
+  }
+  // クール：スターライトドレス（V襟＋星のブローチ＋雪/星）
+  {
+    const D="#3A5E86",M="#7FA6CC",L="#B8D2EC",LC="#EAF2FB",GD="#CFE0F0";
+    const dress=`<g id="top">${SLV(M,D,L,LC)}${BOD(M,D,L,LC)}
+      <path d="M116 183 l24 16 24 -16 -5 13 -19 11 -19 -11z" fill="${L}" stroke="${D}" stroke-width="1.3" stroke-linejoin="round"/>
+      <path d="M140 200 v44" stroke="${GD}" stroke-width="1.4" opacity=".7"/>
+      ${star(140,202,7,GD,D)}
+      ${motif("cool",116,228,6,"#FFFFFF",D)}${motif("cool",164,228,6,"#FFFFFF",D)}
+      ${PEP(M,D,LC)}${star(140,247,5,GD,D)}
+      ${gemSVG(122,214,2.6,GD)}${gemSVG(158,214,2.6,GD)}
+      ${ssrAura([[96,182,4,"#FFFFFF"],[190,192,3.4,"#EAF2FB"],[150,176,3,"#FFFFFF"],[140,236,3,"#FFFFFF"]])}</g>`;
+    art("スターライトドレス", dress, dth(M,D,GD,"cool"));
+  }
+  // フェアリー：ようせいのドレス（シアーな羽＋蝶＋二段チュール）
+  {
+    const D="#8A63B8",M="#C2A9E0",L="#E0CFF2",LC="#FBF1FF",GD="#F0CBE0";
+    const dress=`<g id="top">${SLV(M,D,L,LC)}
+      <path d="M70 200 q-22 8 -28 30 q-2 12 4 20 q10 2 16 -4 q-4 -14 0 -26 q3 -12 12 -18z" fill="${LC}" opacity=".42" stroke="${D}" stroke-width="1"/>
+      <path d="M210 200 q22 8 28 30 q2 12 -4 20 q-10 2 -16 -4 q4 -14 0 -26 q-3 -12 -12 -18z" fill="${LC}" opacity=".42" stroke="${D}" stroke-width="1"/>
+      ${BOD(M,D,L,LC)}
+      <path d="M120 184 q20 12 40 0 l-4 9 q-16 9 -32 0z" fill="${LC}" stroke="${D}" stroke-width="1.3" stroke-linejoin="round"/>
+      ${motif("fairy",140,201,8,GD,D)}
+      ${motif("fairy",114,228,5.5,GD,D)}${motif("fairy",166,228,5.5,GD,D)}
+      <path d="M90 242 q50 14 100 0 l6 18 q-56 15 -112 0z" fill="${L}" opacity=".5" stroke="${D}" stroke-width="1"/>
+      ${PEP(M,D,LC)}
+      ${gemSVG(140,214,3.2,GD)}
+      ${ssrAura([[94,182,4.5,"#FFF6FF"],[192,190,3.6,"#FFFFFF"],[150,174,3,"#F0CBE0"],[140,236,3.2,"#FFF6FF"],[110,250,2.6,"#FFFFFF"],[170,250,2.6,"#FFF6FF"]])}</g>`;
+    art("ようせいのドレス", dress, dth(M,D,GD,"fairy"));
+  }
+  // マリン：マーメイドドレス（セーラー襟＋リボン＋貝）
+  {
+    const D="#27607A",M="#6FC1C8",L="#A9E0E4",LC="#FFFFFF",GD="#E8D29A",RIB="#D9544F";
+    const dress=`<g id="top">${SLV(M,D,L,LC)}${BOD(M,D,L,LC)}
+      <path d="M104 188 q36 -12 72 0 l-10 26 -26 8 -26 -8z" fill="${LC}" stroke="${D}" stroke-width="1.3" stroke-linejoin="round"/>
+      <path d="M112 194 q28 -8 56 0 M110 200 q30 -8 60 0" stroke="${D}" stroke-width="1.2" fill="none" opacity=".7"/>
+      <path d="M134 200 l6 14 6 -14z" fill="${D}"/>
+      ${bow(140,206,5.5,RIB,shade(RIB,-0.25))}
+      ${motif("marine",116,230,6,GD,D)}${motif("marine",164,230,6,GD,D)}
+      ${PEP(M,D,LC)}${motif("marine",140,248,6,GD,D)}
+      ${gemSVG(122,216,2.6,GD)}${gemSVG(158,216,2.6,GD)}
+      ${ssrAura([[96,182,4,"#FFFFFF"],[190,192,3.4,"#FFFFFF"],[150,176,3,"#EFE0A8"],[140,236,3,"#FFFFFF"]])}</g>`;
+    art("マーメイドドレス", dress, dth(M,D,GD,"marine"));
+  }
 })();
 
 /* ---- 実例②：くろレースドレスに合わせたゴシック・フルコーデ ----
