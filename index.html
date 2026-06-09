@@ -675,6 +675,12 @@ function plotWorld(idx){ const c=idx%game.cols,r=Math.floor(idx/game.cols); retu
 
 /* ===================== ドット絵描画（テクスチャ生成用） ===================== */
 function rc(x,cx,cy,w,h,col){ x.fillStyle=col; x.fillRect(cx,cy,w,h); }
+// 不透明部分のまわりに1pxの輪郭を付けて背景から浮かせる（getImageData利用）
+function addOutline(x,w,h,col){ const d=x.getImageData(0,0,w,h).data, op=[];
+  const A=(i,j)=>(i<0||j<0||i>=w||j>=h)?0:d[(j*w+i)*4+3];
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++){ if(d[(j*w+i)*4+3]!==0)continue;
+    if(A(i-1,j)||A(i+1,j)||A(i,j-1)||A(i,j+1))op.push([i,j]); }
+  x.fillStyle=col; op.forEach(([i,j])=>x.fillRect(i,j,1,1)); }
 function drawGroundC(x,variant,season){
   let base=variant?"#7cba49":"#74b143", d1="#69a83c", d2="#86c95a", d3="#5e9a34";
   if(season==="summer"){ base=variant?"#6fb33f":"#67a838"; d1="#5c9c33"; d2="#7ec24f"; d3="#4f8c2c"; }
@@ -705,8 +711,8 @@ function drawSoilC(x,watered){ const base=watered?"#6e4326":"#9a6336", dk=watere
   sc.forEach(([a,b],i)=> rc(x,a,b,1,1, i%2?lt:dk));                    // 土の粒
   if(watered){ rc(x,4,4,1,1,"#9fd0ff"); rc(x,10,8,1,1,"#bfe6ff"); rc(x,7,12,1,1,"#9fd0ff"); rc(x,12,3,1,1,"#cdeaff"); } }
 function drawPlantC(x,crop,stage){ const cf=CROPS[crop], p=(a,b,w,h,c)=>rc(x,a,b,w,h,c);
-  if(stage===0){ p(7,9,2,4,cf.leaf); p(5,9,2,2,cf.leaf); p(9,9,2,2,cf.leaf); }
-  else if(stage===1){ p(7,6,2,7,"#4d8a2c"); p(4,7,3,2,cf.leaf); p(9,8,3,2,cf.leaf); p(5,5,2,2,cf.leaf); p(9,5,2,2,cf.leaf); }
+  if(stage===0){ p(7,6,2,7,"#4d8a2c"); p(4,7,4,3,cf.leaf); p(8,6,4,3,cf.leaf); p(6,4,4,3,cf.leaf); }
+  else if(stage===1){ p(7,4,2,9,"#4d8a2c"); p(3,6,4,3,cf.leaf); p(9,7,4,3,cf.leaf); p(4,3,4,3,cf.leaf); p(8,3,4,3,cf.leaf); p(6,2,4,2,cf.leaf); }
   else { if(crop==="corn"){ p(7,8,2,5,"#4d8a2c"); p(6,3,4,6,cf.fruit); for(let y=4;y<8;y+=2)p(6,y,4,1,cf.fruit2); p(6,2,2,2,cf.leaf); p(9,3,2,2,cf.leaf); }
     else if(crop==="tomato"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(5,5,3,3,cf.fruit); p(9,4,3,3,cf.fruit); p(5,5,1,1,cf.fruit2); p(9,4,1,1,cf.fruit2); }
     else if(crop==="turnip"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(6,7,5,5,cf.fruit); p(6,11,5,1,"#d8d4c8"); p(6,6,2,2,cf.fruit2); p(8,5,2,2,cf.fruit2); }
@@ -715,7 +721,8 @@ function drawPlantC(x,crop,stage){ const cf=CROPS[crop], p=(a,b,w,h,c)=>rc(x,a,b
     else if(crop==="watermelon"){ p(4,7,2,2,cf.leaf); p(5,8,7,6,cf.fruit); p(6,8,1,6,cf.fruit2); p(8,8,1,6,cf.fruit2); p(10,8,1,6,cf.fruit2); p(6,8,2,1,"#7fd98e"); }
     else if(crop==="golden"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf);
       p(6,5,5,7,cf.fruit); p(6,5,5,1,cf.fruit2); p(6,5,1,7,cf.fruit2); p(7,7,1,1,"#ffffff"); p(9,9,1,1,"#fffef0"); p(5,4,1,1,"#fffef0"); p(11,6,1,1,"#fffef0"); }
-    else { p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(5,5,4,4,cf.fruit); p(8,7,3,3,cf.fruit); p(5,5,1,1,cf.fruit2); p(8,7,1,1,cf.fruit2); } } }
+    else { p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(5,5,4,4,cf.fruit); p(8,7,3,3,cf.fruit); p(5,5,1,1,cf.fruit2); p(8,7,1,1,cf.fruit2); } }
+  addOutline(x,16,16,"#2e2118"); }
 function drawTreeC(x,season){ const t1="#7a5230",t2="#8a6038";
   if(season==="winter"){ rc(x,7,16,2,8,t1); rc(x,7,16,1,8,t2);
     rc(x,5,9,6,2,t1); rc(x,4,11,8,1,t1); rc(x,6,7,3,2,t2);
