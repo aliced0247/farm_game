@@ -1549,20 +1549,29 @@ function renderTops(c,variant,id,base,rarity,attr){
   else if(fam===3) collar=`<path d="M122 188 l18 16 l18 -16 l-5 9 l-13 12 l-13 -12z" fill="${hi}" stroke="${ln}" stroke-width="1.3" stroke-linejoin="round"/>`;
   else if(fam===4) collar=`<path d="M118 192 q22 -12 44 0 q-10 13 -22 13 q-12 0 -22 -13z" fill="${lc}" stroke="${ln}" stroke-width="1.3" stroke-linejoin="round"/>`;
   else collar=`<path d="M116 186 l24 8 l24 -8 l-2 11 l-22 8 l-22 -8z" fill="${lc}" stroke="${shade(c,-0.3)}" stroke-width="1.4" stroke-linejoin="round"/><path d="M138 195 l2 12 l2 -12z" fill="${ac}" stroke="${ln}" stroke-width="1"/>`;
-  // 金属トリム（常時）＋レア度で差し色トリム・宝石
-  let trim=`<path d="M104 197 q36 -9 72 0" stroke="${mt}" stroke-width="2" fill="none" opacity=".85"/>`;
-  if(t>=1) trim+=`<path d="M112 202 q28 8 56 0" stroke="${ac}" stroke-width="2.5" fill="none" opacity=".55" stroke-linecap="round"/>`;
-  if(t>=2) trim+=`<path d="M98 226 q42 11 80 0" fill="none" stroke="${ac}" stroke-width="3" opacity=".7"/>`+gemSVG(140,214,3.2,mt);
-  // SSR：フリル段＋袖飾り＋宝石＋光沢＋きらめき
+  // レア度の段差：N=無装飾 → R=差し色1本 → SR=金トリム+袖フリル+宝石 → SSR=別格
+  let trim="";
+  if(t>=1) trim+=`<path d="M104 199 q36 -9 72 0" stroke="${ac}" stroke-width="2.4" fill="none" opacity=".75" stroke-linecap="round"/>`;
+  if(t>=2) trim+=`<path d="M103 195 q37 -9 74 0" stroke="${mt}" stroke-width="2.4" fill="none" opacity=".9"/>
+    <path d="M98 226 q42 11 80 0" fill="none" stroke="${ac}" stroke-width="3" opacity=".75"/>
+    <path d="M68 214 q-7 12 -1 24 q8 -2 12 -12z" fill="${lc}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
+    <path d="M212 214 q7 12 1 24 q-8 -2 -12 -12z" fill="${lc}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
+    ${gemSVG(140,213,3.4,mt)}`;
+  // SSR：グロー＋二段ペプラム＋大リボン＋宝石多数＋きらめき
   let ssr="";
   if(t>=3){
-    ssr=`<path d="M92 224 q48 14 96 0 l-6 17 q-42 12 -84 0z" fill="url(#dt_${id})" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round" opacity=".95"/>
-      <path d="M92 241 q10 8 18 0 q10 8 18 0 q10 8 18 0 q10 8 18 0 q10 8 18 0" fill="none" stroke="${lc}" stroke-width="2.4" stroke-linecap="round"/>
-      <path d="M62 216 q-7 11 -2 22 q9 -2 13 -11z" fill="${lc}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
-      <path d="M218 216 q7 11 2 22 q-9 -2 -13 -11z" fill="${lc}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
-      ${gemSVG(126,212,3,mt)}${gemSVG(154,212,3,mt)}
+    ssr=`<ellipse cx="140" cy="214" rx="66" ry="46" fill="${mt}" opacity=".13"/>
+      <path d="M88 224 q52 16 104 0 l-7 19 q-45 13 -90 0z" fill="url(#dt_${id})" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round" opacity=".96"/>
+      <path d="M88 243 q11 9 19 0 q11 9 19 0 q11 9 19 0 q11 9 19 0 q11 9 19 0" fill="none" stroke="${lc}" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M58 214 q-8 13 -2 26 q10 -2 14 -13z" fill="${lc}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
+      <path d="M222 214 q8 13 2 26 q-10 -2 -14 -13z" fill="${lc}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
+      <path d="M128 195 q-22 -11 -28 5 q15 9 28 2z" fill="${ac}" stroke="${ln}" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M152 195 q22 -11 28 5 q-15 9 -28 2z" fill="${ac}" stroke="${ln}" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M134 196 q6 6 12 0 l-2 13 q-4 3 -8 0z" fill="${shade(ac,-0.22)}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round"/>
+      <circle cx="140" cy="198" r="3.6" fill="${mt}" stroke="${ln}" stroke-width="1"/>
+      ${gemSVG(116,210,3,mt)}${gemSVG(164,210,3,mt)}
       <path d="M104 192 q12 -6 24 -3" stroke="${lc}" stroke-width="2" fill="none" opacity=".55" stroke-linecap="round"/>`;
-    ssr+=ssrAura([[86,184,4.5,mt],[198,196,3.5,lc],[150,180,3,mt]]);
+    ssr+=ssrAura([[82,182,5,mt],[202,194,4,lc],[150,176,3.6,mt],[94,232,3,lc],[190,230,3,mt]]);
   }
   return `<g id="top">${arms}${bodice}${collar}${trim}${ssr}</g>`;
 }
@@ -1578,10 +1587,10 @@ function renderBottoms(c,variant,id,rarity,attr){
   if(variant%2===1){ // パンツ
     let p=`<g id="bottom">
       <path d="M100 224 h80 l-2 64 h-30 l-8 -44 l-8 44 h-30 z" fill="url(#db_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M140 230 v54" stroke="${sh}" stroke-width="2.5" opacity=".5" stroke-linecap="round"/>
-      <path d="M100 226 h80" stroke="${mt}" stroke-width="2" opacity=".75"/>`;
-    if(t>=2) p+=`<path d="M100 228 h80" stroke="${ac}" stroke-width="2.4" opacity=".7"/>`+gemSVG(140,228,3,mt);
-    if(t>=3) p+=`<path d="M104 284 h28 M148 284 h28" stroke="${mt}" stroke-width="3" stroke-linecap="round"/>`+gemSVG(116,228,2.6,mt)+gemSVG(164,228,2.6,mt)+ssrAura([[106,300,3.5,mt],[174,300,3.5,lc]]);
+      <path d="M140 230 v54" stroke="${sh}" stroke-width="2.5" opacity=".5" stroke-linecap="round"/>`;
+    if(t>=1) p+=`<path d="M100 226 h80" stroke="${mt}" stroke-width="2" opacity=".8"/>`;
+    if(t>=2) p+=`<path d="M100 230 h80" stroke="${ac}" stroke-width="2.4" opacity=".75"/>`+gemSVG(140,228,3,mt)+`<path d="M102 250 q14 6 28 0 M150 250 q14 6 28 0" stroke="${mt}" stroke-width="1.6" fill="none" opacity=".6"/>`;
+    if(t>=3) p+=`<ellipse cx="140" cy="256" rx="52" ry="40" fill="${mt}" opacity=".12"/><path d="M104 284 h28 M148 284 h28" stroke="${mt}" stroke-width="3" stroke-linecap="round"/>`+gemSVG(116,228,2.6,mt)+gemSVG(164,228,2.6,mt)+ssrAura([[106,300,3.5,mt],[174,300,3.5,lc],[140,318,3,mt]]);
     return p+`</g>`;
   }
   let s=`<g id="bottom">
@@ -1592,12 +1601,17 @@ function renderBottoms(c,variant,id,rarity,attr){
     <path d="M162 230 L172 286" stroke="${sh}" stroke-width="3" fill="none" opacity=".55" stroke-linecap="round"/>
     <path d="M128 230 L122 288" stroke="${hi}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>
     <path d="M152 230 L158 288" stroke="${hi}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>`;
-  s+=`<path d="M74 288 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 18 0" fill="none" stroke="${deep}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
-    <path d="M100 226 q40 -8 80 0" fill="none" stroke="${mt}" stroke-width="2" opacity=".8"/>`;
-  if(t>=2) s+=`<path d="M100 230 q40 -8 80 0" fill="none" stroke="${ac}" stroke-width="2.6" opacity=".7"/>`+gemSVG(140,228,3.4,mt);
-  if(t>=3) s+=`<path d="M72 270 q34 14 68 0 q34 -14 68 0 l6 20 q-70 20 -140 0z" fill="url(#db_${id})" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round" opacity=".95"/>
-    <path d="M70 290 q11 9 20 0 q11 9 20 0 q11 9 20 0 q11 9 20 0 q11 9 20 0 q11 9 18 0" fill="none" stroke="${lc}" stroke-width="2.4" stroke-linecap="round"/>
-    ${gemSVG(120,228,2.6,mt)}${gemSVG(160,228,2.6,mt)}`+ssrAura([[76,300,4,mt],[204,296,4,lc],[140,316,3,mt]]);
+  s+=`<path d="M74 288 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 18 0" fill="none" stroke="${deep}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>`;
+  if(t>=1) s+=`<path d="M100 226 q40 -8 80 0" fill="none" stroke="${mt}" stroke-width="2.2" opacity=".85"/>`;
+  if(t>=2) s+=`<path d="M100 230 q40 -8 80 0" fill="none" stroke="${ac}" stroke-width="2.6" opacity=".75"/>`+gemSVG(140,228,3.4,mt)
+    +`<path d="M70 276 q35 14 70 0 q35 -14 70 0" fill="none" stroke="${ac}" stroke-width="2.4" opacity=".55"/>`
+    +`<path d="M178 224 q15 4 19 17 q-11 2 -17 -5z" fill="${ac}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round"/>`;
+  if(t>=3) s+=`<ellipse cx="140" cy="262" rx="78" ry="46" fill="${mt}" opacity=".12"/>
+    <path d="M68 266 q36 15 72 0 q36 -15 72 0 l7 22 q-74 21 -150 0z" fill="url(#db_${id})" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round" opacity=".96"/>
+    <path d="M66 288 q12 10 21 0 q12 10 21 0 q12 10 21 0 q12 10 21 0 q12 10 21 0 q12 10 19 0" fill="none" stroke="${lc}" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M120 224 q20 -6 40 0 l-2 9 q-18 -5 -36 0z" fill="${ac}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M134 226 q6 7 12 0 l-2 12 q-4 3 -8 0z" fill="${shade(ac,-0.22)}" stroke="${ln}" stroke-width="1.1" stroke-linejoin="round"/>
+    ${gemSVG(120,228,2.6,mt)}${gemSVG(160,228,2.6,mt)}${gemSVG(140,228,3,mt)}`+ssrAura([[72,300,4,mt],[208,296,4,lc],[140,322,3.4,mt],[96,280,2.6,lc],[188,280,2.6,mt]]);
   return s+`</g>`;
 }
 function baseBottom(id){
@@ -1610,10 +1624,10 @@ function renderShoes(c,variant,id,rarity,attr){
   const t=rtier(rarity), v=variant%3;
   if(v===1){ // ブーツ
     let b=`<path d="M112 300 h24 v18 l6 8 q-18 6 -34 0 l4 -8 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M144 300 h24 v18 l6 8 q-18 6 -34 0 l4 -8 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M112 302 h24 M144 302 h24" stroke="${mt}" stroke-width="2" opacity=".8"/>`;
-    if(t>=2) b+=`<path d="M112 307 h24 M144 307 h24" stroke="${ac}" stroke-width="2.2"/>`;
-    if(t>=3) b+=gemSVG(124,303,2.6,mt)+gemSVG(156,303,2.6,mt)+`<path d="M110 318 q14 5 28 0 M142 318 q14 5 28 0" stroke="${mt}" stroke-width="2" fill="none"/>`+ssrAura([[120,332,3,mt],[160,332,3,lc]]);
+      <path d="M144 300 h24 v18 l6 8 q-18 6 -34 0 l4 -8 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>`;
+    if(t>=1) b+=`<path d="M112 302 h24 M144 302 h24" stroke="${mt}" stroke-width="2" opacity=".8"/>`;
+    if(t>=2) b+=`<path d="M112 307 h24 M144 307 h24" stroke="${ac}" stroke-width="2.2"/><path d="M112 300 h24 l0 4 q-12 3 -24 0z M144 300 h24 l0 4 q-12 3 -24 0z" fill="${ac}" opacity=".5"/>`;
+    if(t>=3) b+=`<ellipse cx="140" cy="316" rx="46" ry="18" fill="${mt}" opacity=".12"/>`+gemSVG(124,303,2.6,mt)+gemSVG(156,303,2.6,mt)+`<path d="M110 318 q14 5 28 0 M142 318 q14 5 28 0" stroke="${mt}" stroke-width="2" fill="none"/>`+ssrAura([[120,332,3,mt],[160,332,3,lc]]);
     return `<g id="shoes">${b}</g>`;
   }
   if(v===2){ // サンダル
