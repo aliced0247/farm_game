@@ -713,16 +713,23 @@ function drawSoilC(x,watered){ const base=watered?"#6e4326":"#9a6336", dk=watere
 function drawPlantC(x,crop,stage){ const cf=CROPS[crop], p=(a,b,w,h,c)=>rc(x,a,b,w,h,c);
   if(stage===0){ p(7,6,2,7,"#4d8a2c"); p(4,7,4,3,cf.leaf); p(8,6,4,3,cf.leaf); p(6,4,4,3,cf.leaf); }
   else if(stage===1){ p(7,4,2,9,"#4d8a2c"); p(3,6,4,3,cf.leaf); p(9,7,4,3,cf.leaf); p(4,3,4,3,cf.leaf); p(8,3,4,3,cf.leaf); p(6,2,4,2,cf.leaf); }
-  else { if(crop==="corn"){ p(7,8,2,5,"#4d8a2c"); p(6,3,4,6,cf.fruit); for(let y=4;y<8;y+=2)p(6,y,4,1,cf.fruit2); p(6,2,2,2,cf.leaf); p(9,3,2,2,cf.leaf); }
-    else if(crop==="tomato"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(5,5,3,3,cf.fruit); p(9,4,3,3,cf.fruit); p(5,5,1,1,cf.fruit2); p(9,4,1,1,cf.fruit2); }
-    else if(crop==="turnip"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(6,7,5,5,cf.fruit); p(6,11,5,1,"#d8d4c8"); p(6,6,2,2,cf.fruit2); p(8,5,2,2,cf.fruit2); }
-    else if(crop==="potato"){ p(7,6,2,4,"#4d8a2c"); p(5,6,3,2,cf.leaf); p(9,7,3,2,cf.leaf); p(4,10,4,4,cf.fruit); p(8,10,4,4,cf.fruit); p(5,10,1,1,cf.fruit2); p(9,10,1,1,cf.fruit2); }
-    else if(crop==="strawberry"){ p(5,7,6,2,cf.leaf); p(4,8,2,2,cf.leaf); p(10,8,2,2,cf.leaf); p(5,10,3,4,cf.fruit); p(9,10,3,4,cf.fruit); p(6,11,1,1,cf.fruit2); p(10,12,1,1,cf.fruit2); }
-    else if(crop==="watermelon"){ p(4,7,2,2,cf.leaf); p(5,8,7,6,cf.fruit); p(6,8,1,6,cf.fruit2); p(8,8,1,6,cf.fruit2); p(10,8,1,6,cf.fruit2); p(6,8,2,1,"#7fd98e"); }
-    else if(crop==="golden"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf);
-      p(6,5,5,7,cf.fruit); p(6,5,5,1,cf.fruit2); p(6,5,1,7,cf.fruit2); p(7,7,1,1,"#ffffff"); p(9,9,1,1,"#fffef0"); p(5,4,1,1,"#fffef0"); p(11,6,1,1,"#fffef0"); }
+  else {
+    if(crop==="corn"){ p(4,3,3,11,cf.leaf); p(10,3,3,11,cf.leaf); p(6,2,4,12,cf.fruit); for(let yy=3;yy<13;yy+=2)p(6,yy,4,1,cf.fruit2); p(7,2,1,1,"#fff7cc"); }
+    else if(crop==="tomato"){ p(7,3,2,2,"#4d8a2c"); p(5,4,7,2,cf.leaf); p(4,5,9,2,cf.leaf); p(5,6,7,8,cf.fruit); p(4,7,9,6,cf.fruit); p(6,7,2,2,cf.fruit2); p(6,7,1,1,"#ffffff"); }
+    else if(crop==="turnip"){ p(6,1,1,3,cf.leaf); p(4,2,3,2,cf.leaf); p(9,2,3,2,cf.leaf); p(7,2,2,2,cf.leaf); p(4,8,8,4,cf.fruit); p(5,7,6,6,cf.fruit); p(5,6,6,2,cf.fruit2); p(6,12,4,1,"#d8d4c8"); p(6,8,1,1,"#ffffff"); }
+    else if(crop==="potato"){ p(6,4,2,3,cf.leaf); p(8,5,2,2,cf.leaf); p(5,6,7,1,cf.fruit); p(4,7,9,6,cf.fruit); p(5,13,7,1,cf.fruit); p(6,7,2,1,cf.fruit2); p(7,9,1,1,"#8a5a2a"); p(9,11,1,1,"#8a5a2a"); }
+    else if(crop==="strawberry"){ p(7,1,2,2,cf.leaf); p(4,3,4,2,cf.leaf); p(9,3,3,2,cf.leaf); p(6,2,4,2,cf.leaf); p(4,5,9,4,cf.fruit); p(5,9,7,2,cf.fruit); p(6,11,5,2,cf.fruit); p(7,13,3,1,cf.fruit); p(6,6,1,1,cf.fruit2); p(9,7,1,1,cf.fruit2); p(7,9,1,1,cf.fruit2); p(10,9,1,1,cf.fruit2); }
+    else if(crop==="watermelon"){ p(7,3,1,2,"#4d8a2c"); p(5,4,7,1,cf.fruit); p(4,5,9,8,cf.fruit); p(5,13,7,1,cf.fruit); p(6,5,1,8,cf.fruit2); p(8,5,1,8,cf.fruit2); p(10,5,1,8,cf.fruit2); p(5,6,1,2,"#9be88a"); }
+    else if(crop==="onion"){ p(7,1,2,3,cf.leaf); p(6,2,1,2,cf.leaf); p(9,2,1,2,cf.leaf); p(5,5,7,1,cf.fruit); p(4,6,9,7,cf.fruit); p(5,13,7,1,cf.fruit); p(6,6,1,7,cf.fruit2); p(9,6,1,7,cf.fruit2); p(7,7,1,1,"#fff3df"); }
+    else if(crop==="eggplant"){ p(8,1,1,2,"#4d8a2c"); p(7,2,3,2,cf.leaf); p(6,3,5,2,cf.leaf); p(6,4,4,1,cf.fruit); p(5,5,6,9,cf.fruit); p(6,14,4,1,cf.fruit); p(6,6,1,5,cf.fruit2); }
+    else if(crop==="pineapple"){ p(7,0,2,5,cf.leaf); p(5,2,2,3,cf.leaf); p(9,2,2,3,cf.leaf); p(5,5,7,1,cf.fruit); p(4,6,9,8,cf.fruit); p(5,14,7,1,cf.fruit); p(6,7,1,1,cf.fruit2); p(9,7,1,1,cf.fruit2); p(7,9,1,1,cf.fruit2); p(10,9,1,1,cf.fruit2); p(6,11,1,1,cf.fruit2); p(9,11,1,1,cf.fruit2); }
+    else if(crop==="pumpkin"){ p(7,3,2,2,"#7a5230"); p(5,5,7,1,cf.fruit); p(4,6,9,7,cf.fruit); p(5,13,7,1,cf.fruit); p(6,6,1,7,"#b35e1f"); p(8,6,1,7,"#b35e1f"); p(10,6,1,7,"#b35e1f"); p(5,7,1,2,cf.fruit2); }
+    else if(crop==="grape"){ p(8,2,1,2,"#4d8a2c"); p(9,2,2,2,cf.leaf); p(5,5,2,2,cf.fruit); p(8,5,2,2,cf.fruit); p(11,5,1,2,cf.fruit); p(6,7,2,2,cf.fruit); p(9,7,2,2,cf.fruit); p(7,9,2,2,cf.fruit); p(5,5,1,1,cf.fruit2); p(8,5,1,1,cf.fruit2); p(6,7,1,1,cf.fruit2); }
+    else if(crop==="broccoli"){ p(7,9,2,5,"#6cae3a"); p(6,11,1,2,"#6cae3a"); p(9,11,1,2,"#6cae3a"); p(5,2,6,1,cf.fruit); p(4,3,8,6,cf.fruit); p(3,5,1,3,cf.fruit); p(12,5,1,3,cf.fruit); p(5,3,1,1,cf.fruit2); p(8,2,1,1,cf.fruit2); p(10,4,1,1,cf.fruit2); p(6,5,1,1,cf.fruit2); p(9,6,1,1,cf.fruit2); }
+    else if(crop==="carrot"){ p(5,1,2,3,cf.leaf); p(7,1,2,3,cf.leaf); p(9,2,2,3,cf.leaf); p(4,2,2,3,cf.leaf); p(5,5,6,2,cf.fruit); p(5,7,6,2,cf.fruit); p(6,9,4,2,cf.fruit); p(7,11,2,2,cf.fruit); p(7,13,1,1,cf.fruit); p(6,6,1,5,cf.fruit2); }
+    else if(crop==="golden"){ p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(6,5,5,7,cf.fruit); p(6,5,5,1,cf.fruit2); p(6,5,1,7,cf.fruit2); p(7,7,1,1,"#ffffff"); p(9,9,1,1,"#fffef0"); p(5,4,1,1,"#fffef0"); p(11,6,1,1,"#fffef0"); }
     else { p(7,8,2,5,"#4d8a2c"); p(4,8,3,2,cf.leaf); p(9,9,3,2,cf.leaf); p(5,5,4,4,cf.fruit); p(8,7,3,3,cf.fruit); p(5,5,1,1,cf.fruit2); p(8,7,1,1,cf.fruit2); } }
-  addOutline(x,16,16,"#2e2118"); }
+  addOutline(x,16,16,"rgba(58,42,28,0.5)"); }
 function drawTreeC(x,season){ const t1="#7a5230",t2="#8a6038";
   if(season==="winter"){ rc(x,7,16,2,8,t1); rc(x,7,16,1,8,t2);
     rc(x,5,9,6,2,t1); rc(x,4,11,8,1,t1); rc(x,6,7,3,2,t2);
