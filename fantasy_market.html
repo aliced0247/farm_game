@@ -548,8 +548,14 @@ function injectIcons(root){
 function ic(key,size,color){size=size||18;color=color||"currentColor";
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">${ICONS[key]||""}</svg>`;}
 /* アイテムのサムネ（スロット形状＋属性カラー） */
-function itemThumb(it,size){size=size||40;const c=ATTRS[it.attr].color;
-  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${shade(c,0.42)}" stroke="${shade(c,-0.28)}" stroke-linecap="round" stroke-linejoin="round">${ICONS["i_"+it.slot]||""}</svg>`;}
+let _thumbU=0;
+function itemThumb(it,size){size=size||40;const c=ATTRS[it.attr].color;const t=RTIER[it.rarity]||0;const g="tg"+(_thumbU++);
+  const ring = t>=3?`<circle cx="12" cy="12" r="11.2" fill="none" stroke="#E6C77A" stroke-width="1.3" opacity=".9"/>`:"";
+  const spk = t>=3?`<path d="M19 3.4 l.7 1.8 1.8.7 -1.8.7 -.7 1.8 -.7 -1.8 -1.8 -.7 1.8 -.7z" fill="#F4D58A"/>`
+    : t>=2?`<circle cx="19" cy="4.6" r="1.4" fill="${shade(c,0.4)}" stroke="${shade(c,-0.2)}" stroke-width=".6"/>`:"";
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" stroke-linecap="round" stroke-linejoin="round">
+    <defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${shade(c,0.5)}"/><stop offset="100%" stop-color="${shade(c,0.06)}"/></linearGradient></defs>
+    <g fill="url(#${g})" stroke="${shade(c,-0.3)}">${ICONS["i_"+it.slot]||""}</g>${ring}${spk}</svg>`;}
 function matThumb(mid,size){size=size||40;const c=MATERIALS[mid].color||"#D4A574";
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${shade(c,0.42)}" stroke="${shade(c,-0.25)}" stroke-linecap="round" stroke-linejoin="round">${ICONS[mid]||ICONS.material}</svg>`;}
 
@@ -1306,8 +1312,8 @@ function fMouth(){
 }
 
 /* --- 髪（シルエットvariant） root/tip/hi/line を持つ hc --- */
-function renderHair(hc,variant,id){
-  const HI=hc.hi,LN=hc.line;
+function renderHair(hc,variant,id,rarity){
+  const HI=hc.hi,LN=hc.line,t=rtier(rarity);
   const twin = variant===0;
   const short = (variant===3||variant===5);
   let back;
@@ -1332,96 +1338,149 @@ function renderHair(hc,variant,id){
     bang=`<path d="M70 104 C68 44 110 26 140 26 C170 26 212 44 210 104 C200 78 176 70 158 78 C150 60 130 60 122 78 C104 70 80 78 70 104 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
   }
   let buns = twin?`<circle cx="58" cy="92" r="16" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2"/><circle cx="222" cy="92" r="16" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2"/>`:"";
+  // レア度ヘアアクセ
+  let orn="";
+  if(t>=2) orn=`<path d="M150 62 q11 -8 21 -2 q-7 8 -21 5z" fill="${shade(hc.tip,0.42)}" stroke="${LN}" stroke-width="1" stroke-linejoin="round"/>`;
+  if(t>=3) orn=gemSVG(108,64,4,shade(hc.tip,0.55))+gemSVG(176,70,3.4,shade(hc.tip,0.55))+`<path d="M120 40 C104 56 96 80 96 100" stroke="#FFF6D6" stroke-width="2" fill="none" opacity=".55" stroke-linecap="round"/><path d="M150 38 C168 54 180 78 182 100" stroke="#FFF6D6" stroke-width="2" fill="none" opacity=".5" stroke-linecap="round"/>`+ssrAura([[104,56,4],[180,64,3.6],[140,28,3]]);
   const front=`<g id="hairFront" transform="translate(${S.face.offsets.hairFront.x},${S.face.offsets.hairFront.y})">${bang}
     <path d="M70 104 C62 130 64 160 74 184 C66 158 70 128 84 110 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
     <path d="M210 104 C218 130 216 160 206 184 C214 158 210 128 196 110 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
     <path d="M120 40 C104 56 96 80 96 100" stroke="${HI}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/>
     <path d="M150 38 C168 54 180 78 182 100" stroke="${HI}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/>
-    <path d="M140 34 C138 52 138 66 140 76" stroke="${HI}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".7"/>${buns}</g>`;
+    <path d="M140 34 C138 52 138 66 140 76" stroke="${HI}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".7"/>${buns}${orn}</g>`;
   return {back:`<g id="hairBack">${back}</g>`, front};
 }
 
-/* --- トップス --- */
-function renderTops(c,variant,id,base){
-  const sh=shade(c,-0.20),hi=shade(c,0.20),ln=shade(c,-0.42);
-  const collar = variant%3;
-  let collarSvg = collar===0?`<path d="M118 188 q22 12 44 0 l-6 12 q-16 8 -32 0 z" fill="#fff" stroke="${shade(c,-0.3)}" stroke-width="1.6" stroke-linejoin="round" opacity=".95"/>`
-    : collar===1?`<path d="M120 188 l20 14 l20 -14 l-4 10 l-16 8 l-16 -8 z" fill="${hi}" stroke="${ln}" stroke-width="1.4" stroke-linejoin="round"/>`
-    : `<path d="M116 186 q24 14 48 0 l-4 8 q-20 10 -40 0 z" fill="${sh}" stroke="${ln}" stroke-width="1.4" stroke-linejoin="round"/>`;
-  return `<g id="top">
+/* --- レアリティ別ディテール用ヘルパー --- */
+const RTIER={N:0,R:1,SR:2,SSR:3};
+function rtier(r){return RTIER[r]||0;}
+function gemSVG(x,y,r,c){const hi=shade(c,0.55),dk=shade(c,-0.4);
+  return `<path d="M${x} ${y-r} L${x+r} ${y} L${x} ${y+r} L${x-r} ${y} Z" fill="${c}" stroke="${dk}" stroke-width="1" stroke-linejoin="round"/><path d="M${x} ${y-r} L${x+r*0.5} ${y} L${x} ${y+r*0.5} Z" fill="${hi}" opacity=".8"/>`;}
+function sparkSVG(x,y,s,c){c=c||"#FFFBE6";const e=s*0.3;
+  return `<path d="M${x} ${y-s} L${x+e} ${y-e} L${x+s} ${y} L${x+e} ${y+e} L${x} ${y+s} L${x-e} ${y+e} L${x-s} ${y} L${x-e} ${y-e} Z" fill="${c}"/>`;}
+function ssrAura(pts){return pts.map(p=>sparkSVG(p[0],p[1],p[2]||4,p[3])).join("");}
+
+/* --- トップス（formは variant、書き込みは rarity で段階化） --- */
+function renderTops(c,variant,id,base,rarity){
+  const sh=shade(c,-0.20),hi=shade(c,0.26),ln=shade(c,-0.42),lt=shade(c,0.38),dk=shade(c,-0.34);
+  const t=rtier(rarity), fam=variant%6;
+  const arms=`
     <circle cx="84" cy="206" r="20" fill="url(#dt_${id})" stroke="${ln}" stroke-width="2"/>
     <circle cx="196" cy="206" r="20" fill="url(#dt_${id})" stroke="${ln}" stroke-width="2"/>
     <circle cx="84" cy="206" r="20" fill="url(#ptT_${id})"/><circle cx="196" cy="206" r="20" fill="url(#ptT_${id})"/>
     <path d="M74 214 q-8 16 -2 30 a7 7 0 0 0 13 -2 q-3 -14 1 -26 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M206 214 q8 16 2 30 a7 7 0 0 1 -13 -2 q3 -14 -1 -26 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M96 190 q44 -14 88 0 l-4 40 q-40 12 -80 0 z" fill="url(#dt_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M96 190 q44 -14 88 0 l-4 40 q-40 12 -80 0 z" fill="url(#ptT_${id})"/>
-    ${collarSvg}
-    <path d="M112 200 q28 8 56 0" stroke="${sh}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/></g>`;
+    <path d="M206 214 q8 16 2 30 a7 7 0 0 1 -13 -2 q3 -14 -1 -26 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/>`;
+  const bodice=`<path d="M96 190 q44 -14 88 0 l-4 40 q-40 12 -80 0 z" fill="url(#dt_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M96 190 q44 -14 88 0 l-4 40 q-40 12 -80 0 z" fill="url(#ptT_${id})"/>`;
+  // 襟＝属性系統で形ちがい
+  let collar;
+  if(fam===0) collar=`<path d="M126 188 q14 10 28 0 l-4 9 q-10 6 -20 0z" fill="#fff" stroke="${shade(c,-0.3)}" stroke-width="1.4" stroke-linejoin="round" opacity=".95"/><path d="M132 196 q8 5 16 0 q-3 8 -8 8 q-5 0 -8 -8z" fill="${lt}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round"/>`;
+  else if(fam===1) collar=`<path d="M122 184 q18 -8 36 0 l-3 13 q-15 8 -30 0z" fill="${dk}" stroke="${ln}" stroke-width="1.4" stroke-linejoin="round"/><path d="M130 188 v11 M140 189 v11 M150 188 v11" stroke="${lt}" stroke-width="1" opacity=".6"/>`;
+  else if(fam===2) collar=`<path d="M120 188 q20 12 40 0 l-5 10 q-15 7 -30 0z" fill="#fff" stroke="${shade(c,-0.3)}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="140" cy="208" r="1.8" fill="${dk}"/><circle cx="140" cy="218" r="1.8" fill="${dk}"/>`;
+  else if(fam===3) collar=`<path d="M122 188 l18 16 l18 -16 l-5 9 l-13 12 l-13 -12z" fill="${hi}" stroke="${ln}" stroke-width="1.3" stroke-linejoin="round"/>`;
+  else if(fam===4) collar=`<path d="M118 192 q22 -12 44 0 q-10 13 -22 13 q-12 0 -22 -13z" fill="${lt}" stroke="${ln}" stroke-width="1.3" stroke-linejoin="round"/>`;
+  else collar=`<path d="M116 186 l24 8 l24 -8 l-2 11 l-22 8 l-22 -8z" fill="#fff" stroke="${shade(c,-0.3)}" stroke-width="1.4" stroke-linejoin="round"/><path d="M138 195 l2 12 l2 -12z" fill="${c}" stroke="${ln}" stroke-width="1"/>`;
+  // レア度トリム
+  let trim="";
+  if(t>=1) trim+=`<path d="M112 200 q28 8 56 0" stroke="${sh}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>`;
+  if(t>=2) trim+=`<path d="M98 226 q42 11 80 0" fill="none" stroke="${lt}" stroke-width="3" opacity=".7"/>`+gemSVG(140,214,3.2,lt);
+  // SSR：フリル段＋袖飾り＋宝石＋光沢＋きらめき
+  let ssr="";
+  if(t>=3){
+    ssr=`<path d="M92 224 q48 14 96 0 l-6 17 q-42 12 -84 0z" fill="url(#dt_${id})" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round" opacity=".95"/>
+      <path d="M92 241 q10 8 18 0 q10 8 18 0 q10 8 18 0 q10 8 18 0 q10 8 18 0" fill="none" stroke="${lt}" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M62 216 q-7 11 -2 22 q9 -2 13 -11z" fill="${lt}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
+      <path d="M218 216 q7 11 2 22 q-9 -2 -13 -11z" fill="${lt}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
+      ${gemSVG(126,212,3,hi)}${gemSVG(154,212,3,hi)}
+      <path d="M104 192 q12 -6 24 -3" stroke="#fff" stroke-width="2" fill="none" opacity=".5" stroke-linecap="round"/>`;
+    ssr+=ssrAura([[86,184,4.5,"#FFF6D6"],[198,196,3.5,"#FFFFFF"],[150,180,3,"#FFF6D6"]]);
+  }
+  return `<g id="top">${arms}${bodice}${collar}${trim}${ssr}</g>`;
 }
 function baseTop(base,id){
   return `<g id="top"><path d="M98 192 q42 -12 84 0 l-4 38 q-38 11 -76 0 z" fill="#FBEFF3" stroke="#E2C3CF" stroke-width="2" stroke-linejoin="round"/>
     <path d="M118 190 q22 8 44 0" stroke="#E2C3CF" stroke-width="1.6" fill="none"/></g>`;
 }
 /* --- ボトムス --- */
-function renderBottoms(c,variant,id){
-  const sh=shade(c,-0.20),hi=shade(c,0.20),deep=shade(c,-0.34),ln=shade(c,-0.42);
+function renderBottoms(c,variant,id,rarity){
+  const sh=shade(c,-0.20),hi=shade(c,0.22),deep=shade(c,-0.34),ln=shade(c,-0.42),lt=shade(c,0.38);
+  const t=rtier(rarity);
   if(variant%2===1){ // パンツ
-    return `<g id="bottom">
+    let p=`<g id="bottom">
       <path d="M100 224 h80 l-2 64 h-30 l-8 -44 l-8 44 h-30 z" fill="url(#db_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M140 230 v54" stroke="${sh}" stroke-width="2.5" opacity=".5" stroke-linecap="round"/></g>`;
+      <path d="M140 230 v54" stroke="${sh}" stroke-width="2.5" opacity=".5" stroke-linecap="round"/>`;
+    if(t>=2) p+=`<path d="M100 226 h80" stroke="${lt}" stroke-width="3" opacity=".7"/>`+gemSVG(140,228,3,lt);
+    if(t>=3) p+=`<path d="M104 284 h28 M148 284 h28" stroke="${lt}" stroke-width="3" stroke-linecap="round"/>`+gemSVG(116,228,2.6,hi)+gemSVG(164,228,2.6,hi)+ssrAura([[106,300,3.5],[174,300,3.5]]);
+    return p+`</g>`;
   }
-  return `<g id="bottom">
+  let s=`<g id="bottom">
     <path d="M98 224 q42 -10 84 0 l24 64 q-66 18 -132 0 z" fill="url(#db_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M98 224 q42 -10 84 0 l24 64 q-66 18 -132 0 z" fill="url(#ptB_${id})"/>
-    <path d="M118 230 L108 286" stroke="${sh}" stroke-width="3" fill="none" opacity=".55" stroke-linecap="round"/>
+    <path d="M98 224 q42 -10 84 0 l24 64 q-66 18 -132 0 z" fill="url(#ptB_${id})"/>`;
+  if(t>=1) s+=`<path d="M118 230 L108 286" stroke="${sh}" stroke-width="3" fill="none" opacity=".55" stroke-linecap="round"/>
     <path d="M140 232 L140 290" stroke="${sh}" stroke-width="3" fill="none" opacity=".5" stroke-linecap="round"/>
     <path d="M162 230 L172 286" stroke="${sh}" stroke-width="3" fill="none" opacity=".55" stroke-linecap="round"/>
     <path d="M128 230 L122 288" stroke="${hi}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>
-    <path d="M152 230 L158 288" stroke="${hi}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>
-    <path d="M74 288 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 18 0" fill="none" stroke="${deep}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/></g>`;
+    <path d="M152 230 L158 288" stroke="${hi}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>`;
+  s+=`<path d="M74 288 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 18 0" fill="none" stroke="${deep}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>`;
+  if(t>=2) s+=`<path d="M100 226 q40 -8 80 0" fill="none" stroke="${lt}" stroke-width="3" opacity=".75"/>`+gemSVG(140,228,3.4,lt);
+  if(t>=3) s+=`<path d="M72 270 q34 14 68 0 q34 -14 68 0 l6 20 q-70 20 -140 0z" fill="url(#db_${id})" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round" opacity=".95"/>
+    <path d="M70 290 q11 9 20 0 q11 9 20 0 q11 9 20 0 q11 9 20 0 q11 9 20 0 q11 9 18 0" fill="none" stroke="${lt}" stroke-width="2.4" stroke-linecap="round"/>
+    ${gemSVG(120,228,2.6,hi)}${gemSVG(160,228,2.6,hi)}`+ssrAura([[76,300,4],[204,296,4],[140,316,3]]);
+  return s+`</g>`;
 }
 function baseBottom(id){
   return `<g id="bottom"><path d="M100 224 q40 -10 80 0 l18 56 q-58 16 -116 0 z" fill="#F2D6E0" stroke="#DCB6C5" stroke-width="2" stroke-linejoin="round"/></g>`;
 }
 /* --- シューズ --- */
-function renderShoes(c,variant,id){
-  const sh=shade(c,-0.22),hi=shade(c,0.18),ln=shade(c,-0.4);
-  const v=variant%3;
+function renderShoes(c,variant,id,rarity){
+  const sh=shade(c,-0.22),hi=shade(c,0.2),ln=shade(c,-0.4),lt=shade(c,0.42);
+  const t=rtier(rarity), v=variant%3;
   if(v===1){ // ブーツ
-    return `<g id="shoes"><path d="M112 300 h24 v18 l6 8 q-18 6 -34 0 l4 -8 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M144 300 h24 v18 l6 8 q-18 6 -34 0 l4 -8 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/></g>`;
+    let b=`<path d="M112 300 h24 v18 l6 8 q-18 6 -34 0 l4 -8 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M144 300 h24 v18 l6 8 q-18 6 -34 0 l4 -8 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>`;
+    if(t>=2) b+=`<path d="M112 305 h24 M144 305 h24" stroke="${lt}" stroke-width="2.4"/>`;
+    if(t>=3) b+=gemSVG(124,303,2.6,hi)+gemSVG(156,303,2.6,hi)+`<path d="M110 318 q14 5 28 0 M142 318 q14 5 28 0" stroke="${lt}" stroke-width="2" fill="none"/>`+ssrAura([[120,332,3],[160,332,3]]);
+    return `<g id="shoes">${b}</g>`;
   }
   if(v===2){ // サンダル
-    return `<g id="shoes"><path d="M110 320 q14 -3 26 0 l1 6 q-14 4 -28 0z" fill="${hi}" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+    let b=`<path d="M110 320 q14 -3 26 0 l1 6 q-14 4 -28 0z" fill="${hi}" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
       <path d="M144 320 q14 -3 26 0 l1 6 q-14 4 -28 0z" fill="${hi}" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M116 318 l8 -8 M158 318 l-8 -8" stroke="${sh}" stroke-width="2.4" stroke-linecap="round"/></g>`;
+      <path d="M116 318 l8 -8 M158 318 l-8 -8" stroke="${sh}" stroke-width="2.4" stroke-linecap="round"/>`;
+    if(t>=2) b+=`<path d="M120 314 l6 -6 M154 314 l-6 -6" stroke="${lt}" stroke-width="2" stroke-linecap="round"/>`;
+    if(t>=3) b+=gemSVG(123,310,2.4,hi)+gemSVG(157,310,2.4,hi)+ssrAura([[118,330,2.6],[162,330,2.6]]);
+    return `<g id="shoes">${b}</g>`;
   }
-  return `<g id="shoes"><path d="M112 318 q14 -4 24 0 l2 8 q-14 5 -28 0 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+  let b=`<path d="M112 318 q14 -4 24 0 l2 8 q-14 5 -28 0 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
     <path d="M144 318 q14 -4 24 0 l2 8 q-14 5 -28 0 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M118 318 q8 -3 16 0" stroke="#fff" stroke-width="2" fill="none" opacity=".6"/></g>`;
+    <path d="M118 318 q8 -3 16 0" stroke="#fff" stroke-width="2" fill="none" opacity=".6"/>`;
+  if(t>=2) b+=`<path d="M120 316 q4 -5 10 -4 M150 316 q4 -5 10 -4" stroke="${lt}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  if(t>=3) b+=gemSVG(124,314,2.6,hi)+gemSVG(156,314,2.6,hi)+`<path d="M111 327 q13 4 25 0 M144 327 q13 4 25 0" stroke="${lt}" stroke-width="2" fill="none"/>`+ssrAura([[120,332,3],[160,332,3]]);
+  return `<g id="shoes">${b}</g>`;
 }
 function baseShoes(id){
   return `<g id="shoes"><ellipse cx="124" cy="322" rx="13" ry="6" fill="#E6CBB4" stroke="#C9A786" stroke-width="2"/>
     <ellipse cx="156" cy="322" rx="13" ry="6" fill="#E6CBB4" stroke="#C9A786" stroke-width="2"/></g>`;
 }
 /* --- 小物（body=胸/首, head=頭/手） --- */
-function renderAcc(c,variant,id){
+function renderAcc(c,variant,id,rarity){
   const hi=shade("#D4A574",0.18),shr=shade("#D4A574",-0.22),sh=shade(c,-0.2),ln=shade(c,-0.4),lt=shade(c,0.2);
-  let body="",head="";
+  const t=rtier(rarity);
+  let body="",head="",anchor=null;
   switch(variant){
-    case 0: body=`<g id="accBag"><path d="M196 232 q10 -2 18 4 l-2 20 q-9 4 -16 0 z" fill="${lt}" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round"/><path d="M198 234 q6 -8 14 -2" fill="none" stroke="${shr}" stroke-width="1.6"/></g>`; break;
-    case 1: body=`<g id="accChoker"><path d="M126 176 q14 8 28 0" stroke="${sh}" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="140" cy="182" r="3.4" fill="${hi}" stroke="${shr}" stroke-width="1.2"/></g>`; break;
-    case 2: head=`<g id="accCrown"><path d="M104 44 l8 8 M140 36 v10 M176 44 l-8 8" stroke="${lt}" stroke-width="3" stroke-linecap="round"/><circle cx="104" cy="44" r="4" fill="${c}" stroke="${ln}" stroke-width="1.2"/><circle cx="140" cy="36" r="4.4" fill="${hi}" stroke="${shr}" stroke-width="1.2"/><circle cx="176" cy="44" r="4" fill="${c}" stroke="${ln}" stroke-width="1.2"/></g>`; break;
-    case 3: head=`<g id="accEar"><circle cx="72" cy="132" r="4" fill="${hi}" stroke="${shr}" stroke-width="1.2"/><circle cx="208" cy="132" r="4" fill="${hi}" stroke="${shr}" stroke-width="1.2"/><path d="M72 128 v-4 M208 128 v-4" stroke="${shr}" stroke-width="1.4"/></g>`; break;
-    case 4: head=`<g id="accWand"><path d="M210 250 L226 210" stroke="${shr}" stroke-width="3" stroke-linecap="round"/><path d="M226 204 l2.4 5 5 2.4 -5 2.4 -2.4 5 -2.4 -5 -5 -2.4 5 -2.4z" fill="${hi}" stroke="${shr}" stroke-width="1.2" stroke-linejoin="round"/></g>`; break;
-    case 5: head=`<g id="accStar"><path d="M70 130 l1.6 3.4 3.6 .4 -2.7 2.4 .7 3.6 -3.2 -1.8 -3.2 1.8 .7 -3.6 -2.7 -2.4 3.6 -.4z" fill="${hi}" stroke="${shr}" stroke-width="1" stroke-linejoin="round"/></g>`; break;
+    case 0: body=`<g id="accBag"><path d="M196 232 q10 -2 18 4 l-2 20 q-9 4 -16 0 z" fill="${lt}" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round"/><path d="M198 234 q6 -8 14 -2" fill="none" stroke="${shr}" stroke-width="1.6"/></g>`; anchor=[214,236]; break;
+    case 1: body=`<g id="accChoker"><path d="M126 176 q14 8 28 0" stroke="${sh}" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="140" cy="182" r="3.4" fill="${hi}" stroke="${shr}" stroke-width="1.2"/></g>`; anchor=[140,182]; break;
+    case 2: head=`<g id="accCrown"><path d="M104 44 l8 8 M140 36 v10 M176 44 l-8 8" stroke="${lt}" stroke-width="3" stroke-linecap="round"/><circle cx="104" cy="44" r="4" fill="${c}" stroke="${ln}" stroke-width="1.2"/><circle cx="140" cy="36" r="4.4" fill="${hi}" stroke="${shr}" stroke-width="1.2"/><circle cx="176" cy="44" r="4" fill="${c}" stroke="${ln}" stroke-width="1.2"/></g>`; anchor=[140,32]; break;
+    case 3: head=`<g id="accEar"><circle cx="72" cy="132" r="4" fill="${hi}" stroke="${shr}" stroke-width="1.2"/><circle cx="208" cy="132" r="4" fill="${hi}" stroke="${shr}" stroke-width="1.2"/><path d="M72 128 v-4 M208 128 v-4" stroke="${shr}" stroke-width="1.4"/></g>`; anchor=[208,128]; break;
+    case 4: head=`<g id="accWand"><path d="M210 250 L226 210" stroke="${shr}" stroke-width="3" stroke-linecap="round"/><path d="M226 204 l2.4 5 5 2.4 -5 2.4 -2.4 5 -2.4 -5 -5 -2.4 5 -2.4z" fill="${hi}" stroke="${shr}" stroke-width="1.2" stroke-linejoin="round"/></g>`; anchor=[226,200]; break;
+    case 5: head=`<g id="accStar"><path d="M70 130 l1.6 3.4 3.6 .4 -2.7 2.4 .7 3.6 -3.2 -1.8 -3.2 1.8 .7 -3.6 -2.7 -2.4 3.6 -.4z" fill="${hi}" stroke="${shr}" stroke-width="1" stroke-linejoin="round"/></g>`; anchor=[70,124]; break;
   }
+  if(t>=3 && anchor){ const sp=ssrAura([[anchor[0],anchor[1],4,"#FFF6D6"]]); if(head) head+=sp; else body+=sp; }
   return {body,head};
 }
 /* --- 背景小物 --- */
-function renderBg(c,variant){
+function renderBg(c,variant,rarity){
   const lt=shade(c,0.34),md=c,dk=shade(c,-0.2);
+  const t=rtier(rarity);
   let motif="";
   switch(variant){
     case 0: motif=`<path d="M44 60c4-5 11-5 14 1c3-6 10-6 14-1c-3 7-14 13-14 13s-11-6-14-13z" fill="${md}" opacity=".5"/><path d="M212 180c3-4 9-4 11 1c2-5 8-5 11-1c-2 6-11 11-11 11s-9-5-11-11z" fill="${md}" opacity=".45"/>`; break;
@@ -1431,7 +1490,10 @@ function renderBg(c,variant){
     case 4: motif=`<g fill="${md}" opacity=".55"><path d="M48 56l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/><path d="M210 70l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/><path d="M70 150l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></g>`; break;
     case 5: motif=`<g opacity=".5" fill="none" stroke="${dk}" stroke-width="2"><circle cx="48" cy="170" r="7"/><circle cx="62" cy="190" r="5"/><circle cx="214" cy="180" r="8"/><circle cx="226" cy="200" r="5"/></g>`; break;
   }
-  return `<g id="bgItem"><rect x="0" y="0" width="280" height="330" fill="${c}" opacity=".07"/>${motif}</g>`;
+  let extra="";
+  if(t>=3) extra=ssrAura([[40,42,5,"#FFF6D6"],[240,54,4,"#FFFFFF"],[34,150,4],[248,140,4.5],[140,30,4]]);
+  const tint = t>=3?".13":t>=2?".10":".07";
+  return `<g id="bgItem"><rect x="0" y="0" width="280" height="330" fill="${c}" opacity="${tint}"/>${motif}${extra}</g>`;
 }
 
 function renderChar(){
@@ -1466,8 +1528,8 @@ function renderChar(){
     <filter id="soft_${id}" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#8B5E6B" flood-opacity="0.22"/></filter>
   </defs>`;
 
-  const hair=renderHair(hc,hairVar,id);
-  const acc=accItem?renderAcc(ATTRS[accItem.attr].color,accItem.variant,id):{body:"",head:""};
+  const hair=renderHair(hc,hairVar,id,hairItem?hairItem.rarity:"N");
+  const acc=accItem?renderAcc(ATTRS[accItem.attr].color,accItem.variant,id,accItem.rarity):{body:"",head:""};
 
   const body=`<g id="body" filter="url(#soft_${id})">
     <path d="M128 168 h24 v18 a12 12 0 0 1 -24 0 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/>
@@ -1488,12 +1550,12 @@ function renderChar(){
 
   let html=defs;
   html+=renderRoom();
-  html+=bgItem?renderBg(ATTRS[bgItem.attr].color,bgItem.variant):"";
+  html+=bgItem?renderBg(ATTRS[bgItem.attr].color,bgItem.variant,bgItem.rarity):"";
   html+=hair.back;
   html+=body;
-  html+=botItem?renderBottoms(botC,botItem.variant,id):baseBottom(id);
-  html+=shoeItem?renderShoes(shoeC,shoeItem.variant,id):baseShoes(id);
-  html+=topsItem?renderTops(topC,topsItem.variant,id,base):baseTop(base,id);
+  html+=botItem?renderBottoms(botC,botItem.variant,id,botItem.rarity):baseBottom(id);
+  html+=shoeItem?renderShoes(shoeC,shoeItem.variant,id,shoeItem.rarity):baseShoes(id);
+  html+=topsItem?renderTops(topC,topsItem.variant,id,base,topsItem.rarity):baseTop(base,id);
   html+=acc.body;
   html+=head+eyes+brows+fMouth();
   html+=hair.front;
