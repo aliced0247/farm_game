@@ -358,7 +358,12 @@
         <div class="grid" id="buyGrid"></div>
       </div>
       <div class="panel">
-        <h2><span class="ic" data-ico="coin"></span>売却（手持ち）</h2>
+        <h2><span class="ic" data-ico="crown"></span>今日のお客さん</h2>
+        <p class="muted">好みの属性/レアを手数料なし＆プレミア価格で買ってくれる。市場に投げ売りするより得！</p>
+        <div id="buyerList"></div>
+      </div>
+      <div class="panel">
+        <h2><span class="ic" data-ico="coin"></span>売却（手持ち・市場へ）</h2>
         <p class="muted">売却手数料 <b id="feeLbl">15</b>%。トレンドが高いときが売り時！</p>
         <div class="grid" id="sellGrid"></div>
       </div>
@@ -748,6 +753,79 @@ function rankInfo(){
 }
 
 /* =========================================================
+   NPCバイヤー（好み売買）
+   ========================================================= */
+const NPC_NAMES=["ルル","ノワ","ミミ","サラ","ベル","コハ","リリ","ナナ","ティア","モモ","ユイ","アン"];
+function hotAttr(){ let best=ATTR_KEYS[0]; ATTR_KEYS.forEach(a=>{ if(S.trend[a]>S.trend[best]) best=a; }); return best; }
+function genBuyers(){
+  const names=shuffle(NPC_NAMES.slice());
+  const types=shuffle(["gothic","mieha","reseller","fan","fan"]).slice(0,3);
+  S.buyers=types.map((tk,i)=>{
+    let want,premium,demand,label,line,color;
+    if(tk==="gothic"){ want={kind:"attr",attr:"gothic"}; premium=1.50+Math.random()*0.15; demand=2+(Math.random()<0.5?1:0); label="ゴシック偏愛"; line="暗くて可愛いの、ちょうだい？"; color=ATTRS.gothic.color; }
+    else if(tk==="mieha"){ const a=hotAttr(); want={kind:"attr",attr:a}; premium=1.30+Math.random()*0.12; demand=2+(Math.random()<0.5?1:0); label="ミーハー"; line="いま流行ってるの欲しい！"; color=ATTRS[a].color; }
+    else if(tk==="reseller"){ want={kind:"rarity",min:"SR"}; premium=1.28+Math.random()*0.10; demand=3+(Math.random()<0.5?1:0); label="やり手の転売屋"; line="レアなら数で買い取るよ。"; color="#D4A574"; }
+    else { const a=ATTR_KEYS[Math.floor(Math.random()*ATTR_KEYS.length)]; want={kind:"attr",attr:a}; premium=1.35+Math.random()*0.20; demand=2+(Math.random()<0.5?1:0); label=ATTRS[a].jp+"党"; line=ATTRS[a].jp+"が大すき！"; color=ATTRS[a].color; }
+    return {name:names[i]||"おきゃく", typeKey:tk, label, line, want, premium:Math.round(premium*100)/100, demand, bought:0, avatarColor:color};
+  });
+}
+function matchBuyer(b,it){ return b.want.kind==="attr" ? it.attr===b.want.attr : RARITY[it.rarity].mult>=RARITY[b.want.min].mult; }
+function buyerPrice(b,it){ return Math.round(itemPrice(it)*b.premium); }
+function npcAvatar(color,size){ size=size||40; const ln=shade(color,-0.4);
+  return `<svg viewBox="0 0 40 40" width="${size}" height="${size}">
+    <circle cx="20" cy="21" r="14" fill="#F6D6BF" stroke="#B88A6E" stroke-width="1.5"/>
+    <path d="M6 21 a14 13 0 0 1 28 0 q-14 -9 -28 0z" fill="${color}" stroke="${ln}" stroke-width="1.2"/>
+    <ellipse cx="14" cy="22" rx="2.2" ry="2.8" fill="#5C3D4A"/><ellipse cx="26" cy="22" rx="2.2" ry="2.8" fill="#5C3D4A"/>
+    <circle cx="14.6" cy="21.2" r=".7" fill="#fff"/><circle cx="26.6" cy="21.2" r=".7" fill="#fff"/>
+    <circle cx="10" cy="26" r="2.4" fill="#F3A9B6" opacity=".5"/><circle cx="30" cy="26" r="2.4" fill="#F3A9B6" opacity=".5"/>
+    <path d="M16 28 q4 3 8 0" stroke="#C36E80" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`;
+}
+function sellToBuyer(bi,id){
+  const b=S.buyers[bi]; const it=ITEM_BY_ID[id];
+  if(!b||b.demand<=0||(S.inv[id]||0)<=0||!matchBuyer(b,it)) return;
+  const price=buyerPrice(b,it);
+  S.inv[id]--; if(S.inv[id]<=0){ delete S.inv[id]; SLOT_KEYS.forEach(sl=>{ if(S.equip[sl]===id) S.equip[sl]=null; }); }
+  S.coin+=price; b.demand--; b.bought=(b.bought||0)+1;
+  save(); renderMarket(); renderHeader(); renderHome();
+  toast(b.name+"に "+price.toLocaleString()+" リルで売れた！");
+  openBuyerSell(bi);
+}
+function openBuyerSell(bi){
+  const b=S.buyers[bi];
+  const wantTxt=b.want.kind==="attr"?ATTRS[b.want.attr].jp+"系":"SR以上のレア";
+  let body=`<div class="muted" style="margin-bottom:8px">「${b.line}」<br>${wantTxt}を <b style="color:var(--rose)">${b.premium.toFixed(2)}倍・手数料なし</b>で買い取り（残り ${Math.max(0,b.demand)} 点）</div>`;
+  if(b.demand<=0){ body+=`<div class="empty"><span class="ic">${ic('check',34,'var(--good)')}</span>この子は買い終わったよ。</div>`; openModal(b.name+"に売る",body); return; }
+  const matches=Object.keys(S.inv).map(id=>ITEM_BY_ID[id]).filter(it=>matchBuyer(b,it));
+  if(matches.length===0){ body+=`<div class="empty"><span class="ic">${ic('bag',34,'var(--text-soft)')}</span>条件に合う手持ちがないよ。</div>`; openModal(b.name+"に売る",body); return; }
+  body+=`<div class="grid">`;
+  matches.forEach(it=>{ const price=buyerPrice(b,it);
+    body+=`<div class="card"><span class="qty">×${S.inv[it.id]}</span><span class="thumb">${itemThumb(it,40)}</span>
+      <div class="nm">${it.name}</div><div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div>
+      <div class="price"><span class="c">${ic('coin',11,'var(--gold)')}</span>${price.toLocaleString()}</div>
+      <button class="btn sm full gold" onclick="sellToBuyer(${bi},'${it.id}')">売る</button></div>`;
+  });
+  body+=`</div>`;
+  openModal(b.name+"に売る",body);
+}
+function renderBuyers(){
+  const el=document.getElementById("buyerList"); if(!el) return; el.innerHTML="";
+  if(!S.buyers||!S.buyers.length){ el.innerHTML=`<div class="muted">今日はお客さんがいないみたい。</div>`; return; }
+  S.buyers.forEach((b,bi)=>{
+    const wantTxt=b.want.kind==="attr"?ATTRS[b.want.attr].jp+"系":"SR以上のレア";
+    const done=b.demand<=0;
+    const d=document.createElement("div"); d.className="codeSlot"; d.style.cursor="default";
+    d.innerHTML=`<span class="ic" style="width:40px;height:40px;flex:none">${npcAvatar(b.avatarColor,40)}</span>
+      <div class="info">
+        <div class="nm">${b.name} <span class="muted">(${b.label})</span></div>
+        <div style="font-size:11px;margin-top:2px">${wantTxt}を <b style="color:var(--rose)">${b.premium.toFixed(2)}倍</b>（残り ${Math.max(0,b.demand)}）</div>
+      </div>
+      <button class="btn sm ${done?'ghost':'gold'}" ${done?'disabled':''}>${done?'完売':'売る'}</button>`;
+    d.querySelector("button").onclick=()=>{ if(!done) openBuyerSell(bi); };
+    el.appendChild(d);
+  });
+}
+
+/* =========================================================
    ステート
    ========================================================= */
 const FEE = 0.15;
@@ -775,6 +853,7 @@ function newGame(){
            equip:{wallpaper:"w_plain",floor:"f_wood",rug:null,wall:null,left:null,right:null,ceiling:null}},
     pickup: null,            // ピックアップ itemId
     code: null,              // 進行中審査 {theme,done,sel:{slot:itemId}}
+    buyers: [],              // 今日のNPCバイヤー
     nextCodeDay: 4,
     legendOff: {},           // チャート非表示属性
     chartSel: "all",
@@ -906,6 +985,7 @@ function nextDay(){
   genNews();
   recomputeTrend();
   refreshMarket();
+  genBuyers();
   maybeStartCode();
   save();
   renderAll();
@@ -1486,6 +1566,7 @@ function renderMarket(){
     c.querySelector("button").onclick=()=>sellItem(id);
     sg.appendChild(c);
   });
+  renderBuyers();
   drawChart();
   renderLegend();
 }
@@ -1856,11 +1937,13 @@ function bootstrap(fresh){
     starter.forEach(nm=>{ const it=ITEMS.find(i=>i.name===nm); if(it){S.inv[it.id]=1;S.seen[it.id]=true;S.equip[it.slot]=it.id;} });
     S.mats={m_cloth:4,m_leaf:2,m_shell:3};
     refreshMarket();
+    genBuyers();
     genNews();
     save();
   } else {
     // ロード後は当日の市場を復元（出品はセーブ外なので再生成）
     refreshMarket();
+    if(!S.buyers||!S.buyers.length) genBuyers();
   }
   renderAll();
 }
