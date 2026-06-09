@@ -3,40 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
 <title>きせかえマーケット 〜ファンタジー市場ものがたり〜</title>
 <style>
-  /* ===== カラーパレット（くすみピンク・安っぽさ防止仕様） ===== */
+  /* ===== カラーパレット（くすみピンク・安っぽさ防止仕様 v2） ===== */
   :root{
-    --bg:        #f3e3e9;   /* 画面背景 */
-    --bg2:       #ecd6df;
-    --panel:     #fbf3f6;   /* パネル */
-    --panel2:    #f6e9ee;
-    --pink:      #d18aa1;   /* メインピンク S<70% */
-    --pink-d:    #b56e87;   /* 濃いめ */
-    --rose:      #8f5366;   /* ヘッダー/重要 */
-    --gold:      #c6a667;   /* アクセント1色のみ */
-    --text:      #4a3a40;   /* ダークブラウン（真っ黒禁止） */
-    --text-soft: #7d6670;
-    --line:      #e2cbd4;
+    --bg:        #FFF5F8;   /* 画面背景 */
+    --bg2:       #F6DCE7;
+    --panel:     #F5E0E8;   /* サブピンク：パネル */
+    --panel2:    #FBF0F4;   /* さらに薄いトーン */
+    --pink:      #E8B4C8;   /* メインピンク */
+    --pink-d:    #D99FB6;   /* 枠線用 */
+    --rose:      #8B5E6B;   /* ダークピンク：ヘッダー/強調 */
+    --gold:      #D4A574;   /* アクセント（ゴールドベージュ） */
+    --text:      #5C3D4A;   /* ダークローズ（真っ黒禁止） */
+    --text-soft: #9A7C88;
+    --line:      #E7CBD6;
     --good:      #6f9a78;
     --bad:       #c0707f;
-    --r:         8px;       /* 角丸固定 */
+    --r:         12px;      /* 角丸統一 */
     --gap:       8px;       /* 8pxグリッド */
-    --shadow:    0 2px 8px rgba(143,83,102,.12);
+    --shadow:    0 2px 8px rgba(139,94,107,.15);
   }
   /* 属性色 */
   :root{
-    --at-pastel:  #e6a9c4;
-    --at-gothic:  #5b4a66;
-    --at-natural: #9fb083;
-    --at-cool:    #7fa6cc;
-    --at-fairy:   #c2a9e0;
-    --at-marine:  #6fc1c8;
+    --at-pastel:  #E8B4C8;
+    --at-gothic:  #6E5A78;
+    --at-natural: #9DB389;
+    --at-cool:    #7FA6CC;
+    --at-fairy:   #C2A9E0;
+    --at-marine:  #7FBEC4;
   }
+  /* アイコン共通 */
+  .ic svg,.ico svg{width:100%;height:100%;display:block;}
+  .ic,.ico{display:inline-flex;align-items:center;justify-content:center;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
   body{
-    font-family:"Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
     background:var(--bg);
     color:var(--text);
     font-size:14px;
@@ -76,7 +82,9 @@
     text-align:center;
     min-width:62px;
   }
-  .stat b{display:block;font-size:13px;color:var(--gold);letter-spacing:.02em;}
+  .stat{display:flex;align-items:center;gap:5px;}
+  .stat .ico{width:16px;height:16px;color:var(--gold);flex:none;}
+  .stat b{font-size:13px;color:#FBEDF2;letter-spacing:.02em;}
   .stat span{font-size:9px;opacity:.85;}
 
   /* ===== コンテンツ ===== */
@@ -96,21 +104,25 @@
     box-shadow:var(--shadow);
   }
   .panel h2{margin:0 0 8px;font-size:13px;color:var(--rose);display:flex;align-items:center;gap:6px;}
-  .panel h2 .ic{font-size:15px;}
+  .panel h2 .ic{width:17px;height:17px;color:var(--rose);}
   .muted{color:var(--text-soft);font-size:11px;}
 
   /* ===== ボタン ===== */
   button{font-family:inherit;cursor:pointer;border:none;color:var(--text);}
   .btn{
-    background:var(--pink);color:#fff;border-radius:var(--r);
-    padding:10px 14px;font-size:13px;font-weight:700;border:1px solid var(--pink-d);
-    transition:filter .12s,transform .05s;letter-spacing:.02em;
+    background:var(--rose);color:#fff;border-radius:var(--r);
+    padding:10px 14px;font-size:13px;font-weight:700;border:1px solid var(--rose);
+    transition:filter .12s,transform .05s,box-shadow .12s;letter-spacing:.02em;box-shadow:var(--shadow);
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
   }
-  .btn:hover{filter:brightness(1.05);}
-  .btn:active{transform:translateY(1px);filter:brightness(.95);}
-  .btn:disabled{background:#d9c6cd;border-color:#cdb6bf;color:#fff;cursor:not-allowed;filter:none;}
-  .btn.gold{background:var(--gold);border-color:#b08f50;}
-  .btn.ghost{background:var(--panel2);color:var(--rose);border:1px solid var(--line);}
+  .btn:hover{filter:brightness(1.08);}
+  .btn:active{transform:translateY(1px);filter:brightness(.92);box-shadow:0 1px 4px rgba(139,94,107,.2);}
+  .btn:disabled{background:#D9C3CB;border-color:#D9C3CB;color:#fff;cursor:not-allowed;filter:none;box-shadow:none;}
+  .btn .ico{width:15px;height:15px;flex:none;}
+  .btn.gold{background:var(--gold);border-color:#bf9460;}
+  .btn.ghost{background:transparent;color:var(--rose);border:2px solid var(--rose);box-shadow:none;}
+  .btn.ghost:hover{background:rgba(139,94,107,.06);filter:none;}
+  .btn.ghost:disabled{color:#C9AEB8;border-color:#E0CAD3;background:transparent;}
   .btn.sm{padding:6px 10px;font-size:11px;}
   .btn.full{width:100%;}
 
@@ -120,7 +132,6 @@
     background:
       radial-gradient(circle at 50% 38%, #fbf3f6 0%, #f2dbe5 70%, #ead0db 100%);
     border-radius:var(--r);border:1px solid var(--line);overflow:hidden;
-    image-rendering:pixelated;
   }
   #charSvg{width:100%;height:100%;display:block;}
   .floor{position:absolute;left:0;right:0;bottom:0;height:22%;
@@ -135,7 +146,7 @@
   .slot:hover{border-color:var(--pink);}
   .slot .lbl{font-size:9px;color:var(--text-soft);}
   .slot .val{font-size:11px;font-weight:700;margin-top:2px;min-height:14px;}
-  .slot .ic{font-size:18px;}
+  .slot .ic{height:34px;margin:2px 0;}
 
   /* ===== アイテムカード ===== */
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:var(--gap);}
@@ -143,7 +154,7 @@
     background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
     padding:8px 6px;text-align:center;position:relative;overflow:hidden;
   }
-  .card .thumb{font-size:30px;line-height:1;margin:2px 0 4px;display:block;}
+  .card .thumb{height:40px;margin:2px auto 4px;display:flex;align-items:center;justify-content:center;}
   .card .nm{font-size:11px;font-weight:700;min-height:28px;display:flex;align-items:center;justify-content:center;}
   .card .meta{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin:4px 0;}
   .tag{font-size:8px;padding:2px 5px;border-radius:6px;font-weight:700;color:#fff;letter-spacing:.02em;}
@@ -179,7 +190,8 @@
   .news{display:flex;gap:6px;align-items:flex-start;padding:6px;border-radius:var(--r);background:var(--panel2);margin-bottom:6px;border-left:3px solid var(--gold);}
   .news.omen{border-left-color:var(--pink);}
   .news.spike{border-left-color:var(--bad);}
-  .news .ic{font-size:15px;}
+  .news .ic{width:16px;height:16px;flex:none;margin-top:1px;color:var(--gold);}
+  .news.omen .ic{color:var(--pink-d);} .news.spike .ic{color:var(--bad);}
   .news .tx{font-size:11px;}
   .news .tx b{color:var(--rose);}
 
@@ -193,7 +205,7 @@
     display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--text-soft);
     font-size:9px;position:relative;transition:color .12s;
   }
-  nav button .ic{font-size:18px;}
+  nav button .ic{width:22px;height:22px;}
   nav button.active{color:var(--rose);font-weight:700;}
   nav button.active::after{content:"";position:absolute;top:0;left:18%;right:18%;height:2px;background:var(--pink);border-radius:2px;}
 
@@ -231,25 +243,60 @@
   .seg button.on{background:var(--pink);color:#fff;border-color:var(--pink-d);}
 
   .empty{text-align:center;padding:24px 8px;color:var(--text-soft);font-size:12px;}
-  .empty .ic{font-size:34px;display:block;margin-bottom:6px;opacity:.5;}
+  .empty .ic{width:34px;height:34px;margin:0 auto 6px;opacity:.5;}
 
   .toast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%) translateY(20px);background:var(--rose);color:#fff;padding:9px 16px;border-radius:20px;font-size:12px;font-weight:700;opacity:0;transition:.25s;z-index:50;box-shadow:var(--shadow);white-space:nowrap;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
   .codeSlot{display:flex;align-items:center;gap:8px;padding:7px;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);margin-bottom:6px;cursor:pointer;}
-  .codeSlot .ic{font-size:24px;width:32px;text-align:center;}
+  .codeSlot .ic{width:30px;height:30px;flex:none;}
   .codeSlot .info{flex:1;}
   .codeSlot .info .nm{font-size:12px;font-weight:700;}
   .scorebar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:4px;}
   .scorebar i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--gold));}
+
+  /* ===== ガチャ演出（SVG対応） ===== */
+  .gx-star{width:20px;height:20px;color:#fff;}
+  .gx-reveal .ring svg{width:80px;height:80px;}
+  .gx-multi .mini .t{height:30px;display:flex;align-items:center;justify-content:center;}
+  .gx-multi .mini .t svg{width:30px;height:30px;}
+
+  /* ===== キャラエディター ===== */
+  .editHead{display:flex;align-items:center;gap:6px;cursor:pointer;}
+  .editHead .caret{margin-left:auto;transition:transform .2s;color:var(--text-soft);}
+  .editBody{margin-top:8px;display:none;}
+  .editBody.open{display:block;}
+  .editHead.open .caret{transform:rotate(180deg);}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:5px 11px;
+    font-size:11px;font-weight:500;color:var(--text);cursor:pointer;font-family:inherit;transition:all .12s;}
+  .chip:active{transform:scale(.95);}
+  .chip.on{background:var(--rose);border-color:var(--rose);color:#fff;font-weight:700;}
+  .chip.preset{background:var(--pink);border-color:var(--pink-d);color:#fff;font-weight:700;}
+  .chip.preset.on{background:var(--rose);border-color:var(--rose);}
+  .swatchRow{display:flex;gap:8px;flex-wrap:wrap;}
+  .sw{width:34px;height:34px;border-radius:9px;border:2px solid transparent;cursor:pointer;
+    box-shadow:var(--shadow);position:relative;transition:transform .1s;}
+  .sw:active{transform:scale(.94);}
+  .sw.on{border-color:var(--rose);}
+  .sw.on::after{content:"";position:absolute;inset:0;border-radius:7px;border:2px solid #fff;}
+  .elbl{font-size:10px;color:var(--text-soft);margin:9px 0 4px;font-weight:500;}
+  .slider{display:flex;align-items:center;gap:10px;margin:5px 0;}
+  .slider .nm{font-size:11px;width:64px;color:var(--text);font-weight:500;}
+  .slider .val{font-size:11px;width:32px;text-align:right;color:var(--rose);font-weight:700;}
+  input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:6px;border-radius:3px;
+    background:linear-gradient(90deg,var(--pink),var(--gold));outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+    background:#fff;border:2px solid var(--rose);box-shadow:var(--shadow);cursor:pointer;}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid var(--rose);cursor:pointer;}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
     <div class="title">きせかえマーケット<small>ファンタジー市場ものがたり</small></div>
-    <div class="stat"><b id="hCoin">0</b><span>🪙 リル</span></div>
-    <div class="stat"><b id="hDay">1</b><span>📅 日目</span></div>
+    <div class="stat"><span class="ico" data-ico="coin"></span><b id="hCoin">0</b><span>リル</span></div>
+    <div class="stat"><span class="ico" data-ico="calendar"></span><b id="hDay">1</b><span>日目</span></div>
   </header>
 
   <main id="main">
@@ -258,39 +305,59 @@
     <section class="screen active" id="scr-home">
       <div class="panel">
         <div id="charStage">
-          <svg id="charSvg" viewBox="0 0 200 230" preserveAspectRatio="xMidYMid meet"></svg>
+          <svg id="charSvg" viewBox="0 0 280 330" preserveAspectRatio="xMidYMid meet"></svg>
           <div class="floor"></div>
         </div>
       </div>
       <div class="panel">
-        <h2><span class="ic">👗</span>きせかえ</h2>
+        <h2><span class="ic" data-ico="dress"></span>きせかえ</h2>
         <div class="slots" id="slotGrid"></div>
         <div class="row" style="margin-top:8px;">
-          <button class="btn ghost sm" id="btnRandom">🎲 おまかせ</button>
-          <button class="btn ghost sm" id="btnStrip">🧺 ぜんぶ外す</button>
+          <button class="btn ghost sm" id="btnRandom"><span class="ico" data-ico="dice"></span>おまかせ</button>
+          <button class="btn ghost sm" id="btnStrip"><span class="ico" data-ico="strip"></span>ぜんぶ外す</button>
         </div>
       </div>
       <div class="panel">
-        <h2><span class="ic">📰</span>街のうわさ</h2>
+        <h2 class="editHead" id="editToggle"><span class="ic" data-ico="face"></span>顔とベースを編集<span class="caret">▾</span></h2>
+        <div class="editBody" id="editBody">
+          <div class="elbl">顔の雰囲気</div><div class="chips" id="presetChips"></div>
+          <div class="elbl">目の形</div><div class="chips" id="eyeChips"></div>
+          <div class="elbl">眉の形</div><div class="chips" id="browChips"></div>
+          <div class="elbl">口の形</div><div class="chips" id="mouthChips"></div>
+          <div class="slider"><span class="nm">目の大きさ</span><input type="range" id="sEyeSize" min="0.8" max="1.3" step="0.05"><span class="val" id="vEyeSize"></span></div>
+          <div class="slider"><span class="nm">目の間隔</span><input type="range" id="sEyeGap" min="22" max="36" step="1"><span class="val" id="vEyeGap"></span></div>
+          <div class="elbl">髪の色（髪型を外した時のベース）</div><div class="swatchRow" id="hairSw"></div>
+          <div class="elbl">肌の色</div><div class="swatchRow" id="skinSw"></div>
+          <div class="elbl">パーツの位置を微調整</div><div class="chips" id="partChips"></div>
+          <div class="slider"><span class="nm">左右(X)</span><input type="range" id="sPosX" min="-24" max="24" step="1"><span class="val" id="vPosX"></span></div>
+          <div class="slider"><span class="nm">上下(Y)</span><input type="range" id="sPosY" min="-24" max="24" step="1"><span class="val" id="vPosY"></span></div>
+          <div class="row wrap" style="margin-top:6px;">
+            <button class="btn ghost sm" id="btnResetPart">この部位をリセット</button>
+            <button class="btn ghost sm" id="btnResetAll">全部リセット</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2><span class="ic" data-ico="news"></span>街のうわさ</h2>
         <div id="newsFeed"></div>
-        <button class="btn gold full" id="btnNextDay" style="margin-top:6px;">🌙 つぎの日へすすむ</button>
+        <button class="btn gold full" id="btnNextDay" style="margin-top:6px;"><span class="ico" data-ico="moon"></span>つぎの日へすすむ</button>
       </div>
     </section>
 
     <!-- ===== マーケット ===== -->
     <section class="screen" id="scr-market">
       <div class="panel">
-        <h2><span class="ic">📈</span>属性トレンド</h2>
+        <h2><span class="ic" data-ico="chart"></span>属性トレンド</h2>
         <div id="chartWrap"><canvas id="chart"></canvas></div>
         <div class="legend" id="legend"></div>
       </div>
       <div class="panel">
-        <h2><span class="ic">🛒</span>仕入れ（マーケット）</h2>
+        <h2><span class="ic" data-ico="cart"></span>仕入れ（マーケット）</h2>
         <p class="muted">安いときに買って、高くなったら売ろう。出品は毎日入れ替わるよ。</p>
         <div class="grid" id="buyGrid"></div>
       </div>
       <div class="panel">
-        <h2><span class="ic">💰</span>売却（手持ち）</h2>
+        <h2><span class="ic" data-ico="coin"></span>売却（手持ち）</h2>
         <p class="muted">売却手数料 <b id="feeLbl">15</b>%。トレンドが高いときが売り時！</p>
         <div class="grid" id="sellGrid"></div>
       </div>
@@ -299,17 +366,17 @@
     <!-- ===== ガチャ ===== -->
     <section class="screen" id="scr-gacha">
       <div class="panel" style="text-align:center;">
-        <h2 style="justify-content:center;"><span class="ic">✨</span>きらめきガチャ</h2>
-        <div style="font-size:54px;margin:6px 0;">🎀</div>
+        <h2 style="justify-content:center;"><span class="ic" data-ico="gacha"></span>きらめきガチャ</h2>
+        <div class="ico" data-ico="gacha" style="width:60px;height:60px;margin:8px auto;color:var(--rose);"></div>
         <p class="muted">N 60% / R 25% / SR 12% / SSR 3%<br>天井：<b id="ceilLbl">0</b>/60 回（SSR確定）</p>
         <div class="row" style="justify-content:center;margin-top:10px;">
-          <button class="btn full" id="btnGacha1">1回まわす<br><small>120 🪙</small></button>
-          <button class="btn gold full" id="btnGacha10">10連まわす<br><small>1,100 🪙</small></button>
+          <button class="btn full" id="btnGacha1">1回まわす<br><small>120 リル</small></button>
+          <button class="btn gold full" id="btnGacha10">10連まわす<br><small>1,100 リル</small></button>
         </div>
         <p class="muted" style="margin-top:8px;">ガチャ限定アイテムはクラフトでは作れないよ。</p>
       </div>
       <div class="panel">
-        <h2><span class="ic">🎁</span>ピックアップ</h2>
+        <h2><span class="ic" data-ico="gift"></span>ピックアップ</h2>
         <div class="grid" id="puGrid"></div>
       </div>
     </section>
@@ -317,15 +384,15 @@
     <!-- ===== クラフト ===== -->
     <section class="screen" id="scr-craft">
       <div class="panel">
-        <h2><span class="ic">🧵</span>クラフト工房</h2>
+        <h2><span class="ic" data-ico="craft"></span>クラフト工房</h2>
         <p class="muted">素材を市場で安く仕入れて、可愛いアイテムに加工して売ろう。レシピは審査報酬などで増えるよ。</p>
       </div>
       <div class="panel">
-        <h2><span class="ic">📜</span>覚えたレシピ</h2>
+        <h2><span class="ic" data-ico="scroll"></span>覚えたレシピ</h2>
         <div id="recipeList"></div>
       </div>
       <div class="panel">
-        <h2><span class="ic">🧶</span>手持ちの素材</h2>
+        <h2><span class="ic" data-ico="material"></span>手持ちの素材</h2>
         <div class="grid" id="matGrid"></div>
       </div>
     </section>
@@ -338,7 +405,7 @@
     <!-- ===== 図鑑/持ち物 ===== -->
     <section class="screen" id="scr-bag">
       <div class="panel">
-        <h2><span class="ic">👜</span>もちもの図鑑</h2>
+        <h2><span class="ic" data-ico="bag"></span>もちもの図鑑</h2>
         <div class="seg" id="bagFilter">
           <button class="on" data-f="all">ぜんぶ</button>
           <button data-f="hair">髪</button>
@@ -352,10 +419,10 @@
         <div class="grid" id="bagGrid"></div>
       </div>
       <div class="panel">
-        <h2><span class="ic">⚙️</span>データ</h2>
+        <h2><span class="ic" data-ico="gear"></span>データ</h2>
         <div class="row wrap">
-          <button class="btn ghost sm" id="btnSave">💾 セーブ</button>
-          <button class="btn ghost sm" id="btnReset">🗑 リセット</button>
+          <button class="btn ghost sm" id="btnSave"><span class="ico" data-ico="save"></span>セーブ</button>
+          <button class="btn ghost sm" id="btnReset"><span class="ico" data-ico="trash"></span>リセット</button>
         </div>
         <p class="muted" style="margin-top:6px;">進行は自動でブラウザに保存されます。</p>
       </div>
@@ -364,12 +431,12 @@
   </main>
 
   <nav>
-    <button class="active" data-scr="home"><span class="ic">🏠</span>メイン</button>
-    <button data-scr="market"><span class="ic">📈</span>市場</button>
-    <button data-scr="gacha"><span class="ic">✨</span>ガチャ</button>
-    <button data-scr="craft"><span class="ic">🧵</span>クラフト</button>
-    <button data-scr="code"><span class="ic">🏆</span>審査</button>
-    <button data-scr="bag"><span class="ic">👜</span>図鑑</button>
+    <button class="active" data-scr="home"><span class="ic" data-ico="home"></span>メイン</button>
+    <button data-scr="market"><span class="ic" data-ico="market"></span>市場</button>
+    <button data-scr="gacha"><span class="ic" data-ico="gacha"></span>ガチャ</button>
+    <button data-scr="craft"><span class="ic" data-ico="craft"></span>クラフト</button>
+    <button data-scr="code"><span class="ic" data-ico="trophy"></span>審査</button>
+    <button data-scr="bag"><span class="ic" data-ico="bag"></span>図鑑</button>
   </nav>
 </div>
 
@@ -394,6 +461,70 @@
    設計書：ファンタジー市場ゲーム（着せ替え×市場売買）
    ========================================================= */
 
+/* =========================================================
+   共通：色ユーティリティ & カスタムSVGアイコン（絵文字全廃）
+   ========================================================= */
+function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  const t=p<0?0:255,a=Math.abs(p);r=Math.round((t-r)*a+r);g=Math.round((t-g)*a+g);b=Math.round((t-b)*a+b);
+  return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
+
+const ICONS={
+  home:`<path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>`,
+  market:`<path d="M12 3v16"/><path d="M6 20h12"/><path d="M5 7h14"/><path d="M5 7 3 13a3 3 0 0 0 6 0L7 7"/><path d="M17 7l-2 6a3 3 0 0 0 6 0l-2-6"/>`,
+  chart:`<path d="M4 4v16h16"/><path d="M7 14l3-4 3 3 4-6"/>`,
+  cart:`<path d="M3 4h2l2 12h11"/><path d="M7 16 5.5 8H20l-2 6H7"/><circle cx="9" cy="20" r="1.3" fill="currentColor" stroke="none"/><circle cx="17" cy="20" r="1.3" fill="currentColor" stroke="none"/>`,
+  coin:`<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5l1.4 2.9 3.1.4-2.3 2.2.6 3.1L12 16.6 9.2 18l.6-3.1L7.5 12.7l3.1-.4z" fill="currentColor" stroke="none"/>`,
+  calendar:`<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9h16"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M8 13h3"/><path d="M8 16h6"/>`,
+  gacha:`<path d="M4 10a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3"/><path d="M4 12h16"/><path d="M12 12v3"/><circle cx="12" cy="11" r="1.2" fill="currentColor" stroke="none"/>`,
+  gift:`<rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M3 9h18"/><path d="M12 9v11"/><path d="M12 9C9 9 7.5 4 12 4c4.5 0 3 5 0 5z"/>`,
+  craft:`<path d="M4 18h10"/><path d="M5 18v-2a4 4 0 0 1 4-4h4"/><path d="M13 7l5-3 2 3-5 3z"/><path d="M13 7l-2 4"/>`,
+  scroll:`<path d="M6 4h11a2 2 0 0 1 2 2v1H8"/><path d="M6 4a2 2 0 0 0-2 2v1h4"/><path d="M8 7v11a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1H10"/><path d="M11 11h6"/><path d="M11 14h6"/>`,
+  material:`<circle cx="12" cy="12" r="8"/><path d="M6 9c4 1 8 1 12 0"/><path d="M5 13c4 2 10 2 14 0"/><path d="M9 5c-1 5-1 9 0 14"/><path d="M15 5c1 5 1 9 0 14"/>`,
+  bag:`<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 12v1"/><path d="M15 12v1"/>`,
+  trophy:`<path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4a2 2 0 0 0 2 4"/><path d="M17 6h3a2 2 0 0 1-2 4"/><path d="M12 13v3"/><path d="M8 20h8"/><path d="M9 20a3 3 0 0 1 6 0"/>`,
+  gear:`<circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/>`,
+  save:`<path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4"/><rect x="8" y="13" width="8" height="6"/>`,
+  trash:`<path d="M5 7h14"/><path d="M9 7V5h6v2"/><path d="M7 7l1 13h8l1-13"/><path d="M11 11v6M13 11v6"/>`,
+  dress:`<path d="M9 4l3 2 3-2"/><path d="M9 4 7 9l2 1-2 9h10l-2-9 2-1-2-5"/>`,
+  dice:`<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/>`,
+  strip:`<path d="M12 4a1.6 1.6 0 1 1 1 2.8L12 8"/><path d="M4 14 12 8l8 6"/><path d="M5 14h14v2a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/>`,
+  face:`<circle cx="12" cy="12" r="8.5"/><circle cx="9" cy="11" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="11" r="1.1" fill="currentColor" stroke="none"/><path d="M9 15c1.5 1.4 4.5 1.4 6 0"/>`,
+  news:`<rect x="4" y="5" width="16" height="14" rx="1.5"/><path d="M7 9h6M7 12h6M7 15h4"/><path d="M16 9h1.5v3H16z"/>`,
+  moon:`<path d="M19 13.5A7 7 0 1 1 10.5 5 5.5 5.5 0 0 0 19 13.5z"/><path d="M16 4l.6 1.6L18 6l-1.4.4L16 8l-.6-1.6L14 6l1.4-.4z" fill="currentColor" stroke="none"/>`,
+  sparkle:`<path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6z"/>`,
+  heart:`<path d="M12 20S4 14.5 4 9.2A4.2 4.2 0 0 1 12 7a4.2 4.2 0 0 1 8 2.2C20 14.5 12 20 12 20z"/>`,
+  check:`<path d="M5 12l5 5L20 6"/>`,
+  /* アイテム（スロット別・塗り対応） */
+  i_hair:`<path d="M5 13C4 6 8 3 12 3s8 3 7 10c0 0-1-4-4-4l-1 2-2-2-2 2-1-2c-3 0-3 4-3 4z" stroke-width="1.4"/>`,
+  i_tops:`<path d="M9 4 5 7l1.5 3L8 9v11h8V9l1.5 1L19 7l-4-3-3 2z" stroke-width="1.4"/>`,
+  i_bottoms:`<path d="M7 5h10l2 14-6-2-6 2z" stroke-width="1.4"/><path d="M7 5h10"/>`,
+  i_shoes:`<path d="M3 14c3 0 4-1 6-3 1 2 3 2 9 3l1 3H3z" stroke-width="1.4"/>`,
+  i_acc:`<path d="M12 3l3 4-3 13L9 7z" stroke-width="1.4"/><path d="M9 7h6"/>`,
+  i_bg:`<rect x="4" y="5" width="16" height="14" rx="2" stroke-width="1.4"/><path d="M4 15l4-4 3 3 4-5 5 6" stroke-width="1.2"/><circle cx="9" cy="9" r="1.3"/>`,
+  /* 素材 */
+  m_cloth:`<path d="M4 7l8-3 8 3-8 3z" stroke-width="1.4"/><path d="M4 7v6l8 3 8-3V7"/>`,
+  m_lace:`<rect x="6" y="4" width="12" height="16" rx="2" stroke-width="1.4"/><path d="M9 8h6M9 12h6M9 16h6"/>`,
+  m_shell:`<path d="M12 19C5 13 7 5 12 5s7 8 0 14z" stroke-width="1.4"/><path d="M12 6v12M8 8l8 0M9 12h6"/>`,
+  m_leaf:`<path d="M5 19C5 9 12 5 19 5c0 10-7 14-14 14z" stroke-width="1.4"/><path d="M9 15c2-4 5-6 8-7"/>`,
+  m_gem:`<path d="M7 4h10l4 5-9 11L3 9z" stroke-width="1.4"/><path d="M3 9h18M9 4l-2 5 5 11 5-11-2-5"/>`,
+  m_thread:`<circle cx="12" cy="12" r="8" stroke-width="1.4"/><path d="M6 9c4 1 8 1 12 0M5 13c4 2 10 2 14 0M9 5c-1 5-1 9 0 14M15 5c1 5 1 9 0 14"/>`,
+};
+/* data-ico プレースホルダにSVGを注入（CSSで親サイズ） */
+function injectIcons(root){
+  (root||document).querySelectorAll("[data-ico]").forEach(el=>{
+    const k=el.dataset.ico; if(!ICONS[k]||el.dataset.done) return; el.dataset.done="1";
+    el.innerHTML=`<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</svg>`;
+  });
+}
+/* テンプレ文字列用：明示サイズのアイコン */
+function ic(key,size,color){size=size||18;color=color||"currentColor";
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">${ICONS[key]||""}</svg>`;}
+/* アイテムのサムネ（スロット形状＋属性カラー） */
+function itemThumb(it,size){size=size||40;const c=ATTRS[it.attr].color;
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${shade(c,0.42)}" stroke="${shade(c,-0.28)}" stroke-linecap="round" stroke-linejoin="round">${ICONS["i_"+it.slot]||""}</svg>`;}
+function matThumb(mid,size){size=size||40;const c=MATERIALS[mid].color||"#D4A574";
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${shade(c,0.42)}" stroke="${shade(c,-0.25)}" stroke-linecap="round" stroke-linejoin="round">${ICONS[mid]||ICONS.material}</svg>`;}
+
 /* ---------- 属性 ---------- */
 const ATTRS = {
   pastel:  {jp:"パステル",  color:"#e6a9c4", cls:"at-pastel",  season:"summer"},
@@ -415,12 +546,12 @@ const RARITY = {
 
 /* ---------- スロット ---------- */
 const SLOTS = {
-  hair:    {jp:"髪型",     ic:"💇"},
-  tops:    {jp:"トップス", ic:"👚"},
-  bottoms: {jp:"ボトムス", ic:"👖"},
-  shoes:   {jp:"シューズ", ic:"👟"},
-  acc:     {jp:"小物",     ic:"💍"},
-  bg:      {jp:"背景小物", ic:"🪴"},
+  hair:    {jp:"髪型"},
+  tops:    {jp:"トップス"},
+  bottoms: {jp:"ボトムス"},
+  shoes:   {jp:"シューズ"},
+  acc:     {jp:"小物"},
+  bg:      {jp:"背景小物"},
 };
 const SLOT_KEYS = Object.keys(SLOTS);
 
@@ -431,58 +562,58 @@ function add(name,slot,attr,rar,base,variant,thumb,src){
   ITEMS.push({id:"i"+(_id++),name,slot,attr,rarity:rar,base,variant,thumb,src});
 }
 // --- 髪型 ---
-add("ふわリボンツイン","hair","pastel","R",260,0,"🎀","gacha");
-add("ナイトレイヴン","hair","gothic","SR",520,1,"🦇","gacha");
-add("もりのおさげ","hair","natural","N",120,2,"🌿","gacha");
-add("アイスショート","hair","cool","R",240,3,"❄️","gacha");
-add("ようせいロング","hair","fairy","SSR",1400,4,"🧚","gacha");
-add("しおかぜボブ","hair","marine","N",110,5,"🌊","craft");
+add("ふわリボンツイン","hair","pastel","R",260,0,"","gacha");
+add("ナイトレイヴン","hair","gothic","SR",520,1,"","gacha");
+add("もりのおさげ","hair","natural","N",120,2,"","gacha");
+add("アイスショート","hair","cool","R",240,3,"","gacha");
+add("ようせいロング","hair","fairy","SSR",1400,4,"","gacha");
+add("しおかぜボブ","hair","marine","N",110,5,"","craft");
 // --- トップス ---
-add("いちごブラウス","tops","pastel","N",130,0,"🍓","gacha");
-add("くろレースドレス","tops","gothic","SSR",1500,1,"🖤","gacha");
-add("リネンシャツ","tops","natural","R",250,2,"🌾","craft");
-add("スターニット","tops","cool","SR",560,3,"⭐","gacha");
-add("ゆめいろケープ","tops","fairy","SR",540,4,"💫","gacha");
-add("セーラーカラー","tops","marine","R",260,5,"⚓","craft");
+add("いちごブラウス","tops","pastel","N",130,0,"","gacha");
+add("くろレースドレス","tops","gothic","SSR",1500,1,"","gacha");
+add("リネンシャツ","tops","natural","R",250,2,"","craft");
+add("スターニット","tops","cool","SR",560,3,"","gacha");
+add("ゆめいろケープ","tops","fairy","SR",540,4,"","gacha");
+add("セーラーカラー","tops","marine","R",260,5,"","craft");
 // --- ボトムス ---
-add("ふんわりスカート","bottoms","pastel","R",240,0,"🌸","gacha");
-add("ゴシックパニエ","bottoms","gothic","SR",520,1,"🕸️","gacha");
-add("コットンロング","bottoms","natural","N",110,2,"🍃","craft");
-add("クールデニム","bottoms","cool","N",120,3,"🩳","gacha");
-add("はねつきスカート","bottoms","fairy","SSR",1450,4,"🪶","gacha");
-add("マリンショーツ","bottoms","marine","R",230,5,"🐚","craft");
+add("ふんわりスカート","bottoms","pastel","R",240,0,"","gacha");
+add("ゴシックパニエ","bottoms","gothic","SR",520,1,"","gacha");
+add("コットンロング","bottoms","natural","N",110,2,"","craft");
+add("クールデニム","bottoms","cool","N",120,3,"","gacha");
+add("はねつきスカート","bottoms","fairy","SSR",1450,4,"","gacha");
+add("マリンショーツ","bottoms","marine","R",230,5,"","craft");
 // --- シューズ ---
-add("りぼんパンプス","shoes","pastel","R",230,0,"👠","gacha");
-add("ブーツノワール","shoes","gothic","R",250,1,"🥾","gacha");
-add("くさはらサンダル","shoes","natural","N",100,2,"👡","craft");
-add("グレイシアブーツ","shoes","cool","SR",510,3,"🧊","gacha");
-add("ガラスのくつ","shoes","fairy","SSR",1600,4,"👑","gacha");
-add("なみうちサンダル","shoes","marine","N",95,5,"🩴","craft");
+add("りぼんパンプス","shoes","pastel","R",230,0,"","gacha");
+add("ブーツノワール","shoes","gothic","R",250,1,"","gacha");
+add("くさはらサンダル","shoes","natural","N",100,2,"","craft");
+add("グレイシアブーツ","shoes","cool","SR",510,3,"","gacha");
+add("ガラスのくつ","shoes","fairy","SSR",1600,4,"","gacha");
+add("なみうちサンダル","shoes","marine","N",95,5,"","craft");
 // --- 小物 ---
-add("いちごバッグ","acc","pastel","N",115,0,"🍰","gacha");
-add("コウモリチョーカー","acc","gothic","SR",530,1,"🦇","gacha");
-add("おはなかんむり","acc","natural","R",240,2,"🌼","craft");
-add("こおりイヤリング","acc","cool","R",235,3,"💎","gacha");
-add("ようせいのつえ","acc","fairy","SSR",1550,4,"🪄","gacha");
-add("ひとでピアス","acc","marine","N",100,5,"⭐","craft");
+add("いちごバッグ","acc","pastel","N",115,0,"","gacha");
+add("コウモリチョーカー","acc","gothic","SR",530,1,"","gacha");
+add("おはなかんむり","acc","natural","R",240,2,"","craft");
+add("こおりイヤリング","acc","cool","R",235,3,"","gacha");
+add("ようせいのつえ","acc","fairy","SSR",1550,4,"","gacha");
+add("ひとでピアス","acc","marine","N",100,5,"","craft");
 // --- 背景小物 ---
-add("ゆめかわベッド","bg","pastel","R",220,0,"🛏️","gacha");
-add("シャンデリア","bg","gothic","SR",500,1,"🕯️","gacha");
-add("もりのきのこ","bg","natural","N",90,2,"🍄","craft");
-add("ゆきのまど","bg","cool","R",225,3,"🪟","gacha");
-add("ほしぞらドーム","bg","fairy","SR",560,4,"🌌","gacha");
-add("すいそうランプ","bg","marine","R",230,5,"🐠","craft");
+add("ゆめかわベッド","bg","pastel","R",220,0,"","gacha");
+add("シャンデリア","bg","gothic","SR",500,1,"","gacha");
+add("もりのきのこ","bg","natural","N",90,2,"","craft");
+add("ゆきのまど","bg","cool","R",225,3,"","gacha");
+add("ほしぞらドーム","bg","fairy","SR",560,4,"","gacha");
+add("すいそうランプ","bg","marine","R",230,5,"","craft");
 
 const ITEM_BY_ID = Object.fromEntries(ITEMS.map(i=>[i.id,i]));
 
 /* ---------- 素材 ---------- */
 const MATERIALS = {
-  m_cloth: {name:"やわらか布",  base:40, thumb:"🧵"},
-  m_lace:  {name:"レース",      base:70, thumb:"🪡"},
-  m_shell: {name:"きれいな貝",  base:55, thumb:"🐚"},
-  m_leaf:  {name:"つやはっぱ",  base:35, thumb:"🍃"},
-  m_gem:   {name:"こな宝石",    base:90, thumb:"💎"},
-  m_thread:{name:"きんの糸",    base:80, thumb:"🧶"},
+  m_cloth: {name:"やわらか布",  base:40, color:"#E8B4C8"},
+  m_lace:  {name:"レース",      base:70, color:"#C2A9E0"},
+  m_shell: {name:"きれいな貝",  base:55, color:"#7FBEC4"},
+  m_leaf:  {name:"つやはっぱ",  base:35, color:"#9DB389"},
+  m_gem:   {name:"こな宝石",    base:90, color:"#7FA6CC"},
+  m_thread:{name:"きんの糸",    base:80, color:"#D4A574"},
 };
 const MAT_KEYS = Object.keys(MATERIALS);
 
@@ -501,12 +632,12 @@ const RECIPES = [
 
 /* ---------- 審査テーマ ---------- */
 const CODE_THEMES = [
-  {name:"雨の日デート",   attr:"cool",    ic:"☔"},
-  {name:"パーティーナイト",attr:"gothic", ic:"🌃"},
-  {name:"森のお散歩",     attr:"natural", ic:"🌳"},
-  {name:"ゆめの女の子",   attr:"fairy",   ic:"🌙"},
-  {name:"なつの海辺",     attr:"marine",  ic:"🏖️"},
-  {name:"あまいティータイム",attr:"pastel",ic:"🍮"},
+  {name:"雨の日デート",   attr:"cool",    ic:"chart"},
+  {name:"パーティーナイト",attr:"gothic", ic:"sparkle"},
+  {name:"森のお散歩",     attr:"natural", ic:"material"},
+  {name:"ゆめの女の子",   attr:"fairy",   ic:"moon"},
+  {name:"なつの海辺",     attr:"marine",  ic:"sparkle"},
+  {name:"あまいティータイム",attr:"pastel",ic:"gift"},
 ];
 
 /* =========================================================
@@ -519,6 +650,7 @@ function newGame(){
   return {
     coin: 800,
     day: 1,
+    face: defaultFace(),     // 顔・ベースのカスタマイズ
     inv: {},                 // itemId -> qty
     mats: {},                // matId -> qty
     equip: {hair:null,tops:null,bottoms:null,shoes:null,acc:null,bg:null},
@@ -625,10 +757,10 @@ function genNews(){
       const mult = up ? (1.3+Math.random()*0.2) : (0.7-Math.random()*0.1);
       S.events.push({attr:a, mult, daysLeft:2+Math.floor(Math.random()*2),
         name:(up?ATTRS[a].jp+"フェス開催！":ATTRS[a].jp+"ブームに陰り")});
-      S.news.push({type:"spike", ic: up?"🎉":"📉",
-        text:`<b>${ATTRS[a].jp}</b>${up?"フェス開催！価格が急上昇📈":"人気が急降下📉 価格ダウン"}`});
+      S.news.push({type:"spike", ic: up?"sparkle":"chart",
+        text:`<b>${ATTRS[a].jp}</b>${up?"フェス開催！価格が急上昇":"人気が急降下 価格ダウン"}`});
     } else {
-      S.news.push({type:"omen", ic:"🍃", text:`${ATTRS[S.omen.attr].jp}の噂は<b>ハズレ</b>だったみたい…`});
+      S.news.push({type:"omen", ic:"material", text:`${ATTRS[S.omen.attr].jp}の噂は<b>ハズレ</b>だったみたい…`});
     }
     S.omen = null;
   }
@@ -637,17 +769,17 @@ function genNews(){
     const a = ATTR_KEYS[Math.floor(Math.random()*ATTR_KEYS.length)];
     const up = Math.random()<0.6;
     S.omen = {attr:a, up};
-    S.news.push({type:"omen", ic:"👂",
-      text:`<b>${ATTRS[a].jp}</b>${up?"フェスの噂が…？📈かも":"離れの噂が…？📉かも"}（確定じゃないよ）`});
+    S.news.push({type:"omen", ic:"news",
+      text:`<b>${ATTRS[a].jp}</b>${up?"フェスの噂が…？上がるかも":"離れの噂が…？下がるかも"}（確定じゃないよ）`});
   }
   // 季節フレーバー
   const seasons=["はる","なつ","あき","ふゆ"];
   const sIdx = Math.floor(((S.day-1)/6))%4;
   if((S.day-1)%6===0){
-    S.news.push({type:"info", ic:"🗓️", text:`季節は<b>${seasons[sIdx]}</b>。旬の属性が上がりやすいよ。`});
+    S.news.push({type:"info", ic:"calendar", text:`季節は<b>${seasons[sIdx]}</b>。旬の属性が上がりやすいよ。`});
   }
   if(S.news.length===0){
-    S.news.push({type:"info", ic:"🌤️", text:"今日はおだやかな相場。じっくりトレンドを読もう。"});
+    S.news.push({type:"info", ic:"sparkle", text:"今日はおだやかな相場。じっくりトレンドを読もう。"});
   }
 }
 function tickEvents(){
@@ -666,7 +798,7 @@ function nextDay(){
   maybeStartCode();
   save();
   renderAll();
-  toast("🌙 "+S.day+"日目の朝。市場が更新されたよ");
+  toast(S.day+"日目の朝。市場が更新されたよ");
 }
 
 /* =========================================================
@@ -676,7 +808,7 @@ function maybeStartCode(){
   if(S.day>=S.nextCodeDay && !S.code){
     const t = CODE_THEMES[Math.floor(Math.random()*CODE_THEMES.length)];
     S.code = {theme:t, done:false, sel:{...S.equip}};
-    toast("🏆 コーデ審査が始まったよ！「"+t.name+"」");
+    toast("コーデ審査が始まったよ！「"+t.name+"」");
   }
 }
 function codeScore(sel){
@@ -705,23 +837,24 @@ function submitCode(){
   // ボーナス：高得点でレシピ解放 or 素材
   if(sc.total>=120){
     const locked = RECIPES.filter(r=>!r.known);
-    if(locked.length){ locked[0].known=true; extra="📜 新レシピ「"+ITEM_BY_ID[locked[0].out].name+"」を発見！"; }
+    if(locked.length){ locked[0].known=true; extra="新レシピ「"+ITEM_BY_ID[locked[0].out].name+"」を発見！"; }
   }
   if(!extra){
     // 素材ごほうび
     const m = MAT_KEYS[Math.floor(Math.random()*MAT_KEYS.length)];
     const q = 2+Math.floor(Math.random()*3);
-    S.mats[m]=(S.mats[m]||0)+q; extra="🧶 素材「"+MATERIALS[m].name+"」×"+q+"をゲット！";
+    S.mats[m]=(S.mats[m]||0)+q; extra="素材「"+MATERIALS[m].name+"」×"+q+"をゲット！";
   }
   S.code.done=true;
   S.nextCodeDay = S.day + 4;
   save();
-  openModal("🏆 審査けっか","<div style='text-align:center'>"+
-    "<div style='font-size:40px'>"+(sc.total>=120?"🌟":sc.total>=70?"✨":"💗")+"</div>"+
+  const bigIco = sc.total>=120?ic('trophy',40,'var(--gold)'):sc.total>=70?ic('sparkle',40,'var(--pink-d)'):ic('heart',40,'var(--pink-d)');
+  openModal("審査けっか","<div style='text-align:center'>"+
+    "<div>"+bigIco+"</div>"+
     "<div style='font-size:22px;font-weight:800;color:var(--rose)'>スコア "+sc.total+"</div>"+
     "<p class='muted'>属性マッチ +"+sc.attrMatch+" / レア +"+sc.rarPts+" / セット +"+sc.setBonus+" / 着用 +"+sc.fillBonus+"</p>"+
     "<hr style='border:none;border-top:1px solid var(--line)'>"+
-    "<p>🪙 <b>"+coinR.toLocaleString()+"</b> リル獲得！</p>"+
+    "<p style='display:flex;align-items:center;justify-content:center;gap:4px'>"+ic('coin',16,'var(--gold)')+"<b>"+coinR.toLocaleString()+"</b> リル獲得！</p>"+
     "<p>"+extra+"</p>"+
     "<button class='btn full' onclick='closeModal();go(\"home\")' style='margin-top:8px'>とじる</button></div>");
   renderAll();
@@ -748,7 +881,7 @@ function pullOne(forceSSR){
 }
 function doGacha(count){
   const cost = count===1?120:1100;
-  if(S.coin<cost){ toast("🪙 リルが足りないよ"); return; }
+  if(S.coin<cost){ toast("リルが足りないよ"); return; }
   S.coin -= cost;
   const results=[];
   for(let i=0;i<count;i++){
@@ -771,24 +904,23 @@ function playGachaFx(results){
   fx.classList.add("show");
   // 星エフェクト
   let stars="";
-  const isHi = best.rarity==="SSR"||best.rarity==="SR";
   const starN = best.rarity==="SSR"?26:best.rarity==="SR"?16:8;
   for(let i=0;i<starN;i++){
-    const e=["✨","⭐","💫","🌟","💗"][i%5];
-    stars+=`<span class="gx-star" style="left:${Math.random()*100}%;bottom:${Math.random()*30}%;animation-delay:${Math.random()*1.4}s;font-size:${14+Math.random()*16}px">${e}</span>`;
+    const sz=14+Math.random()*16;
+    stars+=`<span class="gx-star" style="left:${Math.random()*100}%;bottom:${Math.random()*30}%;width:${sz}px;height:${sz}px;animation-delay:${Math.random()*1.4}s">${ic('sparkle',sz,'#fff')}</span>`;
   }
   if(results.length===1){
     const it=results[0]; const rc=RARITY[it.rarity].color;
     inner.innerHTML = stars + `<div class="gx-reveal" id="gxR">
       <div class="sub ${it.rarity==='SSR'?'rainbow':''}" style="color:${rc}">${it.rarity}</div>
-      <div class="ring" style="background:radial-gradient(circle,${rc}55,transparent 70%);box-shadow:0 0 40px ${rc}">${it.thumb}</div>
+      <div class="ring" style="background:radial-gradient(circle,${rc}55,transparent 70%);box-shadow:0 0 40px ${rc}">${itemThumb(it,80)}</div>
       <div class="nm">${it.name}</div>
       <div class="sub" style="font-size:11px;color:#d9c2cd">${SLOTS[it.slot].jp} / ${ATTRS[it.attr].jp}</div>
       <div style="color:#bda7b1;font-size:11px;margin-top:8px">タップでとじる</div></div>`;
   } else {
     let minis="";
     results.forEach(it=>{ const rc=RARITY[it.rarity].color;
-      minis+=`<div class="mini" style="border:1px solid ${rc}"><div class="t">${it.thumb}</div>
+      minis+=`<div class="mini" style="border:1px solid ${rc}"><div class="t">${itemThumb(it,30)}</div>
         <div style="color:${rc};font-weight:800">${it.rarity}</div>${it.name}</div>`;});
     inner.innerHTML = stars + `<div class="gx-reveal" id="gxR">
       <div class="sub ${best.rarity==='SSR'?'rainbow':''}" style="color:${RARITY[best.rarity].color}">10連けっか</div>
@@ -812,7 +944,7 @@ function craft(r){
   S.inv[it.id]=(S.inv[it.id]||0)+1;
   S.seen[it.id]=true;
   save(); renderAll();
-  toast("🧵 「"+it.name+"」をクラフトしたよ！");
+  toast("「"+it.name+"」をクラフトしたよ！");
 }
 
 /* =========================================================
@@ -820,12 +952,12 @@ function craft(r){
    ========================================================= */
 function buyItem(listing){
   if(listing.stock<=0){ toast("売り切れだよ"); return; }
-  if(S.coin<listing.price){ toast("🪙 リルが足りないよ"); return; }
+  if(S.coin<listing.price){ toast("リルが足りないよ"); return; }
   S.coin-=listing.price; listing.stock--;
   const it=ITEM_BY_ID[listing.id];
   S.inv[it.id]=(S.inv[it.id]||0)+1; S.seen[it.id]=true;
   save(); renderMarket(); renderHeader();
-  toast("🛒 「"+it.name+"」を仕入れた！");
+  toast("「"+it.name+"」を仕入れた！");
 }
 function sellItem(id){
   if((S.inv[id]||0)<=0) return;
@@ -838,78 +970,279 @@ function sellItem(id){
   }
   S.coin+=net;
   save(); renderMarket(); renderHeader(); renderHome();
-  toast("💰 "+net.toLocaleString()+" リルで売却（手数料引後）");
+  toast(net.toLocaleString()+" リルで売却（手数料引後）");
 }
 function buyMat(mid){
   const p=matMarket[mid];
-  if(S.coin<p){ toast("🪙 リルが足りないよ"); return; }
+  if(S.coin<p){ toast("リルが足りないよ"); return; }
   S.coin-=p; S.mats[mid]=(S.mats[mid]||0)+1;
   save(); renderMarket(); renderCraft(); renderHeader();
-  toast("🧶 「"+MATERIALS[mid].name+"」を仕入れた！");
+  toast("「"+MATERIALS[mid].name+"」を仕入れた！");
 }
 
 /* =========================================================
-   キャラ描画（SVGレイヤー）
+   キャラ描画（高品質SVG・グループ分離 / 顔エディター対応）
    ========================================================= */
-function svgBase(){
-  // 肌・顔・体
-  return `
-  <g>
-    <!-- 脚 -->
-    <rect x="84" y="158" width="12" height="46" rx="6" fill="#f3cdb6"/>
-    <rect x="104" y="158" width="12" height="46" rx="6" fill="#f3cdb6"/>
-    <!-- 体 -->
-    <rect x="74" y="120" width="52" height="50" rx="18" fill="#f3cdb6"/>
-    <!-- 腕 -->
-    <rect x="60" y="124" width="12" height="40" rx="6" fill="#f3cdb6"/>
-    <rect x="128" y="124" width="12" height="40" rx="6" fill="#f3cdb6"/>
-    <!-- 頭 -->
-    <circle cx="100" cy="76" r="44" fill="#f6d6bf"/>
-    <!-- ほっぺ -->
-    <circle cx="80" cy="86" r="7" fill="#f3a9b6" opacity=".55"/>
-    <circle cx="120" cy="86" r="7" fill="#f3a9b6" opacity=".55"/>
-    <!-- 目 -->
-    <ellipse cx="86" cy="78" rx="5.5" ry="7" fill="#5a4450"/>
-    <ellipse cx="114" cy="78" rx="5.5" ry="7" fill="#5a4450"/>
-    <circle cx="88" cy="75" r="1.8" fill="#fff"/><circle cx="116" cy="75" r="1.8" fill="#fff"/>
-    <!-- 口 -->
-    <path d="M95 94 Q100 99 105 94" stroke="#c07d86" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-  </g>`;
+const HAIRBASE={rose:{root:"#A86A82",tip:"#E8B4C8"},honey:{root:"#B0855A",tip:"#E6C58F"},
+  ash:{root:"#6E5A66",tip:"#A98FA0"},cocoa:{root:"#6B4A3A",tip:"#A8806A"},mint:{root:"#6FA39A",tip:"#AED9CE"}};
+const SKINS={fair:{s0:"#FCE4D6",s1:"#F6C9B2",line:"#B88A6E"},
+  warm:{s0:"#F6D2B6",s1:"#E8B391",line:"#A8744E"},
+  deep:{s0:"#D9A883",s1:"#BE8862",line:"#8A5A38"}};
+const EYE_STYLES={round:"ぱっちり",sparkle:"きらきら",sharp:"つり目",droopy:"たれ目",sleepy:"ねむそう"};
+const BROW_STYLES={soft:"やわらか",straight:"まっすぐ",angled:"りりしい",worried:"こまり"};
+const MOUTH_STYLES={smile:"にこっ",line:"すまし",smirk:"にやり",open:"あーん",pout:"むぅ"};
+const PRESETS={
+  おっとり:{eye:"droopy",brow:"soft",mouth:"smile",eyeSize:1.05,eyeGap:29},
+  クール:  {eye:"sharp", brow:"angled",mouth:"line",eyeSize:0.95,eyeGap:28},
+  げんき:  {eye:"sparkle",brow:"soft",mouth:"open",eyeSize:1.1,eyeGap:28},
+  ねむねむ:{eye:"sleepy",brow:"worried",mouth:"pout",eyeSize:1.0,eyeGap:28},
+  すまし:  {eye:"round", brow:"straight",mouth:"smirk",eyeSize:1.0,eyeGap:28},
+};
+const PART_LABELS={eyes:"目",brows:"眉",mouth:"口",hairFront:"前髪"};
+function defaultFace(){return{eye:"round",brow:"soft",mouth:"smile",eyeSize:1.05,eyeGap:29,
+  preset:"おっとり",hair:"rose",skin:"fair",blink:false,selPart:"eyes",
+  offsets:{eyes:{x:0,y:0},brows:{x:0,y:0},mouth:{x:0,y:0},hairFront:{x:0,y:0}}};}
+
+let charUid=0;
+function hairColorsFor(base){return {root:shade(base,-0.22),tip:base,hi:shade(base,0.30),line:shade(base,-0.42)};}
+
+/* --- 目 --- */
+function fEye(cx,dir,id,h){
+  const F=S.face,st=F.eye,s=F.eyeSize;
+  if(F.blink) return `<g transform="translate(${cx},112) scale(${s})"><path d="M-15 -2 q15 9 30 0" stroke="#5C3D4A" stroke-width="3" fill="none" stroke-linecap="round"/></g>`;
+  let base=`<ellipse cx="0" cy="0" rx="16" ry="19" fill="#FFFBFC"/>
+    <ellipse cx="0" cy="2" rx="14.5" ry="17" fill="url(#iris_${id})"/>
+    <ellipse cx="0" cy="4" rx="6.5" ry="8.5" fill="#3A2230"/>
+    <ellipse cx="0" cy="11" rx="9" ry="4" fill="${shade(h.tip,0.4)}" opacity=".55"/>
+    <ellipse cx="-5" cy="-6" rx="5" ry="6.5" fill="#fff" opacity=".95"/>
+    <circle cx="5" cy="8" r="2.6" fill="#fff" opacity=".9"/>`;
+  let extra="",lid="",topLash,flick="";
+  if(st==="sparkle") extra=`<path d="M7 -2 l1.1 2.8 2.8 1.1 -2.8 1.1 -1.1 2.8 -1.1 -2.8 -2.8 -1.1 2.8 -1.1z" fill="#fff" opacity=".95"/>`;
+  if(st==="round"||st==="sparkle"){
+    topLash=`<path d="M-16 -4 Q0 -20 16 -4" stroke="#5C3D4A" stroke-width="3.2" fill="none" stroke-linecap="round"/>`;
+    flick=`<path d="M${14*dir} -4 q${4*dir} -3 ${7*dir} 0" stroke="#5C3D4A" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  }else if(st==="sharp"){
+    topLash=`<path d="M${-16*dir} 0 Q0 -18 ${16*dir} -8" stroke="#5C3D4A" stroke-width="3.4" fill="none" stroke-linecap="round"/>`;
+    flick=`<path d="M${14*dir} -8 q${5*dir} -5 ${9*dir} -3" stroke="#5C3D4A" stroke-width="2.8" fill="none" stroke-linecap="round"/>`;
+  }else if(st==="droopy"){
+    topLash=`<path d="M${-16*dir} -8 Q0 -18 ${16*dir} 2" stroke="#5C3D4A" stroke-width="3.2" fill="none" stroke-linecap="round"/>`;
+    flick=`<path d="M${14*dir} 2 q${4*dir} 4 ${8*dir} 4" stroke="#5C3D4A" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
+  }else{ lid=`<path d="M-17 -3 Q0 -10 17 -3 L17 -20 L-17 -20 Z" fill="url(#skin_${id})"/>`;
+    topLash=`<path d="M-16 -3 Q0 -9 16 -3" stroke="#5C3D4A" stroke-width="3" fill="none" stroke-linecap="round"/>`; }
+  const lower=`<path d="M-9 14 q9 4 18 0" stroke="#8B5E6B" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".6"/>`;
+  return `<g transform="translate(${cx},112) scale(${s})">${base}${extra}${lid}${topLash}${flick}${lower}</g>`;
 }
-function partSvg(slot, it){
-  if(!it) return "";
-  const c = ATTRS[it.attr].color;
-  const v = it.variant;
-  switch(slot){
-    case "bg":
-      if(v%3===0) return `<g opacity=".9"><circle cx="40" cy="50" r="22" fill="${c}" opacity=".18"/><circle cx="160" cy="60" r="26" fill="${c}" opacity=".16"/><text x="158" y="190" font-size="26" text-anchor="middle">${it.thumb}</text><text x="40" y="195" font-size="22" text-anchor="middle">${it.thumb}</text></g>`;
-      return `<g opacity=".85"><rect x="0" y="0" width="200" height="230" fill="${c}" opacity=".08"/><text x="160" y="60" font-size="30" text-anchor="middle">${it.thumb}</text><text x="34" y="120" font-size="24" text-anchor="middle">${it.thumb}</text></g>`;
-    case "hair":
-      if(v%2===0) return `<g><path d="M56 74 Q56 24 100 24 Q144 24 144 74 Q144 50 100 46 Q56 50 56 74Z" fill="${c}"/><circle cx="60" cy="70" r="14" fill="${c}"/><circle cx="140" cy="70" r="14" fill="${c}"/><text x="62" y="64" font-size="14" text-anchor="middle">${it.thumb}</text></g>`;
-      return `<g><path d="M54 80 Q52 26 100 24 Q148 26 146 80 L142 120 Q140 96 100 92 Q60 96 58 120Z" fill="${c}"/><text x="100" y="40" font-size="13" text-anchor="middle">${it.thumb}</text></g>`;
-    case "tops":
-      return `<g><path d="M70 120 Q100 110 130 120 L134 158 Q100 166 66 158Z" fill="${c}"/><rect x="58" y="124" width="14" height="40" rx="7" fill="${c}"/><rect x="128" y="124" width="14" height="40" rx="7" fill="${c}"/><text x="100" y="146" font-size="14" text-anchor="middle">${it.thumb}</text></g>`;
-    case "bottoms":
-      if(v%2===0) return `<g><path d="M72 156 Q100 150 128 156 L138 196 Q100 206 62 196Z" fill="${c}"/><text x="100" y="186" font-size="13" text-anchor="middle">${it.thumb}</text></g>`;
-      return `<g><rect x="80" y="156" width="16" height="48" rx="5" fill="${c}"/><rect x="104" y="156" width="16" height="48" rx="5" fill="${c}"/><rect x="74" y="154" width="52" height="14" rx="6" fill="${c}"/></g>`;
-    case "shoes":
-      return `<g><ellipse cx="90" cy="206" rx="11" ry="7" fill="${c}"/><ellipse cx="110" cy="206" rx="11" ry="7" fill="${c}"/><text x="100" y="222" font-size="11" text-anchor="middle">${it.thumb}</text></g>`;
-    case "acc":
-      return `<g><text x="138" y="120" font-size="22" text-anchor="middle">${it.thumb}</text><circle cx="100" cy="112" r="5" fill="${c}"/></g>`;
+function fBrow(cx,dir,h){
+  const col=shade(h.root,-0.15);let p;
+  switch(S.face.brow){case "soft":p="M-13 0 Q0 -6 13 -2";break;case "straight":p="M-13 -1 L13 -2";break;
+    case "angled":p="M-13 2 L13 -5";break;case "worried":p="M-13 -4 L13 3";break;}
+  return `<g transform="translate(${cx},88) scale(${dir},1)"><path d="${p}" stroke="${col}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".85"/></g>`;
+}
+function fMouth(){
+  const o=S.face.offsets.mouth;let m="";
+  switch(S.face.mouth){
+    case "smile":m=`<path d="M-10 0 Q0 11 10 0 Q0 5 -10 0 Z" fill="#E58598" stroke="#C36E80" stroke-width="2" stroke-linejoin="round"/><path d="M-6 3 Q0 6 6 3" stroke="#fff" stroke-width="1.8" fill="none" opacity=".5" stroke-linecap="round"/>`;break;
+    case "line":m=`<path d="M-7 0 Q0 4 7 0" stroke="#C36E80" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;break;
+    case "smirk":m=`<path d="M-8 1 Q1 7 9 -3" stroke="#C36E80" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;break;
+    case "open":m=`<ellipse cx="0" cy="1" rx="6.5" ry="7.5" fill="#C8546A" stroke="#A8435A" stroke-width="2"/><path d="M-5 4 Q0 8 5 4 Q0 2 -5 4 Z" fill="#F08099"/>`;break;
+    case "pout":m=`<path d="M-5 -1 Q0 -4 5 -1 Q0 5 -5 -1 Z" fill="#E58598" stroke="#C36E80" stroke-width="2" stroke-linejoin="round"/>`;break;
   }
-  return "";
+  return `<g id="mouth" transform="translate(${140+o.x},${140+o.y})">${m}</g>`;
 }
+
+/* --- 髪（シルエットvariant） root/tip/hi/line を持つ hc --- */
+function renderHair(hc,variant,id){
+  const HI=hc.hi,LN=hc.line;
+  const twin = variant===0;
+  const short = (variant===3||variant===5);
+  let back;
+  if(twin){
+    back=`<path d="M62 96 C54 40 98 16 140 16 C182 16 226 40 218 96 L222 176 C222 206 188 214 140 214 C92 214 58 206 58 176 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M52 120 q-16 50 6 96 q14 -8 18 -26 q-10 -34 -4 -64z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M228 120 q16 50 -6 96 q-14 -8 -18 -26 q10 -34 4 -64z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
+  }else if(short){
+    back=`<path d="M64 100 C58 44 98 18 140 18 C182 18 222 44 216 100 L214 168 C214 192 182 196 140 196 C98 196 66 192 66 168 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
+  }else{
+    back=`<path d="M60 96 C50 38 96 14 140 14 C184 14 230 38 220 96 L228 214 C228 250 188 262 140 262 C92 262 52 250 52 214 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M70 120 C66 170 70 210 86 244" stroke="${HI}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>
+      <path d="M210 120 C214 170 210 210 196 244" stroke="${HI}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>`;
+  }
+  // 前髪バリエーション
+  let bang;
+  if(variant===1){ // ストレート
+    bang=`<path d="M70 104 C70 42 110 26 140 26 C170 26 210 42 210 104 C200 80 176 74 140 74 C104 74 80 80 70 104 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
+  }else if(variant===2){ // センター分け
+    bang=`<path d="M70 104 C70 44 110 26 140 26 C170 26 210 44 210 104 C198 78 168 74 142 86 L140 70 L138 86 C112 74 82 78 70 104 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
+  }else{
+    bang=`<path d="M70 104 C68 44 110 26 140 26 C170 26 212 44 210 104 C200 78 176 70 158 78 C150 60 130 60 122 78 C104 70 80 78 70 104 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
+  }
+  let buns = twin?`<circle cx="58" cy="92" r="16" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2"/><circle cx="222" cy="92" r="16" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2"/>`:"";
+  const front=`<g id="hairFront" transform="translate(${S.face.offsets.hairFront.x},${S.face.offsets.hairFront.y})">${bang}
+    <path d="M70 104 C62 130 64 160 74 184 C66 158 70 128 84 110 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M210 104 C218 130 216 160 206 184 C214 158 210 128 196 110 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M120 40 C104 56 96 80 96 100" stroke="${HI}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/>
+    <path d="M150 38 C168 54 180 78 182 100" stroke="${HI}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/>
+    <path d="M140 34 C138 52 138 66 140 76" stroke="${HI}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".7"/>${buns}</g>`;
+  return {back:`<g id="hairBack">${back}</g>`, front};
+}
+
+/* --- トップス --- */
+function renderTops(c,variant,id,base){
+  const sh=shade(c,-0.20),hi=shade(c,0.20),ln=shade(c,-0.42);
+  const collar = variant%3;
+  let collarSvg = collar===0?`<path d="M118 188 q22 12 44 0 l-6 12 q-16 8 -32 0 z" fill="#fff" stroke="${shade(c,-0.3)}" stroke-width="1.6" stroke-linejoin="round" opacity=".95"/>`
+    : collar===1?`<path d="M120 188 l20 14 l20 -14 l-4 10 l-16 8 l-16 -8 z" fill="${hi}" stroke="${ln}" stroke-width="1.4" stroke-linejoin="round"/>`
+    : `<path d="M116 186 q24 14 48 0 l-4 8 q-20 10 -40 0 z" fill="${sh}" stroke="${ln}" stroke-width="1.4" stroke-linejoin="round"/>`;
+  return `<g id="top">
+    <circle cx="84" cy="206" r="20" fill="url(#dt_${id})" stroke="${ln}" stroke-width="2"/>
+    <circle cx="196" cy="206" r="20" fill="url(#dt_${id})" stroke="${ln}" stroke-width="2"/>
+    <circle cx="84" cy="206" r="20" fill="url(#ptT_${id})"/><circle cx="196" cy="206" r="20" fill="url(#ptT_${id})"/>
+    <path d="M74 214 q-8 16 -2 30 a7 7 0 0 0 13 -2 q-3 -14 1 -26 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M206 214 q8 16 2 30 a7 7 0 0 1 -13 -2 q3 -14 -1 -26 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M96 190 q44 -14 88 0 l-4 40 q-40 12 -80 0 z" fill="url(#dt_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M96 190 q44 -14 88 0 l-4 40 q-40 12 -80 0 z" fill="url(#ptT_${id})"/>
+    ${collarSvg}
+    <path d="M112 200 q28 8 56 0" stroke="${sh}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/></g>`;
+}
+function baseTop(base,id){
+  return `<g id="top"><path d="M98 192 q42 -12 84 0 l-4 38 q-38 11 -76 0 z" fill="#FBEFF3" stroke="#E2C3CF" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M118 190 q22 8 44 0" stroke="#E2C3CF" stroke-width="1.6" fill="none"/></g>`;
+}
+/* --- ボトムス --- */
+function renderBottoms(c,variant,id){
+  const sh=shade(c,-0.20),hi=shade(c,0.20),deep=shade(c,-0.34),ln=shade(c,-0.42);
+  if(variant%2===1){ // パンツ
+    return `<g id="bottom">
+      <path d="M100 224 h80 l-2 64 h-30 l-8 -44 l-8 44 h-30 z" fill="url(#db_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M140 230 v54" stroke="${sh}" stroke-width="2.5" opacity=".5" stroke-linecap="round"/></g>`;
+  }
+  return `<g id="bottom">
+    <path d="M98 224 q42 -10 84 0 l24 64 q-66 18 -132 0 z" fill="url(#db_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M98 224 q42 -10 84 0 l24 64 q-66 18 -132 0 z" fill="url(#ptB_${id})"/>
+    <path d="M118 230 L108 286" stroke="${sh}" stroke-width="3" fill="none" opacity=".55" stroke-linecap="round"/>
+    <path d="M140 232 L140 290" stroke="${sh}" stroke-width="3" fill="none" opacity=".5" stroke-linecap="round"/>
+    <path d="M162 230 L172 286" stroke="${sh}" stroke-width="3" fill="none" opacity=".55" stroke-linecap="round"/>
+    <path d="M128 230 L122 288" stroke="${hi}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>
+    <path d="M152 230 L158 288" stroke="${hi}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>
+    <path d="M74 288 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 18 0" fill="none" stroke="${deep}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/></g>`;
+}
+function baseBottom(id){
+  return `<g id="bottom"><path d="M100 224 q40 -10 80 0 l18 56 q-58 16 -116 0 z" fill="#F2D6E0" stroke="#DCB6C5" stroke-width="2" stroke-linejoin="round"/></g>`;
+}
+/* --- シューズ --- */
+function renderShoes(c,variant,id){
+  const sh=shade(c,-0.22),hi=shade(c,0.18),ln=shade(c,-0.4);
+  const v=variant%3;
+  if(v===1){ // ブーツ
+    return `<g id="shoes"><path d="M112 300 h24 v18 l6 8 q-18 6 -34 0 l4 -8 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M144 300 h24 v18 l6 8 q-18 6 -34 0 l4 -8 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/></g>`;
+  }
+  if(v===2){ // サンダル
+    return `<g id="shoes"><path d="M110 320 q14 -3 26 0 l1 6 q-14 4 -28 0z" fill="${hi}" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M144 320 q14 -3 26 0 l1 6 q-14 4 -28 0z" fill="${hi}" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M116 318 l8 -8 M158 318 l-8 -8" stroke="${sh}" stroke-width="2.4" stroke-linecap="round"/></g>`;
+  }
+  return `<g id="shoes"><path d="M112 318 q14 -4 24 0 l2 8 q-14 5 -28 0 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M144 318 q14 -4 24 0 l2 8 q-14 5 -28 0 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M118 318 q8 -3 16 0" stroke="#fff" stroke-width="2" fill="none" opacity=".6"/></g>`;
+}
+function baseShoes(id){
+  return `<g id="shoes"><ellipse cx="124" cy="322" rx="13" ry="6" fill="#E6CBB4" stroke="#C9A786" stroke-width="2"/>
+    <ellipse cx="156" cy="322" rx="13" ry="6" fill="#E6CBB4" stroke="#C9A786" stroke-width="2"/></g>`;
+}
+/* --- 小物（body=胸/首, head=頭/手） --- */
+function renderAcc(c,variant,id){
+  const hi=shade("#D4A574",0.18),shr=shade("#D4A574",-0.22),sh=shade(c,-0.2),ln=shade(c,-0.4),lt=shade(c,0.2);
+  let body="",head="";
+  switch(variant){
+    case 0: body=`<g id="accBag"><path d="M196 232 q10 -2 18 4 l-2 20 q-9 4 -16 0 z" fill="${lt}" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round"/><path d="M198 234 q6 -8 14 -2" fill="none" stroke="${shr}" stroke-width="1.6"/></g>`; break;
+    case 1: body=`<g id="accChoker"><path d="M126 176 q14 8 28 0" stroke="${sh}" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="140" cy="182" r="3.4" fill="${hi}" stroke="${shr}" stroke-width="1.2"/></g>`; break;
+    case 2: head=`<g id="accCrown"><path d="M104 44 l8 8 M140 36 v10 M176 44 l-8 8" stroke="${lt}" stroke-width="3" stroke-linecap="round"/><circle cx="104" cy="44" r="4" fill="${c}" stroke="${ln}" stroke-width="1.2"/><circle cx="140" cy="36" r="4.4" fill="${hi}" stroke="${shr}" stroke-width="1.2"/><circle cx="176" cy="44" r="4" fill="${c}" stroke="${ln}" stroke-width="1.2"/></g>`; break;
+    case 3: head=`<g id="accEar"><circle cx="72" cy="132" r="4" fill="${hi}" stroke="${shr}" stroke-width="1.2"/><circle cx="208" cy="132" r="4" fill="${hi}" stroke="${shr}" stroke-width="1.2"/><path d="M72 128 v-4 M208 128 v-4" stroke="${shr}" stroke-width="1.4"/></g>`; break;
+    case 4: head=`<g id="accWand"><path d="M210 250 L226 210" stroke="${shr}" stroke-width="3" stroke-linecap="round"/><path d="M226 204 l2.4 5 5 2.4 -5 2.4 -2.4 5 -2.4 -5 -5 -2.4 5 -2.4z" fill="${hi}" stroke="${shr}" stroke-width="1.2" stroke-linejoin="round"/></g>`; break;
+    case 5: head=`<g id="accStar"><path d="M70 130 l1.6 3.4 3.6 .4 -2.7 2.4 .7 3.6 -3.2 -1.8 -3.2 1.8 .7 -3.6 -2.7 -2.4 3.6 -.4z" fill="${hi}" stroke="${shr}" stroke-width="1" stroke-linejoin="round"/></g>`; break;
+  }
+  return {body,head};
+}
+/* --- 背景小物 --- */
+function renderBg(c,variant){
+  const lt=shade(c,0.34),md=c,dk=shade(c,-0.2);
+  let motif="";
+  switch(variant){
+    case 0: motif=`<path d="M44 60c4-5 11-5 14 1c3-6 10-6 14-1c-3 7-14 13-14 13s-11-6-14-13z" fill="${md}" opacity=".5"/><path d="M212 180c3-4 9-4 11 1c2-5 8-5 11-1c-2 6-11 11-11 11s-9-5-11-11z" fill="${md}" opacity=".45"/>`; break;
+    case 1: motif=`<path d="M150 40 h0" /><circle cx="150" cy="44" r="5" fill="${dk}" opacity=".5"/><path d="M150 49 v22" stroke="${dk}" stroke-width="2" opacity=".5"/><path d="M138 78 q12 14 24 0 z" fill="${md}" opacity=".5"/>`; break;
+    case 2: motif=`<g opacity=".5"><ellipse cx="52" cy="180" rx="16" ry="11" fill="${md}"/><rect x="48" y="180" width="8" height="14" rx="3" fill="${lt}"/><ellipse cx="216" cy="196" rx="12" ry="8" fill="${md}"/><rect x="213" y="196" width="6" height="11" rx="2" fill="${lt}"/></g>`; break;
+    case 3: motif=`<g opacity=".45"><rect x="40" y="44" width="40" height="48" rx="4" fill="none" stroke="${dk}" stroke-width="3"/><path d="M60 44 v48 M40 68 h40" stroke="${dk}" stroke-width="2"/></g>`; break;
+    case 4: motif=`<g fill="${md}" opacity=".55"><path d="M48 56l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/><path d="M210 70l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/><path d="M70 150l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/></g>`; break;
+    case 5: motif=`<g opacity=".5" fill="none" stroke="${dk}" stroke-width="2"><circle cx="48" cy="170" r="7"/><circle cx="62" cy="190" r="5"/><circle cx="214" cy="180" r="8"/><circle cx="226" cy="200" r="5"/></g>`; break;
+  }
+  return `<g id="bgItem"><rect x="0" y="0" width="280" height="330" fill="${c}" opacity=".07"/>${motif}</g>`;
+}
+
 function renderChar(){
-  const svg=document.getElementById("charSvg");
-  let html = partSvg("bg",ITEM_BY_ID[S.equip.bg]);
-  html += svgBase();
-  // レイヤー順
-  html += partSvg("bottoms",ITEM_BY_ID[S.equip.bottoms]);
-  html += partSvg("shoes",ITEM_BY_ID[S.equip.shoes]);
-  html += partSvg("tops",ITEM_BY_ID[S.equip.tops]);
-  html += partSvg("hair",ITEM_BY_ID[S.equip.hair]);
-  html += partSvg("acc",ITEM_BY_ID[S.equip.acc]);
-  svg.innerHTML=html;
+  const id="c"+(charUid++);
+  const F=S.face;
+  const skin=SKINS[F.skin]||SKINS.fair;
+  const base={s0:skin.s0,s1:skin.s1,line:skin.line};
+  const hairItem=S.equip.hair?ITEM_BY_ID[S.equip.hair]:null;
+  const hairBase = hairItem?ATTRS[hairItem.attr].color:HAIRBASE[F.hair].tip;
+  const hc=hairColorsFor(hairBase);
+  const hairVar = hairItem?hairItem.variant:4;
+  const topsItem=S.equip.tops?ITEM_BY_ID[S.equip.tops]:null;
+  const botItem=S.equip.bottoms?ITEM_BY_ID[S.equip.bottoms]:null;
+  const shoeItem=S.equip.shoes?ITEM_BY_ID[S.equip.shoes]:null;
+  const accItem=S.equip.acc?ITEM_BY_ID[S.equip.acc]:null;
+  const bgItem=S.equip.bg?ITEM_BY_ID[S.equip.bg]:null;
+  const topC = topsItem?ATTRS[topsItem.attr].color:"#F2D6E0";
+  const botC = botItem?ATTRS[botItem.attr].color:"#E8B4C8";
+  const shoeC= shoeItem?ATTRS[shoeItem.attr].color:"#D4A574";
+
+  const grad=(gid,c0,c1)=>`<linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${c0}"/><stop offset="100%" stop-color="${c1}"/></linearGradient>`;
+  const pat=(pid,base)=>`<pattern id="${pid}" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="1.7" fill="${shade(base,0.22)}" opacity=".7"/></pattern>`;
+  const defs=`<defs>
+    <radialGradient id="skin_${id}" cx="50%" cy="42%" r="62%"><stop offset="0%" stop-color="${shade(skin.s0,0.12)}"/><stop offset="60%" stop-color="${skin.s0}"/><stop offset="100%" stop-color="${skin.s1}"/></radialGradient>
+    <radialGradient id="cheek_${id}" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#F4A6BC" stop-opacity=".8"/><stop offset="70%" stop-color="#F4A6BC" stop-opacity=".22"/><stop offset="100%" stop-color="#F4A6BC" stop-opacity="0"/></radialGradient>
+    <radialGradient id="iris_${id}" cx="50%" cy="38%" r="62%"><stop offset="0%" stop-color="${shade(hc.root,0.34)}"/><stop offset="45%" stop-color="${shade(hc.root,-0.05)}"/><stop offset="100%" stop-color="${shade(hc.root,-0.5)}"/></radialGradient>
+    ${grad("hair_"+id,hc.root,hc.tip)}
+    ${grad("dt_"+id,shade(topC,0.20),shade(topC,-0.20))}
+    ${grad("db_"+id,shade(botC,0.20),shade(botC,-0.20))}
+    ${grad("sh_"+id,shade(shoeC,0.18),shade(shoeC,-0.22))}
+    ${pat("ptT_"+id,topC)}${pat("ptB_"+id,botC)}
+    <filter id="soft_${id}" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#8B5E6B" flood-opacity="0.22"/></filter>
+  </defs>`;
+
+  const hair=renderHair(hc,hairVar,id);
+  const acc=accItem?renderAcc(ATTRS[accItem.attr].color,accItem.variant,id):{body:"",head:""};
+
+  const body=`<g id="body" filter="url(#soft_${id})">
+    <path d="M128 168 h24 v18 a12 12 0 0 1 -24 0 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/>
+    <g id="legs">
+      <path d="M118 286 h16 v34 a8 8 0 0 1 -16 0 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M146 286 h16 v34 a8 8 0 0 1 -16 0 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/></g></g>`;
+  const head=`<g id="face">
+    <ellipse cx="140" cy="108" rx="70" ry="74" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2"/>
+    <circle cx="72" cy="116" r="11" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2"/>
+    <circle cx="208" cy="116" r="11" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2"/>
+    <ellipse cx="98" cy="130" rx="18" ry="13" fill="url(#cheek_${id})"/>
+    <ellipse cx="182" cy="130" rx="18" ry="13" fill="url(#cheek_${id})"/>
+    <path d="M140 122 q3 4 -1 6" stroke="${shade(skin.s1,-0.18)}" stroke-width="2" fill="none" stroke-linecap="round" opacity=".6"/></g>`;
+  const half=F.eyeGap,cxL=140-half,cxR=140+half;
+  const oe=F.offsets.eyes,ob=F.offsets.brows;
+  const eyes=`<g id="eyes" transform="translate(${oe.x},${oe.y})">${fEye(cxL,-1,id,hc)}${fEye(cxR,1,id,hc)}</g>`;
+  const brows=`<g id="brows" transform="translate(${ob.x},${ob.y})">${fBrow(cxL,-1,hc)}${fBrow(cxR,1,hc)}</g>`;
+
+  let html=defs;
+  html+=bgItem?renderBg(ATTRS[bgItem.attr].color,bgItem.variant):"";
+  html+=hair.back;
+  html+=body;
+  html+=botItem?renderBottoms(botC,botItem.variant,id):baseBottom(id);
+  html+=shoeItem?renderShoes(shoeC,shoeItem.variant,id):baseShoes(id);
+  html+=topsItem?renderTops(topC,topsItem.variant,id,base):baseTop(base,id);
+  html+=acc.body;
+  html+=head+eyes+brows+fMouth();
+  html+=hair.front;
+  html+=acc.head;
+  document.getElementById("charSvg").innerHTML=html;
 }
 
 /* =========================================================
@@ -930,7 +1263,7 @@ function renderHome(){
     const id=S.equip[sl]; const it=id?ITEM_BY_ID[id]:null;
     const d=document.createElement("div"); d.className="slot";
     d.innerHTML=`<div class="lbl">${SLOTS[sl].jp}</div>
-      <div class="ic">${it?it.thumb:SLOTS[sl].ic}</div>
+      <div style="height:34px;display:flex;align-items:center;justify-content:center;margin:2px 0;">${it?itemThumb(it,32):ic('i_'+sl,30,'var(--text-soft)')}</div>
       <div class="val">${it?it.name:"なし"}</div>`;
     d.onclick=()=>openEquipPicker(sl);
     g.appendChild(d);
@@ -939,9 +1272,40 @@ function renderHome(){
   const nf=document.getElementById("newsFeed"); nf.innerHTML="";
   S.news.forEach(n=>{
     const d=document.createElement("div"); d.className="news "+(n.type||"info");
-    d.innerHTML=`<span class="ic">${n.ic}</span><span class="tx">${n.text}</span>`;
+    d.innerHTML=`<span class="ic">${ic(n.ic,16)}</span><span class="tx">${n.text}</span>`;
     nf.appendChild(d);
   });
+  renderEditor();
+}
+
+function renderEditor(){
+  const F=S.face;
+  const fill=(elId,entries,activeKey,cb,cls)=>{
+    const el=document.getElementById(elId); if(!el) return; el.innerHTML="";
+    entries.forEach(([k,v])=>{const b=document.createElement("button");
+      b.className="chip"+(cls?" "+cls:"")+(activeKey===k?" on":"");b.textContent=v;
+      b.onclick=()=>cb(k); el.appendChild(b);});
+  };
+  fill("presetChips",Object.keys(PRESETS).map(k=>[k,k]),F.preset,k=>{const p=PRESETS[k];
+    Object.assign(F,{preset:k,eye:p.eye,brow:p.brow,mouth:p.mouth,eyeSize:p.eyeSize,eyeGap:p.eyeGap});
+    save();renderEditor();renderChar();},"preset");
+  fill("eyeChips",Object.entries(EYE_STYLES),F.eye,k=>{F.eye=k;F.preset="";save();renderEditor();renderChar();});
+  fill("browChips",Object.entries(BROW_STYLES),F.brow,k=>{F.brow=k;F.preset="";save();renderEditor();renderChar();});
+  fill("mouthChips",Object.entries(MOUTH_STYLES),F.mouth,k=>{F.mouth=k;F.preset="";save();renderEditor();renderChar();});
+  document.getElementById("sEyeSize").value=F.eyeSize; document.getElementById("vEyeSize").textContent=F.eyeSize.toFixed(2);
+  document.getElementById("sEyeGap").value=F.eyeGap; document.getElementById("vEyeGap").textContent=F.eyeGap;
+  const hs=document.getElementById("hairSw"); hs.innerHTML="";
+  Object.entries(HAIRBASE).forEach(([k,v])=>{const b=document.createElement("button");
+    b.className="sw"+(F.hair===k?" on":"");b.style.background=`linear-gradient(135deg,${v.root},${v.tip})`;
+    b.onclick=()=>{F.hair=k;save();renderEditor();renderChar();};hs.appendChild(b);});
+  const ks=document.getElementById("skinSw"); ks.innerHTML="";
+  Object.entries(SKINS).forEach(([k,v])=>{const b=document.createElement("button");
+    b.className="sw"+(F.skin===k?" on":"");b.style.background=`linear-gradient(135deg,${v.s0},${v.s1})`;
+    b.onclick=()=>{F.skin=k;save();renderEditor();renderChar();};ks.appendChild(b);});
+  fill("partChips",Object.entries(PART_LABELS),F.selPart,k=>{F.selPart=k;renderEditor();});
+  const o=F.offsets[F.selPart];
+  document.getElementById("sPosX").value=o.x; document.getElementById("vPosX").textContent=o.x;
+  document.getElementById("sPosY").value=o.y; document.getElementById("vPosY").textContent=o.y;
 }
 
 function trendArrow(attr){
@@ -961,10 +1325,10 @@ function renderMarket(){
   marketBuy.forEach(L=>{
     const it=ITEM_BY_ID[L.id];
     const c=document.createElement("div"); c.className="card";
-    c.innerHTML=`<span class="thumb">${it.thumb}</span>
+    c.innerHTML=`<span class="thumb">${itemThumb(it,40)}</span>
       <div class="nm">${it.name}</div>
       <div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div>
-      <div class="price"><span class="c">🪙</span>${L.price.toLocaleString()}${trendArrow(it.attr)}</div>
+      <div class="price"><span class="c">${ic('coin',11,'var(--gold)')}</span>${L.price.toLocaleString()}${trendArrow(it.attr)}</div>
       <button class="btn sm full" style="margin-top:6px" ${L.stock<=0?'disabled':''}>${L.stock<=0?'売切':'仕入れる'}</button>`;
     c.querySelector("button").onclick=()=>buyItem(L);
     bg.appendChild(c);
@@ -972,15 +1336,15 @@ function renderMarket(){
   // sell grid
   const sg=document.getElementById("sellGrid"); sg.innerHTML="";
   const owned=Object.keys(S.inv);
-  if(owned.length===0){ sg.innerHTML=`<div class="empty" style="grid-column:1/-1"><span class="ic">👜</span>売れるアイテムがないよ。ガチャやクラフトで集めよう！</div>`; }
+  if(owned.length===0){ sg.innerHTML=`<div class="empty" style="grid-column:1/-1"><span class="ic">${ic('bag',34,'var(--text-soft)')}</span>売れるアイテムがないよ。ガチャやクラフトで集めよう！</div>`; }
   owned.forEach(id=>{
     const it=ITEM_BY_ID[id]; const q=S.inv[id];
     const gross=itemPrice(it); const net=Math.round(gross*(1-FEE));
     const c=document.createElement("div"); c.className="card";
-    c.innerHTML=`<span class="qty">×${q}</span><span class="thumb">${it.thumb}</span>
+    c.innerHTML=`<span class="qty">×${q}</span><span class="thumb">${itemThumb(it,40)}</span>
       <div class="nm">${it.name}</div>
       <div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div>
-      <div class="price"><span class="c">🪙</span>${net.toLocaleString()}${trendArrow(it.attr)}</div>
+      <div class="price"><span class="c">${ic('coin',11,'var(--gold)')}</span>${net.toLocaleString()}${trendArrow(it.attr)}</div>
       <button class="btn sm full ghost" style="margin-top:6px">売る</button>`;
     c.querySelector("button").onclick=()=>sellItem(id);
     sg.appendChild(c);
@@ -1050,7 +1414,7 @@ function renderGacha(){
   [puItem,...show.filter(i=>i.id!==S.pickup)].slice(0,6).forEach((it,idx)=>{
     const c=document.createElement("div"); c.className="card";
     c.innerHTML=`${idx===0?'<span class="qty" style="background:var(--gold)">PU</span>':''}
-      <span class="thumb">${it.thumb}</span>
+      <span class="thumb">${itemThumb(it,40)}</span>
       <div class="nm">${it.name}</div>
       <div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div>`;
     pu.appendChild(c);
@@ -1060,17 +1424,17 @@ function renderGacha(){
 function renderCraft(){
   const rl=document.getElementById("recipeList"); rl.innerHTML="";
   const known=RECIPES.filter(r=>r.known);
-  if(known.length===0) rl.innerHTML=`<div class="empty"><span class="ic">📜</span>レシピがまだないよ</div>`;
+  if(known.length===0) rl.innerHTML=`<div class="empty"><span class="ic">${ic('scroll',34,'var(--text-soft)')}</span>レシピがまだないよ</div>`;
   known.forEach(r=>{
     const out=ITEM_BY_ID[r.out];
     const inputs=Object.entries(r.inputs).map(([m,q])=>{
       const have=S.mats[m]||0; const ok=have>=q;
-      return `<span style="color:${ok?'var(--good)':'var(--bad)'}">${MATERIALS[m].thumb}${MATERIALS[m].name}×${q}(${have})</span>`;
+      return `<span style="color:${ok?'var(--good)':'var(--bad)'};display:inline-flex;align-items:center;gap:2px">${matThumb(m,14)}${MATERIALS[m].name}×${q}(${have})</span>`;
     }).join(" ＋ ");
     const can=canCraft(r);
     const d=document.createElement("div"); d.className="panel"; d.style.margin="0 0 8px"; d.style.padding="8px";
     d.innerHTML=`<div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:26px">${out.thumb}</span>
+      <span style="width:30px;height:30px;flex:none">${itemThumb(out,30)}</span>
       <div style="flex:1">
         <div style="font-weight:700">${out.name} ${rarTag(out.rarity)}${attrTag(out.attr)}</div>
         <div class="muted" style="margin-top:2px">${inputs}</div>
@@ -1085,7 +1449,7 @@ function renderCraft(){
     const q=S.mats[m]||0;
     const c=document.createElement("div"); c.className="card";
     c.innerHTML=`${q>0?`<span class="qty">×${q}</span>`:''}
-      <span class="thumb">${MATERIALS[m].thumb}</span>
+      <span class="thumb">${matThumb(m,40)}</span>
       <div class="nm">${MATERIALS[m].name}</div>
       <div class="muted">手持ち ${q}</div>`;
     mg.appendChild(c);
@@ -1095,13 +1459,13 @@ function renderCraft(){
 function renderCode(){
   const p=document.getElementById("codePanel");
   if(!S.code){
-    p.innerHTML=`<h2><span class="ic">🏆</span>コーデ審査</h2>
-      <div class="empty"><span class="ic">🗓️</span>次の審査は <b>${S.nextCodeDay}日目</b> ごろ。<br>「つぎの日へ」を進めて待とう！</div>`;
+    p.innerHTML=`<h2><span class="ic">${ic('trophy',17,'var(--rose)')}</span>コーデ審査</h2>
+      <div class="empty"><span class="ic">${ic('calendar',34,'var(--text-soft)')}</span>次の審査は <b>${S.nextCodeDay}日目</b> ごろ。<br>「つぎの日へ」を進めて待とう！</div>`;
     return;
   }
   if(S.code.done){
-    p.innerHTML=`<h2><span class="ic">🏆</span>コーデ審査</h2>
-      <div class="empty"><span class="ic">✅</span>「${S.code.theme.name}」は提出ずみ！<br>次は <b>${S.nextCodeDay}日目</b> ごろ。</div>`;
+    p.innerHTML=`<h2><span class="ic">${ic('trophy',17,'var(--rose)')}</span>コーデ審査</h2>
+      <div class="empty"><span class="ic">${ic('check',34,'var(--good)')}</span>「${S.code.theme.name}」は提出ずみ！<br>次は <b>${S.nextCodeDay}日目</b> ごろ。</div>`;
     return;
   }
   const t=S.code.theme;
@@ -1111,13 +1475,13 @@ function renderCode(){
     const id=S.code.sel[sl]; const it=id?ITEM_BY_ID[id]:null;
     const match = it && it.attr===t.attr;
     slotsHtml+=`<div class="codeSlot" data-sl="${sl}">
-      <span class="ic">${it?it.thumb:SLOTS[sl].ic}</span>
+      <span class="ic">${it?itemThumb(it,30):ic('i_'+sl,28,'var(--text-soft)')}</span>
       <div class="info"><div class="nm">${SLOTS[sl].jp}：${it?it.name:'<span class="muted">えらぶ</span>'}</div>
         ${it?`<div>${rarTag(it.rarity)}${attrTag(it.attr)}${match?' <span style="color:var(--good);font-size:10px;font-weight:700">★テーマ一致</span>':''}</div>`:''}
       </div>
       <span style="font-size:18px;color:var(--text-soft)">›</span></div>`;
   });
-  p.innerHTML=`<h2><span class="ic">${t.ic}</span>お題「${t.name}」</h2>
+  p.innerHTML=`<h2><span class="ic">${ic(t.ic,17,'var(--rose)')}</span>お題「${t.name}」</h2>
     <p class="muted">テーマ属性：${attrTag(t.attr)} を多く取り入れると高得点！同属性3つ以上でセットボーナス。</p>
     ${slotsHtml}
     <div class="scorebar"><i style="width:${Math.min(100,sc.total/2)}%"></i></div>
@@ -1140,12 +1504,12 @@ function renderBag(){
     const q=S.inv[it.id]||0;
     const c=document.createElement("div"); c.className="card";
     if(!owned){
-      c.innerHTML=`<span class="thumb" style="filter:grayscale(1);opacity:.3">❔</span>
+      c.innerHTML=`<span class="thumb" style="opacity:.35">${ic('i_'+it.slot,36,'#C9AEB8')}</span>
         <div class="nm muted">？？？</div>
         <div class="meta">${rarTag(it.rarity)}</div>`;
     } else {
       c.innerHTML=`${q>0?`<span class="qty">×${q}</span>`:''}
-        <span class="thumb">${it.thumb}</span>
+        <span class="thumb">${itemThumb(it,40)}</span>
         <div class="nm">${it.name}</div>
         <div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div>
         <div class="muted">${SLOTS[it.slot].jp}・${it.src==="gacha"?"ガチャ":"クラフト"}</div>`;
@@ -1170,16 +1534,16 @@ function ownedInSlot(slot){
 function openEquipPicker(slot){
   const list=ownedInSlot(slot);
   let body=`<div class="seg" style="margin-bottom:8px"><button class="btn ghost sm" onclick="setEquip('${slot}',null)">このスロットを外す</button></div>`;
-  if(list.length===0){ body+=`<div class="empty"><span class="ic">${SLOTS[slot].ic}</span>この種類のアイテムをまだ持ってないよ</div>`; }
+  if(list.length===0){ body+=`<div class="empty"><span class="ic">${ic('i_'+slot,34,'var(--text-soft)')}</span>この種類のアイテムをまだ持ってないよ</div>`; }
   body+=`<div class="grid">`;
   list.forEach(it=>{
     const on=S.equip[slot]===it.id;
-    body+=`<div class="card" style="${on?'border-color:var(--pink);border-width:2px':''}" onclick="setEquip('${slot}','${it.id}')">
-      <span class="thumb">${it.thumb}</span><div class="nm">${it.name}</div>
+    body+=`<div class="card" style="${on?'border-color:var(--rose);border-width:2px':''}" onclick="setEquip('${slot}','${it.id}')">
+      <span class="thumb">${itemThumb(it,40)}</span><div class="nm">${it.name}</div>
       <div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div></div>`;
   });
   body+=`</div>`;
-  openModal(SLOTS[slot].ic+" "+SLOTS[slot].jp+"をえらぶ", body);
+  openModal(SLOTS[slot].jp+"をえらぶ", body);
 }
 function setEquip(slot,id){ S.equip[slot]=id; save(); renderHome(); closeModal(); }
 
@@ -1188,13 +1552,13 @@ function openCodePicker(slot){
   let body=`<div class="seg" style="margin-bottom:8px"><button class="btn ghost sm" onclick="setCodeSel('${slot}',null)">外す</button></div><div class="grid">`;
   list.forEach(it=>{
     const on=S.code.sel[slot]===it.id;
-    body+=`<div class="card" style="${on?'border-color:var(--pink);border-width:2px':''}" onclick="setCodeSel('${slot}','${it.id}')">
-      <span class="thumb">${it.thumb}</span><div class="nm">${it.name}</div>
+    body+=`<div class="card" style="${on?'border-color:var(--rose);border-width:2px':''}" onclick="setCodeSel('${slot}','${it.id}')">
+      <span class="thumb">${itemThumb(it,40)}</span><div class="nm">${it.name}</div>
       <div class="meta">${rarTag(it.rarity)}${attrTag(it.attr)}</div></div>`;
   });
-  if(list.length===0) body+=`<div class="empty" style="grid-column:1/-1"><span class="ic">${SLOTS[slot].ic}</span>持ってないよ</div>`;
+  if(list.length===0) body+=`<div class="empty" style="grid-column:1/-1"><span class="ic">${ic('i_'+slot,34,'var(--text-soft)')}</span>持ってないよ</div>`;
   body+=`</div>`;
-  openModal(SLOTS[slot].ic+" "+SLOTS[slot].jp,body);
+  openModal(SLOTS[slot].jp,body);
 }
 function setCodeSel(slot,id){ S.code.sel[slot]=id; renderCode(); closeModal(); }
 
@@ -1239,6 +1603,11 @@ function load(){
     if(data.recKnown) RECIPES.forEach((r,i)=> r.known=data.recKnown[i]);
     // 後方互換チェック
     if(!S.history||!S.trend) return false;
+    // 顔データの移行（旧セーブ対応）
+    const df=defaultFace();
+    S.face = Object.assign(df, S.face||{});
+    if(!S.face.offsets) S.face.offsets=df.offsets;
+    ["eyes","brows","mouth","hairFront"].forEach(k=>{ if(!S.face.offsets[k]) S.face.offsets[k]={x:0,y:0}; });
     return true;
   }catch(e){ return false; }
 }
@@ -1247,7 +1616,7 @@ function resetGame(){
   RECIPES.forEach(r=> r.known=(r.id==="r1"||r.id==="r2"));
   bootstrap(true);
   closeModal();
-  toast("🗑 はじめからスタート！");
+  toast("はじめからスタート！");
 }
 
 /* =========================================================
@@ -1285,10 +1654,10 @@ document.getElementById("btnGacha1").onclick=()=>doGacha(1);
 document.getElementById("btnGacha10").onclick=()=>doGacha(10);
 document.getElementById("btnRandom").onclick=()=>{
   SLOT_KEYS.forEach(sl=>{ const l=ownedInSlot(sl); if(l.length) S.equip[sl]=l[Math.floor(Math.random()*l.length)].id; });
-  save(); renderHome(); toast("🎲 おまかせコーデ！");
+  save(); renderHome(); toast("おまかせコーデ！");
 };
 document.getElementById("btnStrip").onclick=()=>{ SLOT_KEYS.forEach(sl=>S.equip[sl]=null); save(); renderHome(); };
-document.getElementById("btnSave").onclick=()=>{ save(); toast("💾 セーブしたよ"); };
+document.getElementById("btnSave").onclick=()=>{ save(); toast("セーブしたよ"); };
 document.getElementById("btnReset").onclick=()=>openModal("リセット確認",
   "<p>進行データを消してはじめからにする？</p><button class='btn full' style='background:var(--bad);border-color:#a85a68' onclick='resetGame()'>はい、リセット</button><button class='btn ghost full' style='margin-top:6px' onclick='closeModal()'>やめる</button>");
 document.querySelectorAll("#bagFilter button").forEach(b=> b.onclick=()=>{
@@ -1297,7 +1666,20 @@ document.querySelectorAll("#bagFilter button").forEach(b=> b.onclick=()=>{
 });
 window.addEventListener("resize", ()=>{ if(document.getElementById("scr-market").classList.contains("active")) drawChart(); });
 
+/* 顔エディター */
+document.getElementById("editToggle").onclick=()=>{
+  document.getElementById("editToggle").classList.toggle("open");
+  document.getElementById("editBody").classList.toggle("open");
+};
+document.getElementById("sEyeSize").oninput=e=>{S.face.eyeSize=parseFloat(e.target.value);document.getElementById("vEyeSize").textContent=S.face.eyeSize.toFixed(2);S.face.preset="";renderChar();renderEditor();save();};
+document.getElementById("sEyeGap").oninput=e=>{S.face.eyeGap=parseInt(e.target.value);document.getElementById("vEyeGap").textContent=S.face.eyeGap;S.face.preset="";renderChar();save();};
+document.getElementById("sPosX").oninput=e=>{S.face.offsets[S.face.selPart].x=parseInt(e.target.value);document.getElementById("vPosX").textContent=e.target.value;renderChar();save();};
+document.getElementById("sPosY").oninput=e=>{S.face.offsets[S.face.selPart].y=parseInt(e.target.value);document.getElementById("vPosY").textContent=e.target.value;renderChar();save();};
+document.getElementById("btnResetPart").onclick=()=>{S.face.offsets[S.face.selPart]={x:0,y:0};renderEditor();renderChar();save();};
+document.getElementById("btnResetAll").onclick=()=>{Object.keys(S.face.offsets).forEach(k=>S.face.offsets[k]={x:0,y:0});renderEditor();renderChar();save();};
+
 bootstrap(false);
+injectIcons();
 </script>
 </body>
 </html>
