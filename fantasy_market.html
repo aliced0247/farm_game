@@ -569,6 +569,17 @@ const ATTRS = {
   marine:  {jp:"マリン",    color:"#6fc1c8", cls:"at-marine",  season:"summer"},
 };
 const ATTR_KEYS = Object.keys(ATTRS);
+/* テーマ別パレット：差し色(accent)・金属トリム(metal)・レース/白(lace)・濃色(deep)。
+   服/スカート/靴のエンジンに流し込んで“単色のっぺり”を解消する。 */
+const THEMES = {
+  pastel:  {accent:"#E58CA9", metal:"#F0C987", lace:"#FFF4F8", deep:"#C77FA0"},
+  gothic:  {accent:"#9E1B36", metal:"#E6C77A", lace:"#CFC2E0", deep:"#2A2138"},
+  natural: {accent:"#C98A3A", metal:"#D8B25A", lace:"#FBF3E0", deep:"#6E5A3A"},
+  cool:    {accent:"#2E5C8A", metal:"#CFE0F0", lace:"#EAF2FB", deep:"#274B6E"},
+  fairy:   {accent:"#E59ACB", metal:"#F0CBE0", lace:"#FBF1FF", deep:"#8A63B8"},
+  marine:  {accent:"#27607A", metal:"#E8D29A", lace:"#FFFFFF", deep:"#1F5A66"},
+};
+function tpal(attr,c){return THEMES[attr]||{accent:shade(c,0.38),metal:shade(c,0.5),lace:"#fff",deep:shade(c,-0.34)};}
 
 /* ---------- レアリティ ---------- */
 const RARITY = {
@@ -1517,8 +1528,9 @@ function sparkSVG(x,y,s,c){c=c||"#FFFBE6";const e=s*0.3;
 function ssrAura(pts){return pts.map(p=>sparkSVG(p[0],p[1],p[2]||4,p[3])).join("");}
 
 /* --- トップス（formは variant、書き込みは rarity で段階化） --- */
-function renderTops(c,variant,id,base,rarity){
+function renderTops(c,variant,id,base,rarity,attr){
   const sh=shade(c,-0.20),hi=shade(c,0.26),ln=shade(c,-0.42),lt=shade(c,0.38),dk=shade(c,-0.34);
+  const P=tpal(attr,c), ac=P.accent, mt=P.metal, lc=P.lace;
   const t=rtier(rarity), fam=variant%6;
   const arms=`
     <circle cx="84" cy="206" r="20" fill="url(#dt_${id})" stroke="${ln}" stroke-width="2"/>
@@ -1527,29 +1539,30 @@ function renderTops(c,variant,id,base,rarity){
     <path d="M74 214 q-8 16 -2 30 a7 7 0 0 0 13 -2 q-3 -14 1 -26 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/>
     <path d="M206 214 q8 16 2 30 a7 7 0 0 1 -13 -2 q3 -14 -1 -26 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/>`;
   const bodice=`<path d="M96 190 q44 -14 88 0 l-4 40 q-40 12 -80 0 z" fill="url(#dt_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M96 190 q44 -14 88 0 l-4 40 q-40 12 -80 0 z" fill="url(#ptT_${id})"/>`;
-  // 襟＝属性系統で形ちがい
+    <path d="M96 190 q44 -14 88 0 l-4 40 q-40 12 -80 0 z" fill="url(#ptT_${id})"/>
+    <path d="M104 214 q36 9 72 0" stroke="${hi}" stroke-width="2" fill="none" opacity=".4"/>`;
+  // 襟＝属性系統で形ちがい（白はテーマのレース色、差し色で締める）
   let collar;
-  if(fam===0) collar=`<path d="M126 188 q14 10 28 0 l-4 9 q-10 6 -20 0z" fill="#fff" stroke="${shade(c,-0.3)}" stroke-width="1.4" stroke-linejoin="round" opacity=".95"/><path d="M132 196 q8 5 16 0 q-3 8 -8 8 q-5 0 -8 -8z" fill="${lt}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round"/>`;
-  else if(fam===1) collar=`<path d="M122 184 q18 -8 36 0 l-3 13 q-15 8 -30 0z" fill="${dk}" stroke="${ln}" stroke-width="1.4" stroke-linejoin="round"/><path d="M130 188 v11 M140 189 v11 M150 188 v11" stroke="${lt}" stroke-width="1" opacity=".6"/>`;
-  else if(fam===2) collar=`<path d="M120 188 q20 12 40 0 l-5 10 q-15 7 -30 0z" fill="#fff" stroke="${shade(c,-0.3)}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="140" cy="208" r="1.8" fill="${dk}"/><circle cx="140" cy="218" r="1.8" fill="${dk}"/>`;
+  if(fam===0) collar=`<path d="M126 188 q14 10 28 0 l-4 9 q-10 6 -20 0z" fill="${lc}" stroke="${shade(c,-0.3)}" stroke-width="1.4" stroke-linejoin="round" opacity=".97"/><path d="M132 196 q8 5 16 0 q-3 8 -8 8 q-5 0 -8 -8z" fill="${ac}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round"/>`;
+  else if(fam===1) collar=`<path d="M122 184 q18 -8 36 0 l-3 13 q-15 8 -30 0z" fill="${dk}" stroke="${ln}" stroke-width="1.4" stroke-linejoin="round"/><path d="M130 188 v11 M140 189 v11 M150 188 v11" stroke="${mt}" stroke-width="1" opacity=".75"/>`;
+  else if(fam===2) collar=`<path d="M120 188 q20 12 40 0 l-5 10 q-15 7 -30 0z" fill="${lc}" stroke="${shade(c,-0.3)}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="140" cy="208" r="1.8" fill="${ac}"/><circle cx="140" cy="218" r="1.8" fill="${ac}"/>`;
   else if(fam===3) collar=`<path d="M122 188 l18 16 l18 -16 l-5 9 l-13 12 l-13 -12z" fill="${hi}" stroke="${ln}" stroke-width="1.3" stroke-linejoin="round"/>`;
-  else if(fam===4) collar=`<path d="M118 192 q22 -12 44 0 q-10 13 -22 13 q-12 0 -22 -13z" fill="${lt}" stroke="${ln}" stroke-width="1.3" stroke-linejoin="round"/>`;
-  else collar=`<path d="M116 186 l24 8 l24 -8 l-2 11 l-22 8 l-22 -8z" fill="#fff" stroke="${shade(c,-0.3)}" stroke-width="1.4" stroke-linejoin="round"/><path d="M138 195 l2 12 l2 -12z" fill="${c}" stroke="${ln}" stroke-width="1"/>`;
-  // レア度トリム
-  let trim="";
-  if(t>=1) trim+=`<path d="M112 200 q28 8 56 0" stroke="${sh}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>`;
-  if(t>=2) trim+=`<path d="M98 226 q42 11 80 0" fill="none" stroke="${lt}" stroke-width="3" opacity=".7"/>`+gemSVG(140,214,3.2,lt);
+  else if(fam===4) collar=`<path d="M118 192 q22 -12 44 0 q-10 13 -22 13 q-12 0 -22 -13z" fill="${lc}" stroke="${ln}" stroke-width="1.3" stroke-linejoin="round"/>`;
+  else collar=`<path d="M116 186 l24 8 l24 -8 l-2 11 l-22 8 l-22 -8z" fill="${lc}" stroke="${shade(c,-0.3)}" stroke-width="1.4" stroke-linejoin="round"/><path d="M138 195 l2 12 l2 -12z" fill="${ac}" stroke="${ln}" stroke-width="1"/>`;
+  // 金属トリム（常時）＋レア度で差し色トリム・宝石
+  let trim=`<path d="M104 197 q36 -9 72 0" stroke="${mt}" stroke-width="2" fill="none" opacity=".85"/>`;
+  if(t>=1) trim+=`<path d="M112 202 q28 8 56 0" stroke="${ac}" stroke-width="2.5" fill="none" opacity=".55" stroke-linecap="round"/>`;
+  if(t>=2) trim+=`<path d="M98 226 q42 11 80 0" fill="none" stroke="${ac}" stroke-width="3" opacity=".7"/>`+gemSVG(140,214,3.2,mt);
   // SSR：フリル段＋袖飾り＋宝石＋光沢＋きらめき
   let ssr="";
   if(t>=3){
     ssr=`<path d="M92 224 q48 14 96 0 l-6 17 q-42 12 -84 0z" fill="url(#dt_${id})" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round" opacity=".95"/>
-      <path d="M92 241 q10 8 18 0 q10 8 18 0 q10 8 18 0 q10 8 18 0 q10 8 18 0" fill="none" stroke="${lt}" stroke-width="2.4" stroke-linecap="round"/>
-      <path d="M62 216 q-7 11 -2 22 q9 -2 13 -11z" fill="${lt}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
-      <path d="M218 216 q7 11 2 22 q-9 -2 -13 -11z" fill="${lt}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
-      ${gemSVG(126,212,3,hi)}${gemSVG(154,212,3,hi)}
-      <path d="M104 192 q12 -6 24 -3" stroke="#fff" stroke-width="2" fill="none" opacity=".5" stroke-linecap="round"/>`;
-    ssr+=ssrAura([[86,184,4.5,"#FFF6D6"],[198,196,3.5,"#FFFFFF"],[150,180,3,"#FFF6D6"]]);
+      <path d="M92 241 q10 8 18 0 q10 8 18 0 q10 8 18 0 q10 8 18 0 q10 8 18 0" fill="none" stroke="${lc}" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M62 216 q-7 11 -2 22 q9 -2 13 -11z" fill="${lc}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
+      <path d="M218 216 q7 11 2 22 q-9 -2 -13 -11z" fill="${lc}" stroke="${ln}" stroke-width="1.2" stroke-linejoin="round" opacity=".92"/>
+      ${gemSVG(126,212,3,mt)}${gemSVG(154,212,3,mt)}
+      <path d="M104 192 q12 -6 24 -3" stroke="${lc}" stroke-width="2" fill="none" opacity=".55" stroke-linecap="round"/>`;
+    ssr+=ssrAura([[86,184,4.5,mt],[198,196,3.5,lc],[150,180,3,mt]]);
   }
   return `<g id="top">${arms}${bodice}${collar}${trim}${ssr}</g>`;
 }
@@ -1558,15 +1571,17 @@ function baseTop(base,id){
     <path d="M118 190 q22 8 44 0" stroke="#E2C3CF" stroke-width="1.6" fill="none"/></g>`;
 }
 /* --- ボトムス --- */
-function renderBottoms(c,variant,id,rarity){
+function renderBottoms(c,variant,id,rarity,attr){
   const sh=shade(c,-0.20),hi=shade(c,0.22),deep=shade(c,-0.34),ln=shade(c,-0.42),lt=shade(c,0.38);
+  const P=tpal(attr,c), ac=P.accent, mt=P.metal, lc=P.lace;
   const t=rtier(rarity);
   if(variant%2===1){ // パンツ
     let p=`<g id="bottom">
       <path d="M100 224 h80 l-2 64 h-30 l-8 -44 l-8 44 h-30 z" fill="url(#db_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M140 230 v54" stroke="${sh}" stroke-width="2.5" opacity=".5" stroke-linecap="round"/>`;
-    if(t>=2) p+=`<path d="M100 226 h80" stroke="${lt}" stroke-width="3" opacity=".7"/>`+gemSVG(140,228,3,lt);
-    if(t>=3) p+=`<path d="M104 284 h28 M148 284 h28" stroke="${lt}" stroke-width="3" stroke-linecap="round"/>`+gemSVG(116,228,2.6,hi)+gemSVG(164,228,2.6,hi)+ssrAura([[106,300,3.5],[174,300,3.5]]);
+      <path d="M140 230 v54" stroke="${sh}" stroke-width="2.5" opacity=".5" stroke-linecap="round"/>
+      <path d="M100 226 h80" stroke="${mt}" stroke-width="2" opacity=".75"/>`;
+    if(t>=2) p+=`<path d="M100 228 h80" stroke="${ac}" stroke-width="2.4" opacity=".7"/>`+gemSVG(140,228,3,mt);
+    if(t>=3) p+=`<path d="M104 284 h28 M148 284 h28" stroke="${mt}" stroke-width="3" stroke-linecap="round"/>`+gemSVG(116,228,2.6,mt)+gemSVG(164,228,2.6,mt)+ssrAura([[106,300,3.5,mt],[174,300,3.5,lc]]);
     return p+`</g>`;
   }
   let s=`<g id="bottom">
@@ -1577,40 +1592,43 @@ function renderBottoms(c,variant,id,rarity){
     <path d="M162 230 L172 286" stroke="${sh}" stroke-width="3" fill="none" opacity=".55" stroke-linecap="round"/>
     <path d="M128 230 L122 288" stroke="${hi}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>
     <path d="M152 230 L158 288" stroke="${hi}" stroke-width="2.5" fill="none" opacity=".5" stroke-linecap="round"/>`;
-  s+=`<path d="M74 288 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 18 0" fill="none" stroke="${deep}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>`;
-  if(t>=2) s+=`<path d="M100 226 q40 -8 80 0" fill="none" stroke="${lt}" stroke-width="3" opacity=".75"/>`+gemSVG(140,228,3.4,lt);
+  s+=`<path d="M74 288 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 20 0 q10 10 18 0" fill="none" stroke="${deep}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+    <path d="M100 226 q40 -8 80 0" fill="none" stroke="${mt}" stroke-width="2" opacity=".8"/>`;
+  if(t>=2) s+=`<path d="M100 230 q40 -8 80 0" fill="none" stroke="${ac}" stroke-width="2.6" opacity=".7"/>`+gemSVG(140,228,3.4,mt);
   if(t>=3) s+=`<path d="M72 270 q34 14 68 0 q34 -14 68 0 l6 20 q-70 20 -140 0z" fill="url(#db_${id})" stroke="${ln}" stroke-width="1.6" stroke-linejoin="round" opacity=".95"/>
-    <path d="M70 290 q11 9 20 0 q11 9 20 0 q11 9 20 0 q11 9 20 0 q11 9 20 0 q11 9 18 0" fill="none" stroke="${lt}" stroke-width="2.4" stroke-linecap="round"/>
-    ${gemSVG(120,228,2.6,hi)}${gemSVG(160,228,2.6,hi)}`+ssrAura([[76,300,4],[204,296,4],[140,316,3]]);
+    <path d="M70 290 q11 9 20 0 q11 9 20 0 q11 9 20 0 q11 9 20 0 q11 9 20 0 q11 9 18 0" fill="none" stroke="${lc}" stroke-width="2.4" stroke-linecap="round"/>
+    ${gemSVG(120,228,2.6,mt)}${gemSVG(160,228,2.6,mt)}`+ssrAura([[76,300,4,mt],[204,296,4,lc],[140,316,3,mt]]);
   return s+`</g>`;
 }
 function baseBottom(id){
   return `<g id="bottom"><path d="M100 224 q40 -10 80 0 l18 56 q-58 16 -116 0 z" fill="#F2D6E0" stroke="#DCB6C5" stroke-width="2" stroke-linejoin="round"/></g>`;
 }
 /* --- シューズ --- */
-function renderShoes(c,variant,id,rarity){
+function renderShoes(c,variant,id,rarity,attr){
   const sh=shade(c,-0.22),hi=shade(c,0.2),ln=shade(c,-0.4),lt=shade(c,0.42);
+  const P=tpal(attr,c), ac=P.accent, mt=P.metal, lc=P.lace;
   const t=rtier(rarity), v=variant%3;
   if(v===1){ // ブーツ
     let b=`<path d="M112 300 h24 v18 l6 8 q-18 6 -34 0 l4 -8 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M144 300 h24 v18 l6 8 q-18 6 -34 0 l4 -8 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>`;
-    if(t>=2) b+=`<path d="M112 305 h24 M144 305 h24" stroke="${lt}" stroke-width="2.4"/>`;
-    if(t>=3) b+=gemSVG(124,303,2.6,hi)+gemSVG(156,303,2.6,hi)+`<path d="M110 318 q14 5 28 0 M142 318 q14 5 28 0" stroke="${lt}" stroke-width="2" fill="none"/>`+ssrAura([[120,332,3],[160,332,3]]);
+      <path d="M144 300 h24 v18 l6 8 q-18 6 -34 0 l4 -8 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M112 302 h24 M144 302 h24" stroke="${mt}" stroke-width="2" opacity=".8"/>`;
+    if(t>=2) b+=`<path d="M112 307 h24 M144 307 h24" stroke="${ac}" stroke-width="2.2"/>`;
+    if(t>=3) b+=gemSVG(124,303,2.6,mt)+gemSVG(156,303,2.6,mt)+`<path d="M110 318 q14 5 28 0 M142 318 q14 5 28 0" stroke="${mt}" stroke-width="2" fill="none"/>`+ssrAura([[120,332,3,mt],[160,332,3,lc]]);
     return `<g id="shoes">${b}</g>`;
   }
   if(v===2){ // サンダル
     let b=`<path d="M110 320 q14 -3 26 0 l1 6 q-14 4 -28 0z" fill="${hi}" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
       <path d="M144 320 q14 -3 26 0 l1 6 q-14 4 -28 0z" fill="${hi}" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M116 318 l8 -8 M158 318 l-8 -8" stroke="${sh}" stroke-width="2.4" stroke-linecap="round"/>`;
-    if(t>=2) b+=`<path d="M120 314 l6 -6 M154 314 l-6 -6" stroke="${lt}" stroke-width="2" stroke-linecap="round"/>`;
-    if(t>=3) b+=gemSVG(123,310,2.4,hi)+gemSVG(157,310,2.4,hi)+ssrAura([[118,330,2.6],[162,330,2.6]]);
+      <path d="M116 318 l8 -8 M158 318 l-8 -8" stroke="${ac}" stroke-width="2.4" stroke-linecap="round"/>`;
+    if(t>=2) b+=`<path d="M120 314 l6 -6 M154 314 l-6 -6" stroke="${mt}" stroke-width="2" stroke-linecap="round"/>`;
+    if(t>=3) b+=gemSVG(123,310,2.4,mt)+gemSVG(157,310,2.4,mt)+ssrAura([[118,330,2.6,mt],[162,330,2.6,lc]]);
     return `<g id="shoes">${b}</g>`;
   }
   let b=`<path d="M112 318 q14 -4 24 0 l2 8 q-14 5 -28 0 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
     <path d="M144 318 q14 -4 24 0 l2 8 q-14 5 -28 0 z" fill="url(#sh_${id})" stroke="${ln}" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M118 318 q8 -3 16 0" stroke="#fff" stroke-width="2" fill="none" opacity=".6"/>`;
-  if(t>=2) b+=`<path d="M120 316 q4 -5 10 -4 M150 316 q4 -5 10 -4" stroke="${lt}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
-  if(t>=3) b+=gemSVG(124,314,2.6,hi)+gemSVG(156,314,2.6,hi)+`<path d="M111 327 q13 4 25 0 M144 327 q13 4 25 0" stroke="${lt}" stroke-width="2" fill="none"/>`+ssrAura([[120,332,3],[160,332,3]]);
+    <path d="M118 318 q8 -3 16 0" stroke="${lc}" stroke-width="2" fill="none" opacity=".6"/>`;
+  if(t>=2) b+=`<path d="M120 316 q4 -5 10 -4 M150 316 q4 -5 10 -4" stroke="${mt}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  if(t>=3) b+=gemSVG(124,314,2.6,mt)+gemSVG(156,314,2.6,mt)+`<path d="M111 327 q13 4 25 0 M144 327 q13 4 25 0" stroke="${mt}" stroke-width="2" fill="none"/>`+ssrAura([[120,332,3,mt],[160,332,3,lc]]);
   return `<g id="shoes">${b}</g>`;
 }
 function baseShoes(id){
@@ -1712,9 +1730,9 @@ function renderChar(){
   html+=bgItem?(useArt(bgItem.art)||renderBg(ATTRS[bgItem.attr].color,bgItem.variant,bgItem.rarity)):"";
   html+=hair.back;
   html+=body;
-  html+=botItem?(useArt(botItem.art)||renderBottoms(botC,botItem.variant,id,botItem.rarity)):baseBottom(id);
-  html+=shoeItem?(useArt(shoeItem.art)||renderShoes(shoeC,shoeItem.variant,id,shoeItem.rarity)):baseShoes(id);
-  html+=topsItem?(useArt(topsItem.art)||renderTops(topC,topsItem.variant,id,base,topsItem.rarity)):baseTop(base,id);
+  html+=botItem?(useArt(botItem.art)||renderBottoms(botC,botItem.variant,id,botItem.rarity,botItem.attr)):baseBottom(id);
+  html+=shoeItem?(useArt(shoeItem.art)||renderShoes(shoeC,shoeItem.variant,id,shoeItem.rarity,shoeItem.attr)):baseShoes(id);
+  html+=topsItem?(useArt(topsItem.art)||renderTops(topC,topsItem.variant,id,base,topsItem.rarity,topsItem.attr)):baseTop(base,id);
   html+=acc.body;
   html+=head+eyes+brows+fMouth();
   html+=hair.front;
