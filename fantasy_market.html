@@ -553,9 +553,9 @@ function itemThumb(it,size){size=size||40;const c=ATTRS[it.attr].color;const t=R
   const ring = t>=3?`<circle cx="12" cy="12" r="11.2" fill="none" stroke="#E6C77A" stroke-width="1.3" opacity=".9"/>`:"";
   const spk = t>=3?`<path d="M19 3.4 l.7 1.8 1.8.7 -1.8.7 -.7 1.8 -.7 -1.8 -1.8 -.7 1.8 -.7z" fill="#F4D58A"/>`
     : t>=2?`<circle cx="19" cy="4.6" r="1.4" fill="${shade(c,0.4)}" stroke="${shade(c,-0.2)}" stroke-width=".6"/>`:"";
-  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" stroke-linecap="round" stroke-linejoin="round">
-    <defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${shade(c,0.5)}"/><stop offset="100%" stop-color="${shade(c,0.06)}"/></linearGradient></defs>
-    <g fill="url(#${g})" stroke="${shade(c,-0.3)}">${ICONS["i_"+it.slot]||""}</g>${ring}${spk}</svg>`;}
+  const defs = it.thumbArt ? "" : `<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${shade(c,0.5)}"/><stop offset="100%" stop-color="${shade(c,0.06)}"/></linearGradient></defs>`;
+  const inner = it.thumbArt ? it.thumbArt : `<g fill="url(#${g})" stroke="${shade(c,-0.3)}">${ICONS["i_"+it.slot]||""}</g>`;
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" stroke-linecap="round" stroke-linejoin="round">${defs}${inner}${ring}${spk}</svg>`;}
 function matThumb(mid,size){size=size||40;const c=MATERIALS[mid].color||"#D4A574";
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${shade(c,0.42)}" stroke="${shade(c,-0.25)}" stroke-linecap="round" stroke-linejoin="round">${ICONS[mid]||ICONS.material}</svg>`;}
 
@@ -690,6 +690,70 @@ add("きらきらほし","bg","fairy","R",230,4,"","gacha");
 add("しんかいの泡","bg","marine","SR",540,5,"","gacha");
 
 const ITEM_BY_ID = Object.fromEntries(ITEMS.map(i=>[i.id,i]));
+
+/* =========================================================
+   作画SVGアセット（ツール書き出し / 手描きSVGを差し込む）
+   ---------------------------------------------------------
+   ◆ 仕組み
+     art(アイテム名, frame, thumb) で、そのアイテムの見た目を
+     プロシージャル描画から「作画SVG」に差し替える。
+   ◆ frame の形（キャラ全体は viewBox 0 0 280 330 の座標系）
+     - tops/bottoms/shoes/bg : SVGマークアップ文字列（その slot の領域に描く）
+     - hair                  : {back, front}（顔の後ろ/前）
+     - acc                   : {body, head}（胸元・首/頭・手まわり）
+     - 文字列の代わりに function(id){...return svg} も可
+       （肌など動的グラデを使いたい時は fill="url(#skin_"+id+")" を利用）
+   ◆ 各 slot のおおよその描画領域（x / y）
+     hair  : 50–230 / 14–262     tops : 62–218 / 184–250
+     bottoms: 70–210 / 224–292    shoes: 108–174 / 300–330
+     acc   : 任意（顔 cx140 cy108）  bg  : 0–280 / 0–330（全面）
+   ◆ 注意：tops を差し替えると素体の腕は出ないので、袖を含めて描くこと。
+   ◆ 詳しい手順とテンプレは ART_PIPELINE.md を参照。
+   ========================================================= */
+function art(name, frame, thumb){
+  const it = ITEMS.find(i=>i.name===name);
+  if(!it){ console.warn("art(): item not found:", name); return; }
+  it.art = frame;
+  if(thumb) it.thumbArt = thumb;
+}
+
+/* ---- 実例①：くろレースドレス（gothic SSR トップス） ----
+   作画SVGに差し替えると、プロシージャル版よりリッチにできる見本。
+   これと同じ要領で他アイテムにも art(...) を足していけばOK。 */
+(function(){
+  const D="#2A2338", M="#43394F", L="#5E5270", LACE="#D9CCE6", LACE2="#EFE7F5",
+        RIB="#7A6A95", GOLD="#E6C77A", GEM="#B57EDC";
+  const dress = `<g id="top">
+    <path d="M86 196 q-26 6 -34 34 q-3 12 2 22 q14 6 26 0 q-6 -16 -2 -30 q3 -14 14 -22z" fill="${M}" stroke="${D}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M54 246 q12 6 24 2 l-2 9 q-12 4 -22 -2z" fill="${LACE}" stroke="${D}" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M58 230 q10 5 20 1 M56 238 q11 5 22 1" stroke="${LACE2}" stroke-width="1" fill="none" opacity=".7"/>
+    <path d="M194 196 q26 6 34 34 q3 12 -2 22 q-14 6 -26 0 q6 -16 2 -30 q-3 -14 -14 -22z" fill="${M}" stroke="${D}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M226 246 q-12 6 -24 2 l2 9 q12 4 22 -2z" fill="${LACE}" stroke="${D}" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M222 230 q-10 5 -20 1 M224 238 q-11 5 -22 1" stroke="${LACE2}" stroke-width="1" fill="none" opacity=".7"/>
+    <ellipse cx="92" cy="196" rx="18" ry="14" fill="${L}" stroke="${D}" stroke-width="2"/>
+    <ellipse cx="188" cy="196" rx="18" ry="14" fill="${L}" stroke="${D}" stroke-width="2"/>
+    <path d="M104 190 q36 -12 72 0 l-6 60 q-30 10 -60 0z" fill="${M}" stroke="${D}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M110 192 q30 -10 60 0 l-4 22 q-26 8 -52 0z" fill="${L}" opacity=".5"/>
+    <path d="M140 196 v52" stroke="${D}" stroke-width="1.4" opacity=".6"/>
+    <path d="M128 200 L152 210 M152 208 L128 218 M128 218 L152 228 M152 226 L128 236" stroke="${GOLD}" stroke-width="1.4" opacity=".85"/>
+    <circle cx="128" cy="200" r="1.6" fill="${GOLD}"/><circle cx="152" cy="226" r="1.6" fill="${GOLD}"/>
+    <path d="M124 184 q16 -10 32 0 l-2 10 q-14 7 -28 0z" fill="${LACE}" stroke="${D}" stroke-width="1.4" stroke-linejoin="round"/>
+    <path d="M126 186 q14 6 28 0" stroke="${LACE2}" stroke-width="1" fill="none"/>
+    <path d="M126 176 q14 7 28 0" stroke="${D}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    ${gemSVG(140,180,3.4,GEM)}
+    <path d="M100 240 q40 12 80 0 l4 14 q-44 12 -88 0z" fill="${M}" stroke="${D}" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M98 252 q11 8 20 0 q11 8 20 0 q11 8 20 0 q11 8 20 0 q11 8 20 0" fill="none" stroke="${LACE}" stroke-width="2.2" stroke-linecap="round"/>
+    ${gemSVG(140,214,4,GEM)}
+    ${ssrAura([[96,182,4,"#FFF6D6"],[190,192,3.4,"#FFFFFF"],[150,176,3,"#F4D58A"],[140,236,3,"#FFF6D6"]])}
+  </g>`;
+  const thumb = `<path d="M9 4 q3 -1 6 0 l1.6 3 q-1 1 -2 1 l1 13 q-4 1.6 -8 0 l1 -13 q-1 0 -2 -1z" fill="${M}" stroke="${D}" stroke-width="1" stroke-linejoin="round"/>
+    <path d="M12 6.4 v11.4" stroke="${GOLD}" stroke-width=".7" opacity=".8"/>
+    <path d="M10.6 8.4 L13.4 9.8 M13.4 9.4 L10.6 10.8 M10.6 11.4 L13.4 12.8" stroke="${GOLD}" stroke-width=".6"/>
+    <path d="M9.6 17.6 q2.4 1.1 4.8 0" stroke="${LACE}" stroke-width="1" fill="none"/>
+    <circle cx="12" cy="6.2" r="1" fill="${GEM}"/>
+    <path d="M18.4 4 l.5 1.4 1.4.5 -1.4.5 -.5 1.4 -.5 -1.4 -1.4 -.5 1.4 -.5z" fill="#F4D58A"/>`;
+  art("くろレースドレス", dress, thumb);
+})();
 
 /* ---------- 限定ガチャのバナー（8日ごとに切替、一巡したら復刻） ---------- */
 const LIMITED = ITEMS.filter(i=>i.src==="limited");
@@ -1528,8 +1592,11 @@ function renderChar(){
     <filter id="soft_${id}" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#8B5E6B" flood-opacity="0.22"/></filter>
   </defs>`;
 
-  const hair=renderHair(hc,hairVar,id,hairItem?hairItem.rarity:"N");
-  const acc=accItem?renderAcc(ATTRS[accItem.attr].color,accItem.variant,id,accItem.rarity):{body:"",head:""};
+  const useArt=(a)=> a==null?null:(typeof a==="function"?a(id):a);
+  const hairArt=hairItem?useArt(hairItem.art):null;
+  const hair = hairArt ? {back:hairArt.back||"", front:hairArt.front||""} : renderHair(hc,hairVar,id,hairItem?hairItem.rarity:"N");
+  const accArt=accItem?useArt(accItem.art):null;
+  const acc = accItem ? (accArt ? {body:accArt.body||"", head:accArt.head||""} : renderAcc(ATTRS[accItem.attr].color,accItem.variant,id,accItem.rarity)) : {body:"",head:""};
 
   const body=`<g id="body" filter="url(#soft_${id})">
     <path d="M128 168 h24 v18 a12 12 0 0 1 -24 0 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/>
@@ -1550,12 +1617,12 @@ function renderChar(){
 
   let html=defs;
   html+=renderRoom();
-  html+=bgItem?renderBg(ATTRS[bgItem.attr].color,bgItem.variant,bgItem.rarity):"";
+  html+=bgItem?(useArt(bgItem.art)||renderBg(ATTRS[bgItem.attr].color,bgItem.variant,bgItem.rarity)):"";
   html+=hair.back;
   html+=body;
-  html+=botItem?renderBottoms(botC,botItem.variant,id,botItem.rarity):baseBottom(id);
-  html+=shoeItem?renderShoes(shoeC,shoeItem.variant,id,shoeItem.rarity):baseShoes(id);
-  html+=topsItem?renderTops(topC,topsItem.variant,id,base,topsItem.rarity):baseTop(base,id);
+  html+=botItem?(useArt(botItem.art)||renderBottoms(botC,botItem.variant,id,botItem.rarity)):baseBottom(id);
+  html+=shoeItem?(useArt(shoeItem.art)||renderShoes(shoeC,shoeItem.variant,id,shoeItem.rarity)):baseShoes(id);
+  html+=topsItem?(useArt(topsItem.art)||renderTops(topC,topsItem.variant,id,base,topsItem.rarity)):baseTop(base,id);
   html+=acc.body;
   html+=head+eyes+brows+fMouth();
   html+=hair.front;
