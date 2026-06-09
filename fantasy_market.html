@@ -669,6 +669,22 @@ add("おおぞらフローラル","tops","natural","SSR",1700,2,"","limited");
 add("スターライトドレス","tops","cool","SSR",1720,3,"","limited");
 add("ようせいのドレス","tops","fairy","SSR",1750,4,"","limited");
 add("マーメイドドレス","tops","marine","SSR",1700,5,"","limited");
+// 目玉フルコーデ用 SSR（手描き）：各テーマのスカート/靴/髪
+add("ゆめみるスカート","bottoms","pastel","SSR",1650,0,"","limited");
+add("ゆめみるシューズ","shoes","pastel","SSR",1500,0,"","limited");
+add("ゆめみるツインヘア","hair","pastel","SSR",1700,0,"","limited");
+add("おおぞらフレアスカート","bottoms","natural","SSR",1650,2,"","limited");
+add("おおぞらサンダル","shoes","natural","SSR",1500,2,"","limited");
+add("おおぞらブレイドヘア","hair","natural","SSR",1700,2,"","limited");
+add("スターライトスカート","bottoms","cool","SSR",1680,3,"","limited");
+add("スターライトブーツ","shoes","cool","SSR",1550,3,"","limited");
+add("スターライトヘア","hair","cool","SSR",1720,3,"","limited");
+add("ようせいスカート","bottoms","fairy","SSR",1700,4,"","limited");
+add("ようせいシューズ","shoes","fairy","SSR",1550,4,"","limited");
+add("ようせいティアラヘア","hair","fairy","SSR",1750,4,"","limited");
+add("マーメイドスカート","bottoms","marine","SSR",1650,5,"","limited");
+add("マーメイドシューズ","shoes","marine","SSR",1500,5,"","limited");
+add("マーメイドヘア","hair","marine","SSR",1720,5,"","limited");
 add("よるのバラスカート","bottoms","gothic","SSR",1750,1,"","limited");
 add("しんじゅのくつ","shoes","marine","SSR",1850,5,"","limited");
 add("こおりのティアラ","acc","cool","SSR",1800,3,"","limited");
@@ -874,6 +890,94 @@ function art(name, frame, thumb){
       ${ssrAura([[96,182,4,"#FFFFFF"],[190,192,3.4,"#FFFFFF"],[150,176,3,"#EFE0A8"],[140,236,3,"#FFFFFF"]])}</g>`;
     art("マーメイドドレス", dress, dth(M,D,GD,"marine"));
   }
+})();
+
+/* ---- 目玉フルコーデ：各テーマの手描きSSR スカート/靴/髪 ---- */
+(function(){
+  const bow=(x,y,s,c,d)=>`<path d="M${x} ${y} q${-s*1.5} ${-s*0.8} ${-s*1.9} ${s*0.4} q0 ${s} ${s*1.9} ${s*0.5}z" fill="${c}" stroke="${d}" stroke-width="1.2" stroke-linejoin="round"/><path d="M${x} ${y} q${s*1.5} ${-s*0.8} ${s*1.9} ${s*0.4} q0 ${s} ${-s*1.9} ${s*0.5}z" fill="${c}" stroke="${d}" stroke-width="1.2" stroke-linejoin="round"/><ellipse cx="${x}" cy="${y+s*0.25}" rx="${s*0.5}" ry="${s*0.62}" fill="${d}"/>`;
+  const flower=(x,y,s,c,c2)=>{let p="";for(let i=0;i<5;i++){const a=i*72*Math.PI/180;p+=`<circle cx="${(x+Math.cos(a)*s).toFixed(1)}" cy="${(y+Math.sin(a)*s).toFixed(1)}" r="${(s*0.64).toFixed(1)}" fill="${c}" stroke="${c2}" stroke-width="1"/>`;}return `${p}<circle cx="${x}" cy="${y}" r="${(s*0.52).toFixed(1)}" fill="${c2}"/>`;};
+  const star=(x,y,s,c,c2)=>{let pts="";for(let i=0;i<10;i++){const r=i%2?s*0.44:s;const a=(-90+i*36)*Math.PI/180;pts+=`${(x+Math.cos(a)*r).toFixed(1)},${(y+Math.sin(a)*r).toFixed(1)} `;}return `<polygon points="${pts.trim()}" fill="${c}" stroke="${c2}" stroke-width="1" stroke-linejoin="round"/>`;};
+
+  // ===== スカート（ロング段フリル）=====
+  function skirt(M,D,L,LC,GD,ac,attr){
+    const f=44,drop=82,hemY=224+drop,hlx=98-f,hrx=182+f,span=84+2*f;
+    const f2=f+10,drop2=Math.round(drop*0.58),hemY2=224+drop2,span2=84+2*f2,hlx2=98-f2,hrx2=182+f2;
+    return `<g id="bottom">
+      <ellipse cx="140" cy="${(224+drop*0.55)|0}" rx="${span/2+12}" ry="${drop*0.62|0}" fill="${GD}" opacity=".12"/>
+      <path d="M98 224 q42 -10 84 0 l${f} ${drop} q${(-span/2)|0} ${(drop*0.28)|0} ${-span} 0 z" fill="${M}" stroke="${D}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M118 230 L${(112-f*0.3)|0} ${hemY-8} M140 232 L140 ${hemY-3} M160 230 L${(168+f*0.3)|0} ${hemY-8}" stroke="${D}" stroke-width="2.6" fill="none" opacity=".4" stroke-linecap="round"/>
+      <path d="M128 232 L${(122-f*0.2)|0} ${hemY-5} M152 232 L${(158+f*0.2)|0} ${hemY-5}" stroke="${L}" stroke-width="2.2" fill="none" opacity=".5" stroke-linecap="round"/>
+      <path d="${scallop(hlx,hrx,hemY,7,10)}" fill="none" stroke="${D}" stroke-width="3" stroke-linecap="round" opacity=".75"/>
+      <path d="M98 224 q42 -10 84 0 l${f2} ${drop2} q${(-span2/2)|0} ${(drop2*0.28)|0} ${-span2} 0 z" fill="${M}" stroke="${D}" stroke-width="1.6" stroke-linejoin="round" opacity=".97"/>
+      <path d="${scallop(hlx2,hrx2,hemY2,7,9)}" fill="none" stroke="${LC}" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M100 226 q40 -8 80 0" fill="none" stroke="${GD}" stroke-width="2.4" opacity=".85"/>
+      <path d="M120 224 q20 -6 40 0 l-2 9 q-18 -5 -36 0z" fill="${ac}" stroke="${D}" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M134 226 q6 7 12 0 l-2 12 q-4 3 -8 0z" fill="${shade(ac,-0.22)}" stroke="${D}" stroke-width="1.1" stroke-linejoin="round"/>
+      ${motif(attr,118,hemY2-4,7.5,GD,ac)}${motif(attr,140,hemY2+4,9,GD,ac)}${motif(attr,162,hemY2-4,7.5,GD,ac)}
+      ${gemSVG(120,228,2.6,GD)}${gemSVG(160,228,2.6,GD)}
+      ${ssrAura([[hlx+4,hemY-8,4,GD],[hrx-4,hemY-12,4,LC],[140,hemY+4,3.4,GD],[104,226,2.6,LC],[176,226,2.6,GD]])}
+    </g>`;
+  }
+  // ===== 靴（ストラップヒール）=====
+  function shoes(M,D,L,GD,ac,attr){
+    return `<g id="shoes">
+      <path d="M110 316 q16 -4 28 0 l3 8 q-2 6 -10 6 l-14 0 q-7 0 -8 -6z" fill="${M}" stroke="${D}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M142 316 q16 -4 28 0 l3 8 q-2 6 -10 6 l-14 0 q-7 0 -8 -6z" fill="${M}" stroke="${D}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M112 314 q13 4 26 0 M144 314 q13 4 26 0" stroke="${GD}" stroke-width="2" fill="none"/>
+      <path d="M122 312 q4 -7 9 -6 M154 312 q4 -7 9 -6" stroke="${D}" stroke-width="2" fill="none" stroke-linecap="round"/>
+      ${motif(attr,125,309,3.2,GD,ac)}${motif(attr,157,309,3.2,GD,ac)}
+      ${ssrAura([[120,330,3,GD],[160,330,3,L]])}
+    </g>`;
+  }
+  // ===== 髪（ロング＋テーマ装飾）=====
+  function hair(F,HI,DK,LN,orn){
+    const back=`<g>
+      <path d="M60 96 C50 38 96 14 140 14 C184 14 230 38 220 96 L228 214 C228 250 188 262 140 262 C92 262 52 250 52 214 Z" fill="${F}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M54 150 C42 200 48 252 64 292 C72 286 80 274 80 262 C70 224 66 188 70 152 Z" fill="${F}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M226 150 C238 200 232 252 216 292 C208 286 200 274 200 262 C210 224 214 188 210 152 Z" fill="${F}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M52 200 C72 244 208 244 228 200 L228 214 C228 250 188 262 140 262 C92 262 52 250 52 214z" fill="${DK}" opacity=".22"/>
+      <path d="M70 120 C66 170 70 210 86 244" stroke="${HI}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>
+      <path d="M210 120 C214 170 210 210 196 244" stroke="${HI}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>
+      <path d="M62 296 C66 266 64 228 70 200" stroke="${HI}" stroke-width="2.4" fill="none" opacity=".5" stroke-linecap="round"/>
+      <path d="M218 296 C214 266 216 228 210 200" stroke="${HI}" stroke-width="2.4" fill="none" opacity=".5" stroke-linecap="round"/></g>`;
+    const front=`<g id="hairFront">
+      <path d="M70 104 C68 44 110 26 140 26 C170 26 212 44 210 104 C200 78 176 70 158 78 C150 60 130 60 122 78 C104 70 80 78 70 104 Z" fill="${F}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M70 104 C62 130 64 160 74 184 C66 158 70 128 84 110 Z" fill="${F}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M210 104 C218 130 216 160 206 184 C214 158 210 128 196 110 Z" fill="${F}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <ellipse cx="140" cy="46" rx="52" ry="14" fill="${HI}" opacity=".3"/>
+      <path d="M120 40 C104 56 96 80 96 100" stroke="${HI}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".85"/>
+      <path d="M150 38 C168 54 180 78 182 100" stroke="${HI}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".85"/>
+      <path d="M112 44 C104 64 100 84 102 100" stroke="${DK}" stroke-width="1.6" fill="none" opacity=".3"/>
+      <path d="M168 44 C176 64 180 84 178 100" stroke="${DK}" stroke-width="1.6" fill="none" opacity=".3"/>
+      ${orn}</g>`;
+    return {back, front};
+  }
+  // ===== サムネ =====
+  const sktTh=(M,D,GD,attr)=>`<path d="M7 6 q5 -1.6 10 0 l4 13 q-9 2.6 -18 0z" fill="${M}" stroke="${D}" stroke-width="1" stroke-linejoin="round"/>${motif(attr,12,15,2.6,GD,D)}`;
+  const shoTh=(M,D,GD,attr)=>`<path d="M3 14 q4 -1 7 0 l1 4 q-1 2 -4 2 l-3 0 q-2 0 -2 -3z M13 14 q4 -1 7 0 l1 4 q-1 2 -4 2 l-3 0 q-2 0 -2 -3z" fill="${M}" stroke="${D}" stroke-width=".8" stroke-linejoin="round"/>${motif(attr,7,12,1.8,GD,D)}${motif(attr,17,12,1.8,GD,D)}`;
+  const hairTh=(F,LN,acc,attr)=>`<path d="M5 13 C4 5 8 3 12 3 C16 3 20 5 19 13 l1 7 q-3 2 -5 0 q1 -9 -3 -11 q-4 2 -3 11 q-2 2 -5 0z" fill="${F}" stroke="${LN}" stroke-width=".8" stroke-linejoin="round"/>${motif(attr,12,6,2.2,acc,LN)}`;
+
+  // ===== テーマ別登録 =====
+  // パステル
+  art("ゆめみるスカート", skirt("#F4B8D0","#C77FA0","#FBDCEA","#FFF4F8","#F0C987","#E58CA9","pastel"), sktTh("#F4B8D0","#C77FA0","#E58CA9","pastel"));
+  art("ゆめみるシューズ", shoes("#F4B8D0","#C77FA0","#FBDCEA","#F0C987","#E58CA9","pastel"), shoTh("#F4B8D0","#C77FA0","#E58CA9","pastel"));
+  art("ゆめみるツインヘア", hair("#F0B8D0","#FBD9E8","#C77FA0","#A85F84", bow(98,60,9,"#E58CA9","#C77FA0")+motif("pastel",186,66,7,"#E58CA9","#C77FA0")), hairTh("#F0B8D0","#A85F84","#E58CA9","pastel"));
+  // ナチュラル
+  art("おおぞらフレアスカート", skirt("#A7C580","#6E8A4E","#C8DFA2","#FBF3E0","#D8B25A","#C98A3A","natural"), sktTh("#A7C580","#6E8A4E","#D8B25A","natural"));
+  art("おおぞらサンダル", shoes("#C9A86A","#6E5530","#E6CF9E","#D8B25A","#C98A3A","natural"), shoTh("#C9A86A","#6E5530","#D8B25A","natural"));
+  art("おおぞらブレイドヘア", hair("#C9A86A","#E6CF9E","#9A7A44","#6E5530", flower(108,40,6,"#EBA6BE","#D8B25A")+flower(140,32,6.5,"#F2C0D0","#D8B25A")+flower(172,40,6,"#EBA6BE","#D8B25A")), hairTh("#C9A86A","#6E5530","#EBA6BE","natural"));
+  // クール
+  art("スターライトスカート", skirt("#7FA6CC","#3A5E86","#B8D2EC","#EAF2FB","#CFE0F0","#2E5C8A","cool"), sktTh("#7FA6CC","#3A5E86","#CFE0F0","cool"));
+  art("スターライトブーツ", shoes("#3A5E86","#26415E","#7FA6CC","#CFE0F0","#9FC2E6","cool"), shoTh("#3A5E86","#26415E","#CFE0F0","cool"));
+  art("スターライトヘア", hair("#9FC2E6","#D6E8F8","#5E83AE","#3E5E84", `<path d="M104 52 q36 -22 72 0" stroke="#CFE0F0" stroke-width="2.4" fill="none" stroke-linecap="round"/>`+star(140,44,7,"#CFE0F0","#3A5E86")+star(116,52,4,"#EAF2FB","#3A5E86")+star(164,52,4,"#EAF2FB","#3A5E86")), hairTh("#9FC2E6","#3E5E84","#CFE0F0","cool"));
+  // フェアリー
+  art("ようせいスカート", skirt("#C2A9E0","#8A63B8","#E0CFF2","#FBF1FF","#F0CBE0","#A87FD0","fairy"), sktTh("#C2A9E0","#8A63B8","#F0CBE0","fairy"));
+  art("ようせいシューズ", shoes("#C2A9E0","#8A63B8","#E0CFF2","#F0CBE0","#A87FD0","fairy"), shoTh("#C2A9E0","#8A63B8","#F0CBE0","fairy"));
+  art("ようせいティアラヘア", hair("#C6AEE6","#E6D6F6","#9576C0","#6E5296", `<path d="M106 50 q34 -20 68 0" stroke="#F0CBE0" stroke-width="2.4" fill="none" stroke-linecap="round"/>`+gemSVG(140,44,4.2,"#F0CBE0")+gemSVG(120,50,3,"#F0CBE0")+gemSVG(160,50,3,"#F0CBE0")+motif("fairy",96,66,8,"#F0CBE0","#8A63B8")), hairTh("#C6AEE6","#6E5296","#F0CBE0","fairy"));
+  // マリン
+  art("マーメイドスカート", skirt("#6FC1C8","#27607A","#A9E0E4","#FFFFFF","#E8D29A","#27607A","marine"), sktTh("#6FC1C8","#27607A","#E8D29A","marine"));
+  art("マーメイドシューズ", shoes("#6FC1C8","#27607A","#A9E0E4","#E8D29A","#27607A","marine"), shoTh("#6FC1C8","#27607A","#E8D29A","marine"));
+  art("マーメイドヘア", hair("#8FD2D6","#C6EEEF","#4E9AA2","#2E6E76", bow(100,64,8,"#D9544F","#27607A")+motif("marine",186,66,7,"#E8D29A","#27607A")), hairTh("#8FD2D6","#2E6E76","#E8D29A","marine"));
 })();
 
 /* ---- 実例②：くろレースドレスに合わせたゴシック・フルコーデ ----
