@@ -755,6 +755,98 @@ function art(name, frame, thumb){
   art("くろレースドレス", dress, thumb);
 })();
 
+/* ---- 実例②：くろレースドレスに合わせたゴシック・フルコーデ ----
+   髪・スカート・靴・背景もまとめて作画SVG化。体の座標
+   （首168 / 肩206 / 腰224・裾288 / 脚286-320 / 足元300-326 / 頭cx140cy108）に合わせて配置。 */
+(function(){
+  const gem=(x,y,r,c)=>gemSVG(x,y,r,c), spk=(x,y,s,c)=>sparkSVG(x,y,s,c);
+  function rose(x,y,s,p,c){return `<g><circle cx="${x}" cy="${y}" r="${s}" fill="${p}"/>`
+    +`<path d="M${x-s} ${y} a${s} ${s} 0 1 1 ${2*s} 0" fill="none" stroke="${c}" stroke-width="${s*0.4}" opacity=".7"/>`
+    +`<circle cx="${x}" cy="${y}" r="${s*0.45}" fill="${c}"/>`
+    +`<path d="M${x-s*0.6} ${y-s*0.2} q${s*0.6} -${s*0.5} ${s*1.2} 0" stroke="${c}" stroke-width="${s*0.22}" fill="none" opacity=".6"/></g>`;}
+
+  /* === 髪「ナイトレイヴン」=== */
+  const BK="#15101F", BK2="#241A33", SHN="#5B4685", GLT="#3F73B0", R1="#A01837", R2="#6E0E22", LF="#2E5A3A";
+  const hairBack=`<g>
+    <path d="M60 96 C50 38 96 14 140 14 C184 14 230 38 220 96 L228 214 C228 250 188 262 140 262 C92 262 52 250 52 214 Z" fill="${BK}" stroke="${BK2}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M56 150 C44 200 50 252 66 292 C74 286 80 274 80 262 C70 224 66 188 70 152 Z" fill="${BK}" stroke="${BK2}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M224 150 C236 200 230 252 214 292 C206 286 200 274 200 262 C210 224 214 188 210 152 Z" fill="${BK}" stroke="${BK2}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M70 120 C66 170 70 210 86 244" stroke="${SHN}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>
+    <path d="M210 120 C214 170 210 210 196 244" stroke="${SHN}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>
+    <path d="M140 130 C138 180 138 220 140 256" stroke="${GLT}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".4"/></g>`;
+  const hairFront=`<g>
+    <path d="M70 104 C68 44 110 26 140 26 C170 26 212 44 210 104 C200 78 176 70 158 78 C150 60 130 60 122 78 C104 70 80 78 70 104 Z" fill="${BK}" stroke="${BK2}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M70 104 C62 130 64 162 74 186 C66 158 70 128 84 110 Z" fill="${BK}" stroke="${BK2}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M210 104 C218 130 216 162 206 186 C214 158 210 128 196 110 Z" fill="${BK}" stroke="${BK2}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M120 40 C104 56 96 80 96 100" stroke="${SHN}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/>
+    <path d="M150 38 C168 54 180 78 182 100" stroke="${SHN}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/>
+    <path d="M140 34 C138 52 138 66 140 76" stroke="${GLT}" stroke-width="2.2" fill="none" stroke-linecap="round" opacity=".6"/>
+    <path d="M196 64 q18 -10 30 -4 q-6 14 -22 18 q-4 -6 -8 -14z" fill="${BK2}" stroke="${BK}" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M200 66 q12 -4 22 -2" stroke="${GLT}" stroke-width="1" fill="none" opacity=".6"/>
+    ${rose(86,70,9,R1,R2)}
+    <path d="M76 80 q-7 7 -14 4 q5 -7 14 -4z" fill="${LF}"/>
+    ${spk(94,56,3.4,"#F4D58A")}${spk(212,58,3,"#FFFFFF")}</g>`;
+  art("ナイトレイヴン", {back:hairBack, front:hairFront},
+    `<path d="M5 13 q0 -9 7 -9 q7 0 7 9 l0 6 q-3 2 -5 0 q1 -8 -2 -10 q-3 2 -2 10 q-2 2 -5 0z" fill="#15101F"/><circle cx="7.4" cy="7.6" r="2" fill="#A01837"/>`);
+
+  /* === スカート「よるのバラスカート」=== */
+  const SK="#241830", SK2="#160E20", SHE="#4A3568", LC="#C9B8DE", GD="#E6C77A";
+  const skirt=`<g id="bottom">
+    <path d="M86 250 q54 16 108 0 l8 44 q-66 18 -124 0 z" fill="${LC}" opacity=".85" stroke="${SK2}" stroke-width="1"/>
+    <path d="M82 290 q12 9 22 0 q12 9 22 0 q12 9 22 0 q12 9 22 0 q12 9 20 0" fill="none" stroke="#EFE7F5" stroke-width="2" stroke-linecap="round"/>
+    <path d="M98 224 q42 -10 84 0 l24 64 q-66 18 -132 0 z" fill="${SK}" stroke="${SK2}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M118 230 L104 286 M140 232 L140 290 M162 230 L176 286" stroke="${SK2}" stroke-width="3" fill="none" opacity=".6" stroke-linecap="round"/>
+    <path d="M128 230 L120 288 M152 230 L160 288" stroke="${SHE}" stroke-width="2.4" fill="none" opacity=".55" stroke-linecap="round"/>
+    <path d="M96 224 q44 -10 88 0 l-1 9 q-43 -9 -86 0z" fill="${R2}"/>
+    <path d="M132 226 q8 6 16 0 l-2 11 q-6 4 -12 0z" fill="${R1}" stroke="${R2}" stroke-width="1" stroke-linejoin="round"/>
+    ${gem(140,230,3,GD)}
+    ${rose(96,283,8,R1,R2)}${rose(140,292,9,R1,R2)}${rose(186,283,8,R1,R2)}
+    <path d="M108 285 q-6 6 -12 3 M150 294 q8 5 16 2 M174 285 q6 5 12 2" stroke="${LF}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    ${ssrAura([[80,260,4,"#FFF6D6"],[204,256,4,"#FFFFFF"],[140,250,3,"#F4D58A"]])}</g>`;
+  art("よるのバラスカート", skirt,
+    `<path d="M8 6 q4 -1.4 8 0 l3 13 q-7 2.4 -14 0z" fill="#241830"/><circle cx="7.6" cy="18" r="1.5" fill="#A01837"/><circle cx="12" cy="19" r="1.8" fill="#A01837"/><circle cx="16.4" cy="18" r="1.5" fill="#A01837"/>`);
+
+  /* === 靴「ノワールロングブーツ」=== */
+  const BT="#1B1322", BT2="#0E0915", BU="#C9B8DE";
+  const boots=`<g id="shoes">
+    <path d="M112 288 q13 -4 26 0 l1 28 q-14 5 -28 0 z" fill="${BT}" stroke="${BT2}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M108 314 q16 -3 30 0 l0 8 q-2 6 -9 6 l-16 0 q-7 0 -8 -6 z" fill="${BT2}" stroke="${BT2}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M112 290 q13 -4 26 0 l0 6 q-13 4 -26 0z" fill="${BT2}"/>
+    <path d="M117 296 L133 301 M133 300 L117 305 M117 304 L133 309 M133 308 L117 313" stroke="${BU}" stroke-width="1.3" opacity=".9"/>
+    <path d="M112 297 q13 4 26 0" stroke="${GD}" stroke-width="1.6" fill="none" opacity=".8"/>${gem(125,300,2.6,BU)}${spk(120,330,3,"#FFF6D6")}
+    <path d="M142 288 q13 -4 26 0 l1 28 q-14 5 -28 0 z" fill="${BT}" stroke="${BT2}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M142 314 q16 -3 30 0 l0 8 q-2 6 -9 6 l-16 0 q-7 0 -8 -6 z" fill="${BT2}" stroke="${BT2}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M142 290 q13 -4 26 0 l0 6 q-13 4 -26 0z" fill="${BT2}"/>
+    <path d="M147 296 L163 301 M163 300 L147 305 M147 304 L163 309 M163 308 L147 313" stroke="${BU}" stroke-width="1.3" opacity=".9"/>
+    <path d="M142 297 q13 4 26 0" stroke="${GD}" stroke-width="1.6" fill="none" opacity=".8"/>${gem(155,300,2.6,BU)}${spk(160,330,3,"#FFFFFF")}</g>`;
+  art("ノワールロングブーツ", boots,
+    `<path d="M8 4 q3 -1 5 0 l.6 11 q1 2 3 3 l-1 2 q-5 1.4 -9 0 l-.6 -2 q1 -1 1 -3z" fill="#1B1322"/><path d="M7 18 q4 1.4 8 0" stroke="#C9B8DE" stroke-width=".8" fill="none"/><path d="M8.5 6 L12 7 M12 7 L8.5 8.5 M8.5 9.5 L12 11" stroke="#C9B8DE" stroke-width=".6"/>`);
+
+  /* === 背景「シャンデリア」=== */
+  const bg=`<g id="bgArt">
+    <defs>
+      <linearGradient id="ngbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2A2140"/><stop offset="55%" stop-color="#3A2C56"/><stop offset="100%" stop-color="#211A33"/></linearGradient>
+      <radialGradient id="nggl" cx="50%" cy="18%" r="62%"><stop offset="0%" stop-color="#6E5AA0" stop-opacity=".55"/><stop offset="100%" stop-color="#6E5AA0" stop-opacity="0"/></radialGradient>
+    </defs>
+    <rect x="0" y="0" width="280" height="330" fill="url(#ngbg)"/>
+    <rect x="0" y="0" width="280" height="330" fill="url(#nggl)"/>
+    <path d="M70 70 q70 -60 140 0 l0 120 -140 0 z" fill="#1B1530" opacity=".5"/>
+    <path d="M140 24 q-46 0 -70 46 M140 24 q46 0 70 46 M140 24 v120" stroke="#4A3A6E" stroke-width="2" fill="none" opacity=".6"/>
+    <path d="M0 0 h60 q-18 80 -10 170 q4 90 -12 160 l-38 0 z" fill="#3A1530" opacity=".8"/>
+    <path d="M280 0 h-60 q18 80 10 170 q-4 90 12 160 l38 0 z" fill="#3A1530" opacity=".8"/>
+    <path d="M30 10 q-6 150 -8 310 M46 8 q-10 150 0 312" stroke="#5A2348" stroke-width="3" fill="none" opacity=".5"/>
+    <path d="M250 10 q6 150 8 310 M234 8 q10 150 0 312" stroke="#5A2348" stroke-width="3" fill="none" opacity=".5"/>
+    <path d="M140 0 v22" stroke="#E6C77A" stroke-width="2"/>
+    <path d="M110 40 q30 -20 60 0 q-4 14 -30 16 q-26 -2 -30 -16z" fill="#3A2C56" stroke="#E6C77A" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M112 38 h56 M120 30 q20 -10 40 0" stroke="#E6C77A" stroke-width="1.4" fill="none" opacity=".8"/>
+    <circle cx="112" cy="36" r="2.4" fill="#FFE3A0"/><circle cx="128" cy="30" r="2.4" fill="#FFE3A0"/><circle cx="140" cy="28" r="2.6" fill="#FFF2C8"/><circle cx="152" cy="30" r="2.4" fill="#FFE3A0"/><circle cx="168" cy="36" r="2.4" fill="#FFE3A0"/>
+    <path d="M120 44 v10 M132 46 v12 M140 48 v14 M148 46 v12 M160 44 v10" stroke="#E6C77A" stroke-width="1" opacity=".7"/>
+    ${ssrAura([[112,36,4,"#FFF2C8"],[140,28,5,"#FFF6D6"],[168,36,4,"#FFF2C8"],[40,120,3.5,"#FFFFFF"],[240,140,3.5,"#FFFFFF"]])}
+    <ellipse cx="140" cy="320" rx="120" ry="16" fill="#120C20" opacity=".55"/></g>`;
+  art("シャンデリア", bg,
+    `<rect x="1" y="1" width="22" height="22" rx="3" fill="#241830"/><path d="M12 2.5 v3" stroke="#E6C77A" stroke-width="1"/><path d="M6 8 q6 -4 12 0 q-1 3 -6 3.4 q-5 -.4 -6 -3.4z" fill="#3A2C56" stroke="#E6C77A" stroke-width=".8"/><circle cx="7" cy="7.4" r="1" fill="#FFE3A0"/><circle cx="12" cy="6.4" r="1.1" fill="#FFF2C8"/><circle cx="17" cy="7.4" r="1" fill="#FFE3A0"/>`);
+})();
+
 /* ---------- 限定ガチャのバナー（8日ごとに切替、一巡したら復刻） ---------- */
 const LIMITED = ITEMS.filter(i=>i.src==="limited");
 const BANNERS = [
