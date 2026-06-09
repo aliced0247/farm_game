@@ -1446,7 +1446,7 @@ function defaultFace(){return{eye:"round",brow:"soft",mouth:"smile",eyeSize:1.05
   offsets:{eyes:{x:0,y:0},brows:{x:0,y:0},mouth:{x:0,y:0},hairFront:{x:0,y:0}}};}
 
 let charUid=0;
-function hairColorsFor(base){return {root:shade(base,-0.22),tip:base,hi:shade(base,0.30),line:shade(base,-0.42)};}
+function hairColorsFor(base){return {root:shade(base,-0.22),tip:base,hi:shade(base,0.30),line:shade(base,-0.42),deep:shade(base,-0.40),sheen:shade(base,0.58)};}
 
 /* --- 目 --- */
 function fEye(cx,dir,id,h){
@@ -1494,41 +1494,58 @@ function fMouth(){
 
 /* --- 髪（シルエットvariant） root/tip/hi/line を持つ hc --- */
 function renderHair(hc,variant,id,rarity){
-  const HI=hc.hi,LN=hc.line,t=rtier(rarity);
+  const HI=hc.hi,LN=hc.line,DEEP=hc.deep,t=rtier(rarity);
+  const G=`url(#hair_${id})`;
   const twin = variant===0;
   const short = (variant===3||variant===5);
   let back;
   if(twin){
-    back=`<path d="M62 96 C54 40 98 16 140 16 C182 16 226 40 218 96 L222 176 C222 206 188 214 140 214 C92 214 58 206 58 176 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M52 120 q-16 50 6 96 q14 -8 18 -26 q-10 -34 -4 -64z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M228 120 q16 50 -6 96 q-14 -8 -18 -26 q10 -34 4 -64z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
+    back=`<path d="M62 96 C54 40 98 16 140 16 C182 16 226 40 218 96 L222 176 C222 206 188 214 140 214 C92 214 58 206 58 176 Z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M52 120 q-16 50 6 96 q14 -8 18 -26 q-10 -34 -4 -64z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M228 120 q16 50 -6 96 q-14 -8 -18 -26 q10 -34 4 -64z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M56 150 q-10 38 4 70" stroke="${DEEP}" stroke-width="2" fill="none" opacity=".4" stroke-linecap="round"/>
+      <path d="M224 150 q10 38 -4 70" stroke="${DEEP}" stroke-width="2" fill="none" opacity=".4" stroke-linecap="round"/>
+      <path d="M62 132 q-12 40 0 78" stroke="${HI}" stroke-width="2.6" fill="none" opacity=".55" stroke-linecap="round"/>
+      <path d="M218 132 q12 40 0 78" stroke="${HI}" stroke-width="2.6" fill="none" opacity=".55" stroke-linecap="round"/>`;
   }else if(short){
-    back=`<path d="M64 100 C58 44 98 18 140 18 C182 18 222 44 216 100 L214 168 C214 192 182 196 140 196 C98 196 66 192 66 168 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
+    back=`<path d="M64 100 C58 44 98 18 140 18 C182 18 222 44 216 100 L214 168 C214 192 182 196 140 196 C98 196 66 192 66 168 Z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M66 156 C100 178 180 178 214 156 L214 168 C214 192 182 196 140 196 C98 196 66 192 66 168z" fill="${DEEP}" opacity=".22"/>
+      <path d="M88 116 C84 148 88 170 96 186" stroke="${HI}" stroke-width="3.2" fill="none" opacity=".6" stroke-linecap="round"/>
+      <path d="M192 116 C196 148 192 170 184 186" stroke="${HI}" stroke-width="3.2" fill="none" opacity=".6" stroke-linecap="round"/>`;
   }else{
-    back=`<path d="M60 96 C50 38 96 14 140 14 C184 14 230 38 220 96 L228 214 C228 250 188 262 140 262 C92 262 52 250 52 214 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+    back=`<path d="M60 96 C50 38 96 14 140 14 C184 14 230 38 220 96 L228 214 C228 250 188 262 140 262 C92 262 52 250 52 214 Z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M52 198 C72 244 208 244 228 198 L228 214 C228 250 188 262 140 262 C92 262 52 250 52 214z" fill="${DEEP}" opacity=".24"/>
       <path d="M70 120 C66 170 70 210 86 244" stroke="${HI}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>
-      <path d="M210 120 C214 170 210 210 196 244" stroke="${HI}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>`;
+      <path d="M210 120 C214 170 210 210 196 244" stroke="${HI}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".7"/>
+      <path d="M140 118 C138 178 138 220 140 254" stroke="${DEEP}" stroke-width="2" fill="none" stroke-linecap="round" opacity=".32"/>
+      <path d="M104 124 C100 180 104 222 116 252" stroke="${DEEP}" stroke-width="1.6" fill="none" opacity=".28"/>
+      <path d="M176 124 C180 180 176 222 164 252" stroke="${DEEP}" stroke-width="1.6" fill="none" opacity=".28"/>`;
   }
-  // 前髪バリエーション
+  // 前髪バリエーション（silhouette は維持）
   let bang;
-  if(variant===1){ // ストレート
-    bang=`<path d="M70 104 C70 42 110 26 140 26 C170 26 210 42 210 104 C200 80 176 74 140 74 C104 74 80 80 70 104 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
-  }else if(variant===2){ // センター分け
-    bang=`<path d="M70 104 C70 44 110 26 140 26 C170 26 210 44 210 104 C198 78 168 74 142 86 L140 70 L138 86 C112 74 82 78 70 104 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
-  }else{
-    bang=`<path d="M70 104 C68 44 110 26 140 26 C170 26 212 44 210 104 C200 78 176 70 158 78 C150 60 130 60 122 78 C104 70 80 78 70 104 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
-  }
-  let buns = twin?`<circle cx="58" cy="92" r="16" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2"/><circle cx="222" cy="92" r="16" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2"/>`:"";
+  if(variant===1){ bang=`<path d="M70 104 C70 42 110 26 140 26 C170 26 210 42 210 104 C200 80 176 74 140 74 C104 74 80 80 70 104 Z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
+  }else if(variant===2){ bang=`<path d="M70 104 C70 44 110 26 140 26 C170 26 210 44 210 104 C198 78 168 74 142 86 L140 70 L138 86 C112 74 82 78 70 104 Z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`;
+  }else{ bang=`<path d="M70 104 C68 44 110 26 140 26 C170 26 212 44 210 104 C200 78 176 70 158 78 C150 60 130 60 122 78 C104 70 80 78 70 104 Z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>`; }
+  let buns = twin?`<circle cx="58" cy="92" r="16" fill="${G}" stroke="${LN}" stroke-width="2"/><circle cx="222" cy="92" r="16" fill="${G}" stroke="${LN}" stroke-width="2"/><path d="M49 88 a15 15 0 0 1 16 -9" stroke="${HI}" stroke-width="2.6" fill="none" opacity=".6" stroke-linecap="round"/><path d="M231 88 a15 15 0 0 0 -16 -9" stroke="${HI}" stroke-width="2.6" fill="none" opacity=".6" stroke-linecap="round"/>`:"";
+  // 額に落ちる前髪の影＋毛先のワサ
+  const faceShadow=`<path d="M84 96 C110 85 170 85 196 96 C170 103 110 103 84 96 Z" fill="${DEEP}" opacity=".16"/>`;
+  const wisps=`<path d="M104 92 l-4 16 l8 -5 z" fill="${G}" stroke="${LN}" stroke-width="1.1" stroke-linejoin="round"/>
+    <path d="M140 96 l-4 16 l8 0 z" fill="${G}" stroke="${LN}" stroke-width="1.1" stroke-linejoin="round"/>
+    <path d="M176 92 l4 16 l-8 -5 z" fill="${G}" stroke="${LN}" stroke-width="1.1" stroke-linejoin="round"/>`;
   // レア度ヘアアクセ
   let orn="";
-  if(t>=2) orn=`<path d="M150 62 q11 -8 21 -2 q-7 8 -21 5z" fill="${shade(hc.tip,0.42)}" stroke="${LN}" stroke-width="1" stroke-linejoin="round"/>`;
-  if(t>=3) orn=gemSVG(108,64,4,shade(hc.tip,0.55))+gemSVG(176,70,3.4,shade(hc.tip,0.55))+`<path d="M120 40 C104 56 96 80 96 100" stroke="#FFF6D6" stroke-width="2" fill="none" opacity=".55" stroke-linecap="round"/><path d="M150 38 C168 54 180 78 182 100" stroke="#FFF6D6" stroke-width="2" fill="none" opacity=".5" stroke-linecap="round"/>`+ssrAura([[104,56,4],[180,64,3.6],[140,28,3]]);
-  const front=`<g id="hairFront" transform="translate(${S.face.offsets.hairFront.x},${S.face.offsets.hairFront.y})">${bang}
-    <path d="M70 104 C62 130 64 160 74 184 C66 158 70 128 84 110 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M210 104 C218 130 216 160 206 184 C214 158 210 128 196 110 Z" fill="url(#hair_${id})" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
-    <path d="M120 40 C104 56 96 80 96 100" stroke="${HI}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/>
-    <path d="M150 38 C168 54 180 78 182 100" stroke="${HI}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8"/>
-    <path d="M140 34 C138 52 138 66 140 76" stroke="${HI}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".7"/>${buns}${orn}</g>`;
+  if(t>=2) orn=`<path d="M150 60 q14 -9 26 -2 q-8 11 -26 6z" fill="${shade(hc.tip,0.42)}" stroke="${LN}" stroke-width="1.2" stroke-linejoin="round"/><circle cx="161" cy="60" r="2.4" fill="${shade(hc.tip,0.6)}"/>`;
+  if(t>=3) orn=gemSVG(108,62,4.4,shade(hc.tip,0.58))+gemSVG(176,68,3.6,shade(hc.tip,0.58))+`<path d="M150 58 q16 -10 30 -3 q-9 13 -30 7z" fill="${shade(hc.tip,0.5)}" stroke="${LN}" stroke-width="1.2" stroke-linejoin="round"/>`+ssrAura([[104,54,4],[182,62,3.6],[140,26,3]]);
+  const front=`<g id="hairFront" transform="translate(${S.face.offsets.hairFront.x},${S.face.offsets.hairFront.y})">${faceShadow}${bang}
+    <path d="M70 104 C62 130 64 160 74 184 C66 158 70 128 84 110 Z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M210 104 C218 130 216 160 206 184 C214 158 210 128 196 110 Z" fill="${G}" stroke="${LN}" stroke-width="2" stroke-linejoin="round"/>
+    ${wisps}
+    <ellipse cx="140" cy="58" rx="58" ry="21" fill="url(#hairsheen_${id})"/>
+    <path d="M120 40 C104 56 96 80 96 100" stroke="${HI}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".85"/>
+    <path d="M150 38 C168 54 180 78 182 100" stroke="${HI}" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".85"/>
+    <path d="M140 34 C138 52 138 66 140 76" stroke="${HI}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".75"/>
+    <path d="M112 44 C104 64 100 84 102 100" stroke="${DEEP}" stroke-width="1.6" fill="none" opacity=".32"/>
+    <path d="M168 44 C176 64 180 84 178 100" stroke="${DEEP}" stroke-width="1.6" fill="none" opacity=".32"/>${buns}${orn}</g>`;
   return {back:`<g id="hairBack">${back}</g>`, front};
 }
 
@@ -1792,7 +1809,8 @@ function renderChar(){
     <radialGradient id="skin_${id}" cx="50%" cy="42%" r="62%"><stop offset="0%" stop-color="${shade(skin.s0,0.12)}"/><stop offset="60%" stop-color="${skin.s0}"/><stop offset="100%" stop-color="${skin.s1}"/></radialGradient>
     <radialGradient id="cheek_${id}" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#F4A6BC" stop-opacity=".8"/><stop offset="70%" stop-color="#F4A6BC" stop-opacity=".22"/><stop offset="100%" stop-color="#F4A6BC" stop-opacity="0"/></radialGradient>
     <radialGradient id="iris_${id}" cx="50%" cy="38%" r="62%"><stop offset="0%" stop-color="${shade(hc.root,0.34)}"/><stop offset="45%" stop-color="${shade(hc.root,-0.05)}"/><stop offset="100%" stop-color="${shade(hc.root,-0.5)}"/></radialGradient>
-    ${grad("hair_"+id,hc.root,hc.tip)}
+    <linearGradient id="hair_${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${shade(hc.tip,0.30)}"/><stop offset="42%" stop-color="${hc.tip}"/><stop offset="100%" stop-color="${shade(hc.tip,-0.16)}"/></linearGradient>
+    <radialGradient id="hairsheen_${id}" cx="50%" cy="30%" r="55%"><stop offset="0%" stop-color="${hc.sheen}" stop-opacity=".55"/><stop offset="100%" stop-color="${hc.sheen}" stop-opacity="0"/></radialGradient>
     ${grad("dt_"+id,shade(topC,0.20),shade(topC,-0.20))}
     ${grad("db_"+id,shade(botC,0.20),shade(botC,-0.20))}
     ${grad("sh_"+id,shade(shoeC,0.18),shade(shoeC,-0.22))}
