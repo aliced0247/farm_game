@@ -113,6 +113,14 @@
       <div class="row"><div class="nm"><span>かみのいろ</span></div><div class="swatches" id="hairSw"></div></div>
     </div>
     <div class="card"><div class="mini"><button id="resetAll" style="color:var(--rose-d)">顔をぜんぶ さいしょにもどす</button></div></div>
+    <div class="card"><h2>💾 顔の保存・きょうゆう</h2>
+      <div class="mini" id="faceSlots"></div>
+      <button class="bigbtn" id="btnFaceCopy" style="margin-top:10px">この顔を コピー（JSON）📋</button>
+      <p class="hint" id="faceMsg" style="margin-top:8px"></p>
+      <div class="row"><div class="nm"><span>JSONを貼って よみこむ</span></div>
+        <textarea id="faceJson" placeholder="ここに顔JSONを貼って『よみこむ』" style="min-height:60px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px"></textarea></div>
+      <div class="mini"><button id="btnFaceLoad" style="color:var(--rose-d)">JSONをよみこむ</button></div>
+    </div>
     <p class="hint" style="text-align:center">うごかすと すぐ反映＆自動保存。ここの顔はゲームにも出るよ。</p>
   </div>
 
@@ -142,6 +150,7 @@
     </div>
     <div class="card"><h2>④ コードにする</h2>
       <div class="field row"><div class="nm"><span>アイテムの名前</span></div><input type="text" id="artName" placeholder="アイテム名"></div>
+      <div class="toggle"><input type="checkbox" id="tgThumb" checked><label for="tgThumb">一覧アイコン(サムネ)も自動で作る</label></div>
       <button class="bigbtn" id="btnCopy">art() コードをコピー 📋</button>
       <p class="hint" id="copyMsg" style="margin-top:8px"></p>
       <textarea id="codeOut" readonly style="margin-top:6px; min-height:90px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px"></textarea>
@@ -226,14 +235,8 @@ function initStudio(){
   const mkPart=()=>chipRow("partChips",Object.entries(PART_LABELS),()=>F.selPart,(k)=>{F.selPart=k;syncSliders();});
   _chipRefreshers=[mkPresets,mkEye,mkBrow,mkMouth,mkPart]; refreshChips();
 
-  const skinSw=document.getElementById("skinSw"); skinSw.innerHTML="";
-  Object.entries(SKINS).forEach(([k,v])=>{ const b=document.createElement("div"); b.className="sw"+(F.skin===k?" on":"");
-    b.style.background=`linear-gradient(135deg,${v.s0},${v.s1})`;
-    b.onclick=()=>{F.skin=k; skinSw.querySelectorAll(".sw").forEach(x=>x.classList.remove("on")); b.classList.add("on"); drawFace(); persist();}; skinSw.appendChild(b); });
-  const hairSw=document.getElementById("hairSw"); hairSw.innerHTML="";
-  Object.entries(HAIRBASE).forEach(([k,v])=>{ const b=document.createElement("div"); b.className="sw"+(F.hair===k?" on":"");
-    b.style.background=`linear-gradient(135deg,${v.tip},${v.root})`;
-    b.onclick=()=>{F.hair=k; hairSw.querySelectorAll(".sw").forEach(x=>x.classList.remove("on")); b.classList.add("on"); drawFace(); persist();}; hairSw.appendChild(b); });
+  buildSwatches();
+  initFacePresets();
 
   const bind=(id,key,parse)=>{ document.getElementById(id).addEventListener("input",e=>{F[key]=parse(e.target.value);drawFace();persist();}); };
   bind("sW","faceW",v=>parseInt(v)); bind("sH","faceH",v=>parseInt(v));
@@ -258,6 +261,57 @@ function syncSliders(){ const F=S.face; const set=(id,v)=>{const el=document.get
   set("sW",F.faceW); set("sH",F.faceH); set("sChin",F.chin); set("sCheek",F.cheek);
   set("sEyeSize",F.eyeSize); set("sEyeGap",F.eyeGap);
   const o=F.offsets[F.selPart]||{x:0,y:0}; set("sPosX",o.x); set("sPosY",o.y); }
+
+function buildSwatches(){
+  const F=S.face;
+  const skinSw=document.getElementById("skinSw"); skinSw.innerHTML="";
+  Object.entries(SKINS).forEach(([k,v])=>{ const b=document.createElement("div"); b.className="sw"+(F.skin===k?" on":"");
+    b.style.background=`linear-gradient(135deg,${v.s0},${v.s1})`;
+    b.onclick=()=>{F.skin=k; skinSw.querySelectorAll(".sw").forEach(x=>x.classList.remove("on")); b.classList.add("on"); drawFace(); persist();}; skinSw.appendChild(b); });
+  const hairSw=document.getElementById("hairSw"); hairSw.innerHTML="";
+  Object.entries(HAIRBASE).forEach(([k,v])=>{ const b=document.createElement("div"); b.className="sw"+(F.hair===k?" on":"");
+    b.style.background=`linear-gradient(135deg,${v.tip},${v.root})`;
+    b.onclick=()=>{F.hair=k; hairSw.querySelectorAll(".sw").forEach(x=>x.classList.remove("on")); b.classList.add("on"); drawFace(); persist();}; hairSw.appendChild(b); });
+}
+
+/* ---------- 顔プリセット（JSON保存・共有・お気に入りスロット） ---------- */
+const FACE_KEYS=["eye","brow","mouth","eyeSize","eyeGap","faceW","faceH","chin","cheek","preset","hair","skin","offsets"];
+const FP_KEY="atelier_face_presets";
+function faceToObj(){ const F=S.face,o={}; FACE_KEYS.forEach(k=>o[k]=F[k]); return JSON.parse(JSON.stringify(o)); }
+function applyFaceObj(o){ if(!o||typeof o!=="object") return false;
+  const F=S.face;
+  ["eye","brow","mouth","preset","hair","skin"].forEach(k=>{ if(typeof o[k]==="string") F[k]=o[k]; });
+  ["eyeSize","eyeGap","faceW","faceH","chin","cheek"].forEach(k=>{ if(typeof o[k]==="number") F[k]=o[k]; });
+  if(o.offsets&&typeof o.offsets==="object"){ ["eyes","brows","mouth","hairFront"].forEach(k=>{ if(o.offsets[k]) F.offsets[k]={x:o.offsets[k].x|0,y:o.offsets[k].y|0}; }); }
+  return true;
+}
+function fpStore(){ try{ return JSON.parse(localStorage.getItem(FP_KEY))||{}; }catch(e){ return {}; } }
+function fpSave(slot){ const all=fpStore(); all[slot]=faceToObj(); try{ localStorage.setItem(FP_KEY,JSON.stringify(all)); }catch(e){} initFacePresets(); faceMsg("スロット"+slot+"に保存したよ ♡"); }
+function fpLoad(slot){ const all=fpStore(); if(!all[slot]){ faceMsg("スロット"+slot+"は まだ空っぽ"); return; }
+  applyFaceObj(all[slot]); afterFaceImport(); faceMsg("スロット"+slot+"を よみこんだよ"); }
+function faceMsg(t){ const m=document.getElementById("faceMsg"); if(m) m.textContent=t; }
+function afterFaceImport(){ syncSliders(); refreshChips(); buildSwatches(); drawFace(); persist(); }
+function initFacePresets(){
+  const box=document.getElementById("faceSlots"); if(!box) return; box.innerHTML="";
+  const all=fpStore();
+  [1,2,3].forEach(n=>{
+    const filled=!!all[n];
+    const wrap=document.createElement("div"); wrap.style.flex="1"; wrap.style.display="flex"; wrap.style.flexDirection="column"; wrap.style.gap="4px";
+    const save=document.createElement("button"); save.textContent=n+" 保存"; save.onclick=()=>fpSave(n);
+    const load=document.createElement("button"); load.textContent=n+" 呼出"; load.style.color=filled?"var(--rose-d)":"var(--soft)"; load.onclick=()=>fpLoad(n);
+    wrap.appendChild(save); wrap.appendChild(load); box.appendChild(wrap);
+  });
+  const copy=document.getElementById("btnFaceCopy"); if(copy) copy.onclick=()=>{
+    const json=JSON.stringify(faceToObj());
+    document.getElementById("faceJson").value=json;
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(json).then(()=>faceMsg("コピーしたよ！共有できる ♡")).catch(()=>faceMsg("下の枠を長押しでコピーしてね")); }
+    else faceMsg("下の枠を長押しでコピーしてね");
+  };
+  const load=document.getElementById("btnFaceLoad"); if(load) load.onclick=()=>{
+    try{ const o=JSON.parse(document.getElementById("faceJson").value); if(applyFaceObj(o)){ afterFaceImport(); faceMsg("よみこみOK！"); } else faceMsg("JSONが読めなかった…"); }
+    catch(e){ faceMsg("JSONが読めなかった…形をチェックしてね"); }
+  };
+}
 
 /* ============================================================
    作画スタジオ（Phase 2）
@@ -399,22 +453,36 @@ function setupDrag(){
   doll.addEventListener("pointerup",up); doll.addEventListener("pointercancel",up);
 }
 
+/* ---------- サムネ自動生成（スロット領域を24x24へ収める） ---------- */
+function taVal(id){ return document.getElementById(id).value; }
+function thumbStr(){
+  if(!document.getElementById("tgThumb").checked) return null;
+  const reg=ART_REGIONS[artSlot];
+  const content=currentContent();
+  if(!content.trim()) return null;
+  const k=20/Math.max(reg.w,reg.h);
+  const cx=reg.x+reg.w/2, cy=reg.y+reg.h/2;
+  const r=n=>Math.round(n*1000)/1000;
+  return `<g transform="translate(${r(12-k*cx)} ${r(12-k*cy)}) scale(${r(k)})">${content}</g>`;
+}
 /* ---------- コード生成 ---------- */
 function genCode(){
   const name=(document.getElementById("artName").value||"新アイテム").trim();
   const q=JSON.stringify(name);
   const t=tfStr();
   const wrap=s=> t?`<g transform="${t}">${s}</g>` : s;
+  const th=thumbStr();
+  const thumbArg = th ? `, \`${th}\`` : "";
+  let frame;
   if(artSlot==="hair"){
-    const a=document.getElementById("taA").value, b=document.getElementById("taB").value;
-    return `art(${q}, {\n  back:  \`<g id="hairBack">${wrap(a)}</g>\`,\n  front: \`<g id="hairFront">${wrap(b)}</g>\`\n});`;
+    frame=`{\n  back:  \`<g id="hairBack">${wrap(taVal("taA"))}</g>\`,\n  front: \`<g id="hairFront">${wrap(taVal("taB"))}</g>\`\n}`;
+  } else if(artSlot==="acc"){
+    frame=`{\n  body: \`${wrap(taVal("taA"))}\`,\n  head: \`${wrap(taVal("taB"))}\`\n}`;
+  } else {
+    const gid={tops:"top",bottoms:"bottom",shoes:"shoes",bg:"bgItem"}[artSlot];
+    frame=`\`<g id="${gid}">${wrap(currentContent())}</g>\``;
   }
-  if(artSlot==="acc"){
-    const a=document.getElementById("taA").value, b=document.getElementById("taB").value;
-    return `art(${q}, {\n  body: \`${wrap(a)}\`,\n  head: \`${wrap(b)}\`\n});`;
-  }
-  const gid={tops:"top",bottoms:"bottom",shoes:"shoes",bg:"bgItem"}[artSlot];
-  return `art(${q}, \`<g id="${gid}">${wrap(currentContent())}</g>\`);`;
+  return `art(${q}, ${frame}${thumbArg});`;
 }
 function copyCode(){
   const code=genCode();
