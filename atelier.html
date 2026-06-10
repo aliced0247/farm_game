@@ -13,20 +13,24 @@
   html,body{margin:0; background:var(--bg); color:var(--text);
     font-family:-apple-system,"Hiragino Maru Gothic ProN","Hiragino Sans",system-ui,sans-serif;}
   .wrap{max-width:480px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column;}
-  /* 固定プレビュー（操作中も常に見える） */
   .stage{position:sticky; top:0; z-index:10; background:linear-gradient(#fdf3f7,#fbe9f1);
     padding:8px 10px 10px; border-bottom:1px solid var(--line); box-shadow:0 4px 12px rgba(200,120,150,.08);}
-  .stage h1{margin:2px 0 6px; font-size:15px; font-weight:800; color:var(--rose-d); text-align:center; letter-spacing:.04em;}
-  .stage h1 small{display:block; font-weight:600; font-size:10px; color:var(--soft); letter-spacing:0;}
-  .doll{width:46vh; max-width:230px; height:46vh; max-height:271px; margin:0 auto; display:block;
+  .stage h1{margin:2px 0 8px; font-size:15px; font-weight:800; color:var(--rose-d); text-align:center; letter-spacing:.04em;}
+  .tabs{display:flex; gap:6px; justify-content:center; margin-bottom:8px;}
+  .tabs button{font:inherit; font-size:13px; font-weight:800; padding:8px 18px; border-radius:999px;
+    border:1.5px solid var(--line); background:#fff; color:var(--soft);}
+  .tabs button.on{background:var(--rose); color:#fff; border-color:var(--rose);}
+  /* 人形（レイヤー重ね） */
+  .doll{position:relative; width:56vw; max-width:236px; aspect-ratio:280/330; margin:0 auto;
     background:#fff; border:2px solid var(--line); border-radius:18px; overflow:hidden;
-    box-shadow:inset 0 2px 8px rgba(200,120,150,.10);}
-  .doll svg{width:100%; height:100%; display:block;}
+    box-shadow:inset 0 2px 8px rgba(200,120,150,.10); touch-action:none;}
+  .doll svg{position:absolute; inset:0; width:100%; height:100%; display:block;}
+  .layer{pointer-events:none;}
+  #charSvg{z-index:0;} #refLayer{z-index:1;} #pasteLayer{z-index:3;} #guideLayer{z-index:6;}
   .topbtns{display:flex; gap:8px; justify-content:center; margin-top:8px;}
   .topbtns a,.topbtns button{font:inherit; font-size:12px; font-weight:700; text-decoration:none;
     padding:7px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--rose-d);}
   .topbtns .save{background:var(--rose); color:#fff; border-color:var(--rose);}
-  /* コントロール */
   .ctrl{padding:12px 12px 80px; display:flex; flex-direction:column; gap:14px;}
   .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:12px 12px 14px;}
   .card h2{margin:0 0 10px; font-size:13px; font-weight:800; color:var(--rose-d); display:flex; align-items:center; gap:6px;}
@@ -49,217 +53,377 @@
   .mini{display:flex; gap:8px; margin-top:8px;}
   .mini button{flex:1; font:inherit; font-size:12px; font-weight:700; padding:9px; border-radius:12px;
     border:1px solid var(--line); background:#fff; color:var(--soft);}
-  .hint{font-size:11px; color:var(--soft); text-align:center; line-height:1.6;}
+  textarea{width:100%; font:inherit; font-size:12px; padding:9px; border-radius:12px; border:1.5px solid var(--line);
+    background:#fff; color:var(--text); resize:vertical; min-height:70px; line-height:1.45;}
+  .field input[type=text]{width:100%; font:inherit; font-size:14px; padding:10px; border-radius:12px; border:1.5px solid var(--line); background:#fff; color:var(--text);}
+  .toggle{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; margin:4px 0;}
+  .toggle input{width:22px; height:22px; accent-color:var(--rose);}
+  .bigbtn{width:100%; font:inherit; font-size:14px; font-weight:800; padding:13px; border-radius:14px;
+    border:none; background:var(--rose); color:#fff; box-shadow:0 3px 8px rgba(200,120,150,.3);}
+  .hint{font-size:11px; color:var(--soft); line-height:1.6;}
   #loading{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-    background:var(--bg); color:var(--rose-d); font-weight:800; z-index:50;}
+    background:var(--bg); color:var(--rose-d); font-weight:800; z-index:50; text-align:center; padding:20px;}
 </style>
 </head>
 <body>
 <div id="loading">よみこみちゅう…🎨</div>
 <div class="wrap">
   <div class="stage">
-    <h1>キャラ工房<small>顔をスライダーで すきなように</small></h1>
-    <div class="doll"><svg id="charSvg" viewBox="0 0 280 330" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <h1>キャラ工房</h1>
+    <div class="tabs">
+      <button id="tabFace" class="on" onclick="setMode('face')">😊 顔スタジオ</button>
+      <button id="tabArt" onclick="setMode('art')">✏️ 作画スタジオ</button>
+    </div>
+    <div class="doll" id="doll">
+      <svg id="charSvg" viewBox="0 0 280 330" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="refLayer"  class="layer" viewBox="0 0 280 330" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="pasteLayer" class="layer" viewBox="0 0 280 330" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="guideLayer" class="layer" viewBox="0 0 280 330" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
     <div class="topbtns">
       <a href="fantasy_market.html">← ゲームへ</a>
       <button class="save" id="saveBtn">保存ずみ ✓</button>
     </div>
   </div>
-  <div class="ctrl" id="ctrl" style="display:none">
 
-    <div class="card">
-      <h2>😊 顔の雰囲気（プリセット）</h2>
-      <div class="chips" id="presetChips"></div>
-    </div>
-
-    <div class="card">
-      <h2>🫧 顔のかたち</h2>
+  <!-- ===== 顔スタジオ ===== -->
+  <div class="ctrl" id="ctrlFace" style="display:none">
+    <div class="card"><h2>😊 顔の雰囲気（プリセット）</h2><div class="chips" id="presetChips"></div></div>
+    <div class="card"><h2>🫧 顔のかたち</h2>
       <div class="row"><div class="nm"><span>はば</span><span class="ends">ほそい ⇔ ひろい</span></div><input type="range" id="sW" min="58" max="84" step="1"></div>
       <div class="row"><div class="nm"><span>たかさ</span><span class="ends">ひくい ⇔ たかい</span></div><input type="range" id="sH" min="62" max="86" step="1"></div>
       <div class="row"><div class="nm"><span>あご</span><span class="ends">まるい ⇔ とがり</span></div><input type="range" id="sChin" min="-1" max="1" step="0.1"></div>
       <div class="row"><div class="nm"><span>ほっぺ</span><span class="ends">すっきり ⇔ ふっくら</span></div><input type="range" id="sCheek" min="-1" max="1" step="0.1"></div>
     </div>
-
-    <div class="card">
-      <h2>👀 め・まゆ・くち</h2>
+    <div class="card"><h2>👀 め・まゆ・くち</h2>
       <div class="row"><div class="nm"><span>めの形</span></div><div class="chips" id="eyeChips"></div></div>
       <div class="row"><div class="nm"><span>めの大きさ</span><span class="ends">ちいさい ⇔ おおきい</span></div><input type="range" id="sEyeSize" min="0.9" max="1.2" step="0.01"></div>
       <div class="row"><div class="nm"><span>めの間かく</span><span class="ends">よせる ⇔ はなす</span></div><input type="range" id="sEyeGap" min="24" max="34" step="1"></div>
       <div class="row"><div class="nm"><span>まゆ</span></div><div class="chips" id="browChips"></div></div>
       <div class="row"><div class="nm"><span>くち</span></div><div class="chips" id="mouthChips"></div></div>
     </div>
-
-    <div class="card">
-      <h2>📍 パーツのいち</h2>
+    <div class="card"><h2>📍 パーツのいち</h2>
       <div class="row"><div class="chips" id="partChips"></div></div>
       <div class="row"><div class="nm"><span>左右</span><span class="ends">ひだり ⇔ みぎ</span></div><input type="range" id="sPosX" min="-24" max="24" step="1"></div>
       <div class="row"><div class="nm"><span>上下</span><span class="ends">うえ ⇔ した</span></div><input type="range" id="sPosY" min="-24" max="24" step="1"></div>
       <div class="mini"><button id="resetPart">このパーツをもどす</button></div>
     </div>
-
-    <div class="card">
-      <h2>🎨 はだ・かみのいろ</h2>
+    <div class="card"><h2>🎨 はだ・かみのいろ</h2>
       <div class="row"><div class="nm"><span>はだ</span></div><div class="swatches" id="skinSw"></div></div>
       <div class="row"><div class="nm"><span>かみのいろ</span></div><div class="swatches" id="hairSw"></div></div>
     </div>
+    <div class="card"><div class="mini"><button id="resetAll" style="color:var(--rose-d)">顔をぜんぶ さいしょにもどす</button></div></div>
+    <p class="hint" style="text-align:center">うごかすと すぐ反映＆自動保存。ここの顔はゲームにも出るよ。</p>
+  </div>
 
-    <div class="card">
-      <div class="mini"><button id="resetAll" style="color:var(--rose-d)">顔をぜんぶ さいしょにもどす</button></div>
+  <!-- ===== 作画スタジオ ===== -->
+  <div class="ctrl" id="ctrlArt" style="display:none">
+    <div class="card"><h2>① どこを描く？</h2>
+      <div class="chips" id="slotChips"></div>
+      <div class="toggle"><input type="checkbox" id="tgGuide" checked><label for="tgGuide">描く場所のわく を表示</label></div>
+      <div class="toggle"><input type="checkbox" id="tgRef"><label for="tgRef">いまの絵を 下じきに表示（半透明）</label></div>
     </div>
-
-    <p class="hint">うごかすと すぐに反映されて、自動で保存されます。<br>ここで作った顔は ゲームにも反映されるよ。</p>
+    <div class="card"><h2>② SVGを貼る</h2>
+      <div id="pasteSingle">
+        <textarea id="taMain" placeholder="ここに SVG の中身（&lt;path&gt; や &lt;g&gt;）を貼ってね"></textarea>
+      </div>
+      <div id="pasteDual" style="display:none">
+        <div class="row"><div class="nm"><span id="lblA">うしろ</span></div><textarea id="taA" placeholder="うしろ側のSVG"></textarea></div>
+        <div class="row"><div class="nm"><span id="lblB">まえ</span></div><textarea id="taB" placeholder="まえ側のSVG"></textarea></div>
+      </div>
+      <p class="hint">貼ったらすぐ人形に出るよ。出ないときはタグの抜けをチェック。</p>
+    </div>
+    <div class="card"><h2>③ 位置と大きさ</h2>
+      <p class="hint" style="margin:0 0 8px">人形を指でドラッグ＝移動／二本指＝拡大縮小。下のスライダーでも調整できるよ。</p>
+      <div class="row"><div class="nm"><span>大きさ</span><span class="ends">ちいさい ⇔ おおきい</span></div><input type="range" id="sScale" min="0.3" max="2.2" step="0.02" value="1"></div>
+      <div class="row"><div class="nm"><span>左右</span></div><input type="range" id="sTX" min="-120" max="120" step="1" value="0"></div>
+      <div class="row"><div class="nm"><span>上下</span></div><input type="range" id="sTY" min="-120" max="120" step="1" value="0"></div>
+      <div class="mini"><button id="btnResetTf">位置をリセット</button></div>
+    </div>
+    <div class="card"><h2>④ コードにする</h2>
+      <div class="field row"><div class="nm"><span>アイテムの名前</span></div><input type="text" id="artName" placeholder="アイテム名"></div>
+      <button class="bigbtn" id="btnCopy">art() コードをコピー 📋</button>
+      <p class="hint" id="copyMsg" style="margin-top:8px"></p>
+      <textarea id="codeOut" readonly style="margin-top:6px; min-height:90px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px"></textarea>
+      <p class="hint">このコードを くろくん（claude.ai）に渡すと、ゲームに入れてくれるよ。</p>
+    </div>
   </div>
 </div>
 
 <script>
 /* ============================================================
-   キャラ工房（atelier）
-   本体 fantasy_market.html の描画エンジンを実行時に読み込んで使う。
-   → 描画ロジックは本体が唯一の真実。二重管理せず、ズレない。
+   キャラ工房（atelier）  Phase1 顔スタジオ ＋ Phase2 作画スタジオ
+   本体 fantasy_market.html の描画エンジンを実行時に読み込んで使う
+   （描画ロジックは本体が唯一の真実・二重管理なし）。
    ============================================================ */
 (async function(){
-  try{
-    await loadEngine();
-  }catch(e){
-    document.getElementById("loading").innerHTML = "エンジンの読み込みに失敗しました…<br><small>"+e+"</small>";
-    return;
-  }
+  try{ await loadEngine(); }
+  catch(e){ document.getElementById("loading").innerHTML="エンジンの読み込みに失敗…<br><small>"+e+"</small><br><small>Pages(https)で開いてね</small>"; return; }
   initStudio();
 })();
 
-/* 本体の <script> を、DOMをスタブした状態で注入して関数とstateを取り込む */
 function loadEngine(){
-  return fetch("fantasy_market.html", {cache:"no-store"}).then(r=>r.text()).then(txt=>{
-    const m = txt.match(/<script>([\s\S]*?)<\/script>/);
+  return fetch("fantasy_market.html",{cache:"no-store"}).then(r=>r.text()).then(txt=>{
+    const m=txt.match(/<script>([\s\S]*?)<\/script>/);
     if(!m) throw new Error("script not found");
-    const code = m[1];
-    const shim =
-      '(function(){' +
-        'var __real=document.getElementById.bind(document);' +
-        'var noop=function(){};' +
-        'function __el(){' +
-          'var ctx=new Proxy({},{get:function(t,k){return noop;},set:function(){return true;}});' +
-          'var e={classList:{add:noop,remove:noop,toggle:noop,contains:function(){return false;}},style:{},dataset:{},value:"",checked:false,' +
-            'getContext:function(){return ctx;},appendChild:function(c){return c;},removeChild:noop,setAttribute:noop,getAttribute:function(){return null;},' +
-            'addEventListener:noop,removeEventListener:noop,querySelector:function(){return __el();},querySelectorAll:function(){return [];},' +
-            'insertAdjacentHTML:noop,focus:noop,click:noop,remove:noop,' +
-            'getBoundingClientRect:function(){return {left:0,top:0,width:0,height:0,right:0,bottom:0};}};' +
-          'return new Proxy(e,{get:function(t,k){return (k in t)?t[k]:noop;},set:function(t,k,v){t[k]=v;return true;}});' +
-        '}' +
-        // atelier に実在する要素は本物、無い id はダミーを返す（本体の起動コードが落ちないように）
-        'window.__ATELIER_GEI=function(id){return __real(id)||__el();};' +
-        'document.getElementById=window.__ATELIER_GEI;' +
-      '})();\n';
-    const s=document.createElement("script");
-    s.textContent = shim + code;
-    document.head.appendChild(s);   // ここで本体が同期実行され、関数・state(S)が使えるようになる
-    if(typeof S==="undefined" || !S) throw new Error("state未初期化");
+    const shim='(function(){var __real=document.getElementById.bind(document);var noop=function(){};'
+      +'function __el(){var ctx=new Proxy({},{get:function(){return noop;},set:function(){return true;}});'
+      +'var e={classList:{add:noop,remove:noop,toggle:noop,contains:function(){return false;}},style:{},dataset:{},value:"",checked:false,'
+      +'getContext:function(){return ctx;},appendChild:function(c){return c;},removeChild:noop,setAttribute:noop,getAttribute:function(){return null;},'
+      +'addEventListener:noop,removeEventListener:noop,querySelector:function(){return __el();},querySelectorAll:function(){return [];},'
+      +'insertAdjacentHTML:noop,focus:noop,click:noop,remove:noop,getBoundingClientRect:function(){return {left:0,top:0,width:0,height:0,right:0,bottom:0};}};'
+      +'return new Proxy(e,{get:function(t,k){return (k in t)?t[k]:noop;},set:function(t,k,v){t[k]=v;return true;}});}'
+      +'window.__ATELIER_GEI=function(id){return __real(id)||__el();};document.getElementById=window.__ATELIER_GEI;})();\n';
+    const s=document.createElement("script"); s.textContent=shim+m[1]; document.head.appendChild(s);
+    if(typeof S==="undefined"||!S) throw new Error("state未初期化");
   });
 }
 
-/* ============================================================ */
 let savedTimer=null;
-function flashSaved(){
-  const b=document.getElementById("saveBtn");
-  b.textContent="保存しました ♡";
-  clearTimeout(savedTimer);
-  savedTimer=setTimeout(()=>{ b.textContent="保存ずみ ✓"; }, 900);
-}
-function draw(){ try{ renderChar(); }catch(e){ console.warn(e); } }
+function flashSaved(){ const b=document.getElementById("saveBtn"); b.textContent="保存しました ♡";
+  clearTimeout(savedTimer); savedTimer=setTimeout(()=>{ b.textContent="保存ずみ ✓"; },900); }
 function persist(){ try{ save(); }catch(e){} flashSaved(); }
 
-function chipRow(boxId, entries, getCur, onPick){
-  const box=document.getElementById(boxId); box.innerHTML="";
-  entries.forEach(([k,label])=>{
-    const b=document.createElement("button");
-    b.className="chip"+(getCur()===k?" on":"");
-    b.textContent=label;
-    b.onclick=()=>{ onPick(k); refreshChips(); };
-    box.appendChild(b);
-  });
+/* ---------- モード ---------- */
+let MODE="face";
+function setMode(m){
+  MODE=m;
+  document.getElementById("tabFace").classList.toggle("on",m==="face");
+  document.getElementById("tabArt").classList.toggle("on",m==="art");
+  document.getElementById("ctrlFace").style.display=(m==="face")?"flex":"none";
+  document.getElementById("ctrlArt").style.display=(m==="art")?"flex":"none";
+  if(m==="face"){ clearOverlays(); drawFace(); }
+  else { artRefresh(); }
 }
+function clearOverlays(){ ["refLayer","pasteLayer","guideLayer"].forEach(id=>document.getElementById(id).innerHTML=""); }
+function drawFace(){ try{ renderChar(); }catch(e){ console.warn(e); } }
+
+/* ============================================================
+   顔スタジオ
+   ============================================================ */
 let _chipRefreshers=[];
+function chipRow(boxId,entries,getCur,onPick){
+  const box=document.getElementById(boxId); box.innerHTML="";
+  entries.forEach(([k,label])=>{ const b=document.createElement("button");
+    b.className="chip"+(getCur()===k?" on":""); b.textContent=label;
+    b.onclick=()=>{ onPick(k); refreshChips(); }; box.appendChild(b); });
+}
 function refreshChips(){ _chipRefreshers.forEach(fn=>fn()); }
 
 function initStudio(){
   const F=S.face;
-  // 念のため新キー補完（古いセーブ対策）
-  if(typeof F.faceW!=="number") F.faceW=70;
-  if(typeof F.faceH!=="number") F.faceH=74;
-  if(typeof F.chin!=="number")  F.chin=0;
-  if(typeof F.cheek!=="number") F.cheek=0;
-  if(!F.offsets) F.offsets={eyes:{x:0,y:0},brows:{x:0,y:0},mouth:{x:0,y:0},hairFront:{x:0,y:0}};
-  if(!F.selPart) F.selPart="eyes";
+  if(typeof F.faceW!=="number")F.faceW=70; if(typeof F.faceH!=="number")F.faceH=74;
+  if(typeof F.chin!=="number")F.chin=0; if(typeof F.cheek!=="number")F.cheek=0;
+  if(!F.offsets)F.offsets={eyes:{x:0,y:0},brows:{x:0,y:0},mouth:{x:0,y:0},hairFront:{x:0,y:0}};
+  if(!F.selPart)F.selPart="eyes";
 
-  // ---- プリセット ----
-  const presetEntries=Object.keys(PRESETS).map(k=>[k,k]);
-  const mkPresets=()=>chipRow("presetChips", presetEntries, ()=>F.preset, (k)=>{
-    const p=PRESETS[k];
-    Object.assign(F,{preset:k,eye:p.eye,brow:p.brow,mouth:p.mouth,eyeSize:p.eyeSize,eyeGap:p.eyeGap});
-    syncSliders(); draw(); persist();
-  });
-  // ---- め・まゆ・くち ----
-  const mkEye=()=>chipRow("eyeChips", Object.entries(EYE_STYLES), ()=>F.eye, (k)=>{ F.eye=k; F.preset=""; draw(); persist(); });
-  const mkBrow=()=>chipRow("browChips", Object.entries(BROW_STYLES), ()=>F.brow, (k)=>{ F.brow=k; F.preset=""; draw(); persist(); });
-  const mkMouth=()=>chipRow("mouthChips", Object.entries(MOUTH_STYLES), ()=>F.mouth, (k)=>{ F.mouth=k; F.preset=""; draw(); persist(); });
-  // ---- パーツのいち ----
-  const mkPart=()=>chipRow("partChips", Object.entries(PART_LABELS), ()=>F.selPart, (k)=>{ F.selPart=k; syncSliders(); });
-  _chipRefreshers=[mkPresets,mkEye,mkBrow,mkMouth,mkPart];
-  refreshChips();
+  const mkPresets=()=>chipRow("presetChips",Object.keys(PRESETS).map(k=>[k,k]),()=>F.preset,(k)=>{
+    const p=PRESETS[k]; Object.assign(F,{preset:k,eye:p.eye,brow:p.brow,mouth:p.mouth,eyeSize:p.eyeSize,eyeGap:p.eyeGap});
+    syncSliders(); drawFace(); persist(); });
+  const mkEye=()=>chipRow("eyeChips",Object.entries(EYE_STYLES),()=>F.eye,(k)=>{F.eye=k;F.preset="";drawFace();persist();});
+  const mkBrow=()=>chipRow("browChips",Object.entries(BROW_STYLES),()=>F.brow,(k)=>{F.brow=k;F.preset="";drawFace();persist();});
+  const mkMouth=()=>chipRow("mouthChips",Object.entries(MOUTH_STYLES),()=>F.mouth,(k)=>{F.mouth=k;F.preset="";drawFace();persist();});
+  const mkPart=()=>chipRow("partChips",Object.entries(PART_LABELS),()=>F.selPart,(k)=>{F.selPart=k;syncSliders();});
+  _chipRefreshers=[mkPresets,mkEye,mkBrow,mkMouth,mkPart]; refreshChips();
 
-  // ---- 肌・髪 スウォッチ ----
   const skinSw=document.getElementById("skinSw"); skinSw.innerHTML="";
-  Object.entries(SKINS).forEach(([k,v])=>{
-    const b=document.createElement("div"); b.className="sw"+(F.skin===k?" on":"");
+  Object.entries(SKINS).forEach(([k,v])=>{ const b=document.createElement("div"); b.className="sw"+(F.skin===k?" on":"");
     b.style.background=`linear-gradient(135deg,${v.s0},${v.s1})`;
-    b.onclick=()=>{ F.skin=k; skinSw.querySelectorAll(".sw").forEach(x=>x.classList.remove("on")); b.classList.add("on"); draw(); persist(); };
-    skinSw.appendChild(b);
-  });
+    b.onclick=()=>{F.skin=k; skinSw.querySelectorAll(".sw").forEach(x=>x.classList.remove("on")); b.classList.add("on"); drawFace(); persist();}; skinSw.appendChild(b); });
   const hairSw=document.getElementById("hairSw"); hairSw.innerHTML="";
-  Object.entries(HAIRBASE).forEach(([k,v])=>{
-    const b=document.createElement("div"); b.className="sw"+(F.hair===k?" on":"");
+  Object.entries(HAIRBASE).forEach(([k,v])=>{ const b=document.createElement("div"); b.className="sw"+(F.hair===k?" on":"");
     b.style.background=`linear-gradient(135deg,${v.tip},${v.root})`;
-    b.onclick=()=>{ F.hair=k; hairSw.querySelectorAll(".sw").forEach(x=>x.classList.remove("on")); b.classList.add("on"); draw(); persist(); };
-    hairSw.appendChild(b);
-  });
+    b.onclick=()=>{F.hair=k; hairSw.querySelectorAll(".sw").forEach(x=>x.classList.remove("on")); b.classList.add("on"); drawFace(); persist();}; hairSw.appendChild(b); });
 
-  // ---- スライダー結線 ----
-  const bind=(id,key,parse)=>{
-    const el=document.getElementById(id);
-    el.addEventListener("input",e=>{ F[key]=parse(e.target.value); draw(); persist(); });
-  };
-  bind("sW","faceW",v=>parseInt(v));
-  bind("sH","faceH",v=>parseInt(v));
-  bind("sChin","chin",v=>parseFloat(v));
-  bind("sCheek","cheek",v=>parseFloat(v));
-  document.getElementById("sEyeSize").addEventListener("input",e=>{ F.eyeSize=parseFloat(e.target.value); F.preset=""; mkPresets(); draw(); persist(); });
-  document.getElementById("sEyeGap").addEventListener("input",e=>{ F.eyeGap=parseInt(e.target.value); F.preset=""; mkPresets(); draw(); persist(); });
-  document.getElementById("sPosX").addEventListener("input",e=>{ F.offsets[F.selPart].x=parseInt(e.target.value); draw(); persist(); });
-  document.getElementById("sPosY").addEventListener("input",e=>{ F.offsets[F.selPart].y=parseInt(e.target.value); draw(); persist(); });
-
-  document.getElementById("resetPart").onclick=()=>{ F.offsets[F.selPart]={x:0,y:0}; syncSliders(); draw(); persist(); };
-  document.getElementById("resetAll").onclick=()=>{
-    // F（=S.face）の中身だけを既定値に。オブジェクトの差し替えはしない（参照を保つ）
-    const d=defaultFace();
+  const bind=(id,key,parse)=>{ document.getElementById(id).addEventListener("input",e=>{F[key]=parse(e.target.value);drawFace();persist();}); };
+  bind("sW","faceW",v=>parseInt(v)); bind("sH","faceH",v=>parseInt(v));
+  bind("sChin","chin",v=>parseFloat(v)); bind("sCheek","cheek",v=>parseFloat(v));
+  document.getElementById("sEyeSize").addEventListener("input",e=>{F.eyeSize=parseFloat(e.target.value);F.preset="";mkPresets();drawFace();persist();});
+  document.getElementById("sEyeGap").addEventListener("input",e=>{F.eyeGap=parseInt(e.target.value);F.preset="";mkPresets();drawFace();persist();});
+  document.getElementById("sPosX").addEventListener("input",e=>{F.offsets[F.selPart].x=parseInt(e.target.value);drawFace();persist();});
+  document.getElementById("sPosY").addEventListener("input",e=>{F.offsets[F.selPart].y=parseInt(e.target.value);drawFace();persist();});
+  document.getElementById("resetPart").onclick=()=>{F.offsets[F.selPart]={x:0,y:0};syncSliders();drawFace();persist();};
+  document.getElementById("resetAll").onclick=()=>{ const d=defaultFace();
     ["eye","brow","mouth","eyeSize","eyeGap","faceW","faceH","chin","cheek","preset"].forEach(k=>F[k]=d[k]);
-    Object.keys(F.offsets).forEach(k=>F.offsets[k]={x:0,y:0});
-    syncSliders(); refreshChips(); draw(); persist();
-  };
-  document.getElementById("saveBtn").onclick=()=>{ persist(); };
+    Object.keys(F.offsets).forEach(k=>F.offsets[k]={x:0,y:0}); syncSliders(); refreshChips(); drawFace(); persist(); };
+  document.getElementById("saveBtn").onclick=()=>persist();
 
   syncSliders();
-  draw();
+  initArt();
+  drawFace();
   document.getElementById("loading").style.display="none";
-  document.getElementById("ctrl").style.display="flex";
+  document.getElementById("ctrlFace").style.display="flex";
 }
-
-function syncSliders(){
-  const F=S.face;
-  const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val; };
+function syncSliders(){ const F=S.face; const set=(id,v)=>{const el=document.getElementById(id); if(el)el.value=v;};
   set("sW",F.faceW); set("sH",F.faceH); set("sChin",F.chin); set("sCheek",F.cheek);
   set("sEyeSize",F.eyeSize); set("sEyeGap",F.eyeGap);
-  const o=F.offsets[F.selPart]||{x:0,y:0};
-  set("sPosX",o.x); set("sPosY",o.y);
+  const o=F.offsets[F.selPart]||{x:0,y:0}; set("sPosX",o.x); set("sPosY",o.y); }
+
+/* ============================================================
+   作画スタジオ（Phase 2）
+   ============================================================ */
+const ART_REGIONS={
+  hair:   {x:50,y:14,w:180,h:248,label:"髪（前後）",dual:["うしろ(back)","まえ(front)"]},
+  tops:   {x:62,y:184,w:156,h:66,label:"トップス（袖も自分で）"},
+  bottoms:{x:70,y:224,w:140,h:68,label:"ボトムス"},
+  shoes:  {x:108,y:300,w:66,h:30,label:"くつ（左右）"},
+  acc:    {x:40,y:24,w:200,h:240,label:"小物（顔 cx140 cy108 基準）",dual:["からだ(body)","あたま(head)"]},
+  bg:     {x:0,y:0,w:280,h:330,label:"背景（全面）"},
+};
+const SLOT_LABELS={hair:"髪",tops:"トップス",bottoms:"ボトムス",shoes:"くつ",acc:"小物",bg:"背景"};
+let artSlot="tops";
+let tf={tx:0,ty:0,s:1};
+
+function initArt(){
+  const box=document.getElementById("slotChips");
+  Object.keys(ART_REGIONS).forEach(sl=>{ const b=document.createElement("button");
+    b.className="chip"+(sl===artSlot?" on":""); b.textContent=SLOT_LABELS[sl];
+    b.onclick=()=>{ artSlot=sl; tf={tx:0,ty:0,s:1};
+      box.querySelectorAll(".chip").forEach(x=>x.classList.remove("on")); b.classList.add("on");
+      setupSlotFields(); syncTf(); artRefresh(); }; box.appendChild(b); });
+  document.getElementById("tgGuide").addEventListener("change",artRefresh);
+  document.getElementById("tgRef").addEventListener("change",artRefresh);
+  ["taMain","taA","taB"].forEach(id=>document.getElementById(id).addEventListener("input",paintPaste));
+  document.getElementById("sScale").addEventListener("input",e=>{tf.s=parseFloat(e.target.value);paintPaste();});
+  document.getElementById("sTX").addEventListener("input",e=>{tf.tx=parseInt(e.target.value);paintPaste();});
+  document.getElementById("sTY").addEventListener("input",e=>{tf.ty=parseInt(e.target.value);paintPaste();});
+  document.getElementById("btnResetTf").onclick=()=>{tf={tx:0,ty:0,s:1};syncTf();paintPaste();};
+  document.getElementById("btnCopy").onclick=copyCode;
+  setupSlotFields();
+  setupDrag();
+}
+function setupSlotFields(){
+  const reg=ART_REGIONS[artSlot];
+  const dual=!!reg.dual;
+  document.getElementById("pasteSingle").style.display=dual?"none":"block";
+  document.getElementById("pasteDual").style.display=dual?"block":"none";
+  if(dual){ document.getElementById("lblA").textContent=reg.dual[0]; document.getElementById("lblB").textContent=reg.dual[1]; }
+  const eq=(typeof ITEM_BY_ID!=="undefined" && S.equip[artSlot])?ITEM_BY_ID[S.equip[artSlot]]:null;
+  document.getElementById("artName").value = eq?eq.name : "新"+SLOT_LABELS[artSlot]+"アイテム";
+}
+function syncTf(){ document.getElementById("sScale").value=tf.s; document.getElementById("sTX").value=tf.tx; document.getElementById("sTY").value=tf.ty; }
+
+/* 人形ベース：対象スロットを一時的に外して描く（保存しない） */
+function drawArtBase(){
+  const keep=S.equip[artSlot];
+  S.equip[artSlot]=null;
+  try{ renderChar(); }catch(e){ console.warn(e); }
+  S.equip[artSlot]=keep;
+}
+/* 参考（現行プロシージャル）：no-art の代表アイテムを一瞬装備して該当グループだけ取り出す */
+function drawRef(){
+  const ref=document.getElementById("refLayer"); ref.innerHTML="";
+  if(!document.getElementById("tgRef").checked) return;
+  if(artSlot==="acc"){ return; } // accは下じき省略
+  let item=null;
+  try{ item=ITEMS.find(i=>i.slot===artSlot && !i.art); }catch(e){}
+  if(!item) return;
+  const keep=S.equip[artSlot]; S.equip[artSlot]=item.id;
+  const tmp=document.getElementById("charSvg"); const old=tmp.innerHTML;
+  try{ renderChar(); }catch(e){}
+  const full=tmp.innerHTML; tmp.innerHTML=old;   // 本体は戻す（このあと drawArtBase が正規描画）
+  S.equip[artSlot]=keep;
+  // 該当スロットのグループだけ抽出
+  const ids={hair:["hairBack","hairFront"],tops:["top"],bottoms:["bottom"],shoes:["shoes"],bg:["bgItem"]}[artSlot]||[];
+  const buf=document.createElementNS("http://www.w3.org/2000/svg","svg"); buf.innerHTML=full;
+  let out="";
+  ids.forEach(id=>{ const g=buf.querySelector("#"+CSS.escape(id)); if(g) out+=g.outerHTML; });
+  ref.innerHTML=`<g opacity="0.32">${out}</g>`;
+}
+function drawGuide(){
+  const g=document.getElementById("guideLayer"); g.innerHTML="";
+  if(!document.getElementById("tgGuide").checked) return;
+  const r=ART_REGIONS[artSlot];
+  g.innerHTML=`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="rgba(229,140,169,0.08)" stroke="#e58ca9" stroke-width="1.4" stroke-dasharray="5 4" rx="6"/>`
+    +`<text x="${r.x+3}" y="${r.y+12}" font-size="9" fill="#c66e8c" font-family="sans-serif" font-weight="700">${r.label}</text>`;
+}
+function currentContent(){
+  const reg=ART_REGIONS[artSlot];
+  if(reg.dual) return document.getElementById("taA").value + document.getElementById("taB").value;
+  return document.getElementById("taMain").value;
+}
+function tfStr(){ if(tf.tx===0&&tf.ty===0&&tf.s===1) return null;
+  const r=(n,d=2)=>{const f=Math.pow(10,d);return Math.round(n*f)/f;};
+  return `translate(${r(tf.tx)} ${r(tf.ty)}) translate(140 165) scale(${r(tf.s,3)}) translate(-140 -165)`; }
+function paintPaste(){
+  const layer=document.getElementById("pasteLayer");
+  const content=currentContent();
+  const t=tfStr();
+  layer.innerHTML = content ? (t?`<g transform="${t}">${content}</g>`:content) : "";
+  // 背景スロットはキャラの後ろに（pasteLayer/refLayer を charの下へ）
+  const back=(artSlot==="bg");
+  document.getElementById("pasteLayer").style.zIndex=back?"0":"3";
+  document.getElementById("refLayer").style.zIndex=back?"0":"1";
+  document.getElementById("charSvg").style.zIndex=back?"2":"0";
+}
+function artRefresh(){
+  clearOverlays();
+  drawArtBase();
+  drawRef();
+  drawGuide();
+  paintPaste();
+}
+
+/* ---------- ドラッグ / ピンチ ---------- */
+function setupDrag(){
+  const doll=document.getElementById("doll");
+  const pts=new Map();
+  let gmode=null, panLast=null, pinchDist=0, pinchScale=1;
+  const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+  const toVB=(dxPx,dyPx)=>{ const rect=doll.getBoundingClientRect(); return {x:dxPx*280/rect.width, y:dyPx*330/rect.height}; };
+  const active=()=> MODE==="art" && !!currentContent();
+  doll.addEventListener("pointerdown",e=>{
+    if(!active()) return;
+    try{ doll.setPointerCapture(e.pointerId); }catch(_){}
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===1){ gmode="pan"; panLast={x:e.clientX,y:e.clientY}; }
+    else if(pts.size===2){ gmode="pinch"; const p=[...pts.values()]; pinchDist=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)||1; pinchScale=tf.s; panLast=null; }
+    e.preventDefault();
+  });
+  doll.addEventListener("pointermove",e=>{
+    if(!active()||!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(gmode==="pinch" && pts.size>=2){
+      const p=[...pts.values()]; const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);
+      tf.s=clamp(pinchScale*(d/pinchDist),0.3,2.2); syncTf(); paintPaste();
+    } else if(gmode==="pan" && panLast){
+      const v=toVB(e.clientX-panLast.x,e.clientY-panLast.y);
+      tf.tx=clamp(tf.tx+v.x,-120,120); tf.ty=clamp(tf.ty+v.y,-120,120);
+      panLast={x:e.clientX,y:e.clientY}; syncTf(); paintPaste();
+    }
+    e.preventDefault();
+  });
+  const up=e=>{ pts.delete(e.pointerId);
+    if(pts.size===0){ gmode=null; panLast=null; }
+    else if(pts.size===1){ gmode="pan"; const p=[...pts.values()][0]; panLast={x:p.x,y:p.y}; } };
+  doll.addEventListener("pointerup",up); doll.addEventListener("pointercancel",up);
+}
+
+/* ---------- コード生成 ---------- */
+function genCode(){
+  const name=(document.getElementById("artName").value||"新アイテム").trim();
+  const q=JSON.stringify(name);
+  const t=tfStr();
+  const wrap=s=> t?`<g transform="${t}">${s}</g>` : s;
+  if(artSlot==="hair"){
+    const a=document.getElementById("taA").value, b=document.getElementById("taB").value;
+    return `art(${q}, {\n  back:  \`<g id="hairBack">${wrap(a)}</g>\`,\n  front: \`<g id="hairFront">${wrap(b)}</g>\`\n});`;
+  }
+  if(artSlot==="acc"){
+    const a=document.getElementById("taA").value, b=document.getElementById("taB").value;
+    return `art(${q}, {\n  body: \`${wrap(a)}\`,\n  head: \`${wrap(b)}\`\n});`;
+  }
+  const gid={tops:"top",bottoms:"bottom",shoes:"shoes",bg:"bgItem"}[artSlot];
+  return `art(${q}, \`<g id="${gid}">${wrap(currentContent())}</g>\`);`;
+}
+function copyCode(){
+  const code=genCode();
+  document.getElementById("codeOut").value=code;
+  const msg=document.getElementById("copyMsg");
+  const done=()=>{ msg.textContent="コピーしました！くろくんに渡してね ♡"; };
+  const fail=()=>{ msg.textContent="下の枠を長押しでコピーしてね"; };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(code).then(done).catch(fail); }
+  else { const ta=document.getElementById("codeOut"); ta.focus(); ta.select(); try{document.execCommand("copy");done();}catch(e){fail();} }
 }
 </script>
 </body>
