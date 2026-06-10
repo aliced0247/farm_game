@@ -750,24 +750,55 @@ function drawHouseC(x){ rc(x,0,18,48,22,"#f2e3c0"); rc(x,0,18,48,4,"#e0cda0");
 function drawShopC(x){ rc(x,0,18,48,22,"#fff2e0"); rc(x,-2,2,52,18,"#3a8fce"); rc(x,-2,2,52,3,"#5cb6e8");
   rc(x,19,28,10,12,"#7a5230"); for(let i=0;i<6;i++)rc(x,i*8,16,8,5, i%2?"#ff6f8a":"#ffffff");
   x.font="9px serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("🛒",24,9); }
+// 32x36の高精細スプライト（表示は0.5倍＝世界での大きさは従来どおり）
 function drawPlayerC(x,dir,frame){ const mir=(dir==="right"); const D=(dir==="right")?"left":dir;
-  const p=(a,b,w,h,c)=>{ if(mir)a=16-a-w; rc(x,a,b,w,h,c); };
-  const HAIR="#ff8fc0",HAIR_D="#e96fa6",SKIN="#ffe1c6",EYE="#9a5fd6",WHT="#fff",MOUTH="#d4607f",BLUSH="#ff9ecb",DRESS="#2b2b35",FRILL="#ff8fc0";
-  x.save(); x.globalAlpha=.18; x.fillStyle="#000"; x.beginPath(); x.ellipse(8,17,6,2.2,0,0,7); x.fill(); x.restore();
-  const lA=frame?14:15, lB=frame?15:14; p(6,lA,2,3,SKIN); p(9,lB,2,3,SKIN);
+  const p=(a,b,w,h,c)=>{ if(mir)a=32-a-w; rc(x,a,b,w,h,c); };
+  const HAIR="#ff8fc0",HAIR_D="#e96fa6",HAIR_L="#ffc4dd",SKIN="#ffe1c6",SKIN_D="#f0c9a8",EYE="#9a5fd6",LASH="#6e4a8a",WHT="#fff",MOUTH="#d4607f",BLUSH="#ff9ecb",DRESS="#2b2b35",DRESS_L="#3c3c4a",FRILL="#ff8fc0",SHOE="#6b4a2b";
+  const s=frame?1:0;                                  // 歩きで髪が1pxゆれる
+  const lA=frame?29:30, lB=frame?30:29;               // 脚の交互
   if(D==="down"||D==="up"){
-    p(1,5,3,8,HAIR); p(1,5,1,8,HAIR_D); p(12,5,3,8,HAIR); p(14,5,1,8,HAIR_D);
-    p(4,10,8,5,DRESS); p(4,10,8,1,WHT); p(4,14,8,1,FRILL); p(3,11,1,3,SKIN); p(12,11,1,3,SKIN);
-    p(4,2,8,5,HAIR); p(4,2,8,1,"#ffc4dd");
-    if(D==="down"){ p(5,5,6,4,SKIN); p(4,4,8,2,HAIR); p(6,6,1,2,EYE); p(9,6,1,2,EYE); p(6,6,1,1,WHT); p(9,6,1,1,WHT);
-      p(5,8,1,1,BLUSH); p(10,8,1,1,BLUSH); p(7,8,2,1,MOUTH); }
-    else { p(5,5,6,4,HAIR); p(6,3,4,2,FRILL); }
+    // ツインテール（リボン付き・ゆれる）
+    p(2,10+s,6,13,HAIR); p(2,10+s,1,13,HAIR_D); p(6,11+s,1,11,HAIR_L); p(3,23+s,4,3,HAIR); p(3,25+s,4,1,HAIR_D);
+    p(24,10+s,6,13,HAIR); p(29,10+s,1,13,HAIR_D); p(25,11+s,1,11,HAIR_L); p(25,23+s,4,3,HAIR); p(25,25+s,4,1,HAIR_D);
+    p(3,11,3,2,WHT); p(26,11,3,2,WHT);                // リボン
+    // 脚＋くつ
+    p(11,lA,4,4,SKIN); p(11,lA+4,4,2,SHOE); p(17,lB,4,4,SKIN); p(17,lB+4,4,2,SHOE);
+    // ワンピース（襟・しわ・すそフリル）
+    p(9,20,14,1,WHT); p(9,21,14,4,DRESS); p(8,25,16,3,DRESS);
+    p(12,22,1,5,DRESS_L); p(19,22,1,5,DRESS_L); p(15,21,2,1,WHT);
+    for(let i=8;i<24;i+=4){ p(i,27,2,1,FRILL); p(i+2,28,2,1,FRILL); }
+    // うで（そでつき・ふれる）
+    const aw=frame?1:0;
+    p(6,21+aw,2,2,DRESS); p(6,23+aw,2,4,SKIN); p(24,21+aw,2,2,DRESS); p(24,23+aw,2,4,SKIN);
+    // かみ（てっぺんハイライト＋アホ毛）
+    p(10,4,12,1,HAIR_L); p(9,5,14,2,HAIR); p(8,7,16,5,HAIR); p(15,1,1,3,HAIR); p(16,2,1,2,HAIR_D);
+    if(D==="down"){
+      p(10,10,12,9,SKIN);                             // かお
+      p(8,6,16,3,HAIR); p(8,9,16,1,HAIR);             // まえがみ
+      p(9,10,3,1,HAIR); p(14,10,4,1,HAIR); p(20,10,3,1,HAIR); // まえがみのギザギザ
+      p(11,12,3,1,LASH); p(12,13,2,3,EYE); p(12,13,1,1,WHT); p(13,15,1,1,HAIR_L);  // 左目
+      p(18,12,3,1,LASH); p(18,13,2,3,EYE); p(18,13,1,1,WHT); p(19,15,1,1,HAIR_L);  // 右目
+      p(9,16,2,1,BLUSH); p(21,16,2,1,BLUSH); p(15,17,2,1,MOUTH); p(15,15,1,1,SKIN_D);
+    } else {
+      p(9,10,14,9,HAIR); p(12,11,1,7,HAIR_D); p(16,12,1,6,HAIR_D); p(20,11,1,7,HAIR_D); // うしろがみ
+      p(12,6,3,3,FRILL); p(17,6,3,3,FRILL); p(15,7,2,2,HAIR_D);  // うしろリボン
+    }
   } else {
-    p(10,5,3,7,HAIR); p(12,5,1,7,HAIR_D);
-    p(4,10,7,5,DRESS); p(4,10,7,1,WHT); p(4,14,7,1,FRILL); p(5,11,1,3,SKIN);
-    p(4,2,7,5,HAIR); p(4,2,7,1,"#ffc4dd"); p(5,5,4,4,SKIN); p(4,4,5,2,HAIR);
-    p(6,6,1,2,EYE); p(6,6,1,1,WHT); p(5,8,1,1,BLUSH); p(6,8,2,1,MOUTH);
-  } }
+    // 横向き：うしろのツインテール
+    p(20,10+s,6,13,HAIR); p(25,10+s,1,13,HAIR_D); p(21,23+s,4,3,HAIR); p(21,25+s,4,1,HAIR_D); p(21,11,3,2,WHT);
+    p(11,lA,4,4,SKIN); p(11,lA+4,4,2,SHOE); p(16,lB,4,4,SKIN); p(16,lB+4,4,2,SHOE);
+    p(9,20,13,1,WHT); p(9,21,13,4,DRESS); p(8,25,15,3,DRESS); p(13,22,1,5,DRESS_L); p(18,22,1,5,DRESS_L);
+    for(let i=8;i<23;i+=4){ p(i,27,2,1,FRILL); p(i+2,28,2,1,FRILL); }
+    const aw=frame?1:0; p(10,21+aw,2,2,DRESS); p(10,23+aw,2,4,SKIN);
+    p(9,4,12,1,HAIR_L); p(8,5,14,2,HAIR); p(8,7,13,5,HAIR); p(14,1,1,3,HAIR);
+    p(10,10,9,9,SKIN);                                // かお（左むき）
+    p(8,6,13,3,HAIR); p(8,9,12,1,HAIR); p(13,10,8,2,HAIR); // よこのまえがみ
+    p(11,12,3,1,LASH); p(11,13,2,3,EYE); p(11,13,1,1,WHT); p(12,15,1,1,HAIR_L);
+    p(10,16,2,1,BLUSH); p(10,17,2,1,MOUTH);
+  }
+  addOutline(x,32,36,"rgba(40,28,22,0.45)");
+  x.save(); x.globalCompositeOperation="destination-over"; x.globalAlpha=.18; x.fillStyle="#000";
+  x.beginPath(); x.ellipse(16,34,10,2.6,0,0,7); x.fill(); x.restore(); }
 function drawCoopGroundC(x){ rc(x,0,0,16,16,"#d8c08a"); rc(x,3,4,1,1,"#c9ad72"); rc(x,11,10,1,1,"#c9ad72"); rc(x,7,7,1,1,"#e6d3a3"); }
 function drawChickenC(x,frame){ const W="#ffffff",Wd="#e6e6ea",R="#e8473f",O="#f0a020",K="#333";
   rc(x,2,6,3,3,W); rc(x,2,6,1,3,Wd);                 // しっぽ
@@ -937,8 +968,8 @@ class Farm extends Phaser.Scene{
     // ダンジョン（マップ外に戦闘エリアを作る）
     this.inDungeon=false; this.enemies=[]; this.buildDungeon();
     // プレイヤー
-    this.player=this.physics.add.sprite(8*TS+8,10*TS+14,"p_down_0").setOrigin(0.5,0.9);
-    this.player.body.setSize(8,5).setOffset(4,12);
+    this.player=this.physics.add.sprite(8*TS+8,10*TS+14,"p_down_0").setOrigin(0.5,0.9).setScale(0.5);
+    this.player.body.setSize(16,10).setOffset(8,24);   // テクスチャ32x36・表示0.5倍→世界では従来の8x5/(4,12)相当
     this.physics.add.collider(this.player,this.solids);
     // カメラ
     this.cameras.main.setBounds(0,0,MAP_W*TS,MAP_H*TS); this.cameras.main.startFollow(this.player,true,0.18,0.18);
@@ -982,7 +1013,7 @@ class Farm extends Phaser.Scene{
     add("chicken_0",16,16,x=>drawChickenC(x,0)); add("chicken_1",16,16,x=>drawChickenC(x,1));
     add("cow_0",22,16,x=>drawCowC(x,0)); add("cow_1",22,16,x=>drawCowC(x,1));
     add("fairy_0",16,16,x=>drawFairyC(x,0)); add("fairy_1",16,16,x=>drawFairyC(x,1));
-    ["down","up","left","right"].forEach(d=>{ for(let f=0;f<2;f++) add("p_"+d+"_"+f,16,18,x=>drawPlayerC(x,d,f)); });
+    ["down","up","left","right"].forEach(d=>{ for(let f=0;f<2;f++) add("p_"+d+"_"+f,32,36,x=>drawPlayerC(x,d,f)); });
     add("spark",4,4,x=>{ x.fillStyle="#fff"; x.fillRect(0,0,4,4); });
     HOSTS.forEach(h=>add("host_"+h.id,16,16,x=>drawHostC(x,h.col)));
   }
