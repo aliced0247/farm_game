@@ -1642,6 +1642,7 @@ const PRESETS={
 };
 const PART_LABELS={eyes:"目",brows:"眉",mouth:"口",hairFront:"前髪"};
 function defaultFace(){return{eye:"round",brow:"soft",mouth:"smile",eyeSize:1.05,eyeGap:29,
+  faceW:70,faceH:74,chin:0,cheek:0,
   preset:"おっとり",hair:"rose",skin:"fair",blink:false,selPart:"eyes",
   offsets:{eyes:{x:0,y:0},brows:{x:0,y:0},mouth:{x:0,y:0},hairFront:{x:0,y:0}}};}
 
@@ -2028,13 +2029,25 @@ function renderChar(){
     <g id="legs">
       <path d="M118 286 h16 v34 a8 8 0 0 1 -16 0 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/>
       <path d="M146 286 h16 v34 a8 8 0 0 1 -16 0 z" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/></g></g>`;
+  // 顔の輪郭をパラメータ化（すべてベジェ＝角を作らない）。既定値で従来の楕円と一致
+  const cx=140, cy=108, rw=(F.faceW??70), rh=(F.faceH??74), chin=(F.chin??0), cheek=(F.cheek??0);
+  const k=0.5523;
+  const lowerRw=rw*(1+cheek*0.10);            // ほっぺのふくらみ（下側のはば）
+  const bottomY=cy+rh*(1+chin*0.10);          // あごの長さ
+  const bcx=rw*k*(1-chin*0.45);               // あごの尖り（小さいほど尖る＝丸みは大きいほど丸い）
+  const facePath=`M ${cx} ${cy-rh}`
+    +` C ${cx+rw*k} ${cy-rh} ${cx+rw} ${cy-rh*k} ${cx+rw} ${cy}`
+    +` C ${cx+lowerRw} ${cy+rh*k} ${cx+bcx} ${bottomY} ${cx} ${bottomY}`
+    +` C ${cx-bcx} ${bottomY} ${cx-lowerRw} ${cy+rh*k} ${cx-rw} ${cy}`
+    +` C ${cx-rw} ${cy-rh*k} ${cx-rw*k} ${cy-rh} ${cx} ${cy-rh} Z`;
+  const earX=rw-2, earY=cy+8, blushX=Math.round(rw*0.6), noseY=cy+14;
   const head=`<g id="face">
-    <ellipse cx="140" cy="108" rx="70" ry="74" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2"/>
-    <circle cx="72" cy="116" r="11" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2"/>
-    <circle cx="208" cy="116" r="11" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2"/>
-    <ellipse cx="98" cy="130" rx="18" ry="13" fill="url(#cheek_${id})"/>
-    <ellipse cx="182" cy="130" rx="18" ry="13" fill="url(#cheek_${id})"/>
-    <path d="M140 122 q3 4 -1 6" stroke="${shade(skin.s1,-0.18)}" stroke-width="2" fill="none" stroke-linecap="round" opacity=".6"/></g>`;
+    <path d="${facePath}" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="${cx-earX}" cy="${earY}" r="11" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2"/>
+    <circle cx="${cx+earX}" cy="${earY}" r="11" fill="url(#skin_${id})" stroke="${base.line}" stroke-width="2"/>
+    <ellipse cx="${cx-blushX}" cy="${cy+22}" rx="18" ry="13" fill="url(#cheek_${id})"/>
+    <ellipse cx="${cx+blushX}" cy="${cy+22}" rx="18" ry="13" fill="url(#cheek_${id})"/>
+    <path d="M${cx} ${noseY} q3 4 -1 6" stroke="${shade(skin.s1,-0.18)}" stroke-width="2" fill="none" stroke-linecap="round" opacity=".6"/></g>`;
   const half=F.eyeGap,cxL=140-half,cxR=140+half;
   const oe=F.offsets.eyes,ob=F.offsets.brows;
   const eyes=`<g id="eyes" transform="translate(${oe.x},${oe.y})">${fEye(cxL,-1,id,hc)}${fEye(cxR,1,id,hc)}</g>`;
