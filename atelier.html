@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>キャラ工房｜きせかえマーケット</title>
+<style>
+  :root{
+    --bg:#fdf3f7; --panel:#ffffff; --line:#f0d6e2; --text:#5b4a55; --soft:#a98ea0;
+    --rose:#e58ca9; --rose-d:#c66e8c; --gold:#e6b86a; --chip:#fbeef4; --chipOn:#f7c9da;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,"Hiragino Maru Gothic ProN","Hiragino Sans",system-ui,sans-serif;}
+  .wrap{max-width:480px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column;}
+  /* 固定プレビュー（操作中も常に見える） */
+  .stage{position:sticky; top:0; z-index:10; background:linear-gradient(#fdf3f7,#fbe9f1);
+    padding:8px 10px 10px; border-bottom:1px solid var(--line); box-shadow:0 4px 12px rgba(200,120,150,.08);}
+  .stage h1{margin:2px 0 6px; font-size:15px; font-weight:800; color:var(--rose-d); text-align:center; letter-spacing:.04em;}
+  .stage h1 small{display:block; font-weight:600; font-size:10px; color:var(--soft); letter-spacing:0;}
+  .doll{width:46vh; max-width:230px; height:46vh; max-height:271px; margin:0 auto; display:block;
+    background:#fff; border:2px solid var(--line); border-radius:18px; overflow:hidden;
+    box-shadow:inset 0 2px 8px rgba(200,120,150,.10);}
+  .doll svg{width:100%; height:100%; display:block;}
+  .topbtns{display:flex; gap:8px; justify-content:center; margin-top:8px;}
+  .topbtns a,.topbtns button{font:inherit; font-size:12px; font-weight:700; text-decoration:none;
+    padding:7px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--rose-d);}
+  .topbtns .save{background:var(--rose); color:#fff; border-color:var(--rose);}
+  /* コントロール */
+  .ctrl{padding:12px 12px 80px; display:flex; flex-direction:column; gap:14px;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:12px 12px 14px;}
+  .card h2{margin:0 0 10px; font-size:13px; font-weight:800; color:var(--rose-d); display:flex; align-items:center; gap:6px;}
+  .row{margin:11px 0;}
+  .row .nm{font-size:12px; font-weight:700; color:var(--text); display:flex; justify-content:space-between; margin-bottom:5px;}
+  .row .nm .ends{font-size:10px; color:var(--soft); font-weight:600;}
+  input[type=range]{-webkit-appearance:none; width:100%; height:30px; background:transparent; margin:0;}
+  input[type=range]::-webkit-slider-runnable-track{height:8px; border-radius:8px; background:linear-gradient(90deg,#f7d9e6,#f3c2d6);}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:28px; height:28px; margin-top:-10px;
+    border-radius:50%; background:#fff; border:3px solid var(--rose); box-shadow:0 2px 5px rgba(200,120,150,.35);}
+  input[type=range]::-moz-range-track{height:8px; border-radius:8px; background:#f3c2d6;}
+  input[type=range]::-moz-range-thumb{width:26px; height:26px; border-radius:50%; background:#fff; border:3px solid var(--rose);}
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{font:inherit; font-size:13px; font-weight:700; padding:9px 14px; border-radius:999px;
+    border:1.5px solid var(--line); background:var(--chip); color:var(--text); cursor:pointer; min-height:40px;}
+  .chip.on{background:var(--chipOn); border-color:var(--rose); color:var(--rose-d);}
+  .swatches{display:flex; flex-wrap:wrap; gap:10px;}
+  .sw{width:40px; height:40px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 0 1.5px var(--line); cursor:pointer;}
+  .sw.on{box-shadow:0 0 0 3px var(--rose);}
+  .mini{display:flex; gap:8px; margin-top:8px;}
+  .mini button{flex:1; font:inherit; font-size:12px; font-weight:700; padding:9px; border-radius:12px;
+    border:1px solid var(--line); background:#fff; color:var(--soft);}
+  .hint{font-size:11px; color:var(--soft); text-align:center; line-height:1.6;}
+  #loading{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); color:var(--rose-d); font-weight:800; z-index:50;}
+</style>
+</head>
+<body>
+<div id="loading">よみこみちゅう…🎨</div>
+<div class="wrap">
+  <div class="stage">
+    <h1>キャラ工房<small>顔をスライダーで すきなように</small></h1>
+    <div class="doll"><svg id="charSvg" viewBox="0 0 280 330" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="topbtns">
+      <a href="fantasy_market.html">← ゲームへ</a>
+      <button class="save" id="saveBtn">保存ずみ ✓</button>
+    </div>
+  </div>
+  <div class="ctrl" id="ctrl" style="display:none">
+
+    <div class="card">
+      <h2>😊 顔の雰囲気（プリセット）</h2>
+      <div class="chips" id="presetChips"></div>
+    </div>
+
+    <div class="card">
+      <h2>🫧 顔のかたち</h2>
+      <div class="row"><div class="nm"><span>はば</span><span class="ends">ほそい ⇔ ひろい</span></div><input type="range" id="sW" min="58" max="84" step="1"></div>
+      <div class="row"><div class="nm"><span>たかさ</span><span class="ends">ひくい ⇔ たかい</span></div><input type="range" id="sH" min="62" max="86" step="1"></div>
+      <div class="row"><div class="nm"><span>あご</span><span class="ends">まるい ⇔ とがり</span></div><input type="range" id="sChin" min="-1" max="1" step="0.1"></div>
+      <div class="row"><div class="nm"><span>ほっぺ</span><span class="ends">すっきり ⇔ ふっくら</span></div><input type="range" id="sCheek" min="-1" max="1" step="0.1"></div>
+    </div>
+
+    <div class="card">
+      <h2>👀 め・まゆ・くち</h2>
+      <div class="row"><div class="nm"><span>めの形</span></div><div class="chips" id="eyeChips"></div></div>
+      <div class="row"><div class="nm"><span>めの大きさ</span><span class="ends">ちいさい ⇔ おおきい</span></div><input type="range" id="sEyeSize" min="0.9" max="1.2" step="0.01"></div>
+      <div class="row"><div class="nm"><span>めの間かく</span><span class="ends">よせる ⇔ はなす</span></div><input type="range" id="sEyeGap" min="24" max="34" step="1"></div>
+      <div class="row"><div class="nm"><span>まゆ</span></div><div class="chips" id="browChips"></div></div>
+      <div class="row"><div class="nm"><span>くち</span></div><div class="chips" id="mouthChips"></div></div>
+    </div>
+
+    <div class="card">
+      <h2>📍 パーツのいち</h2>
+      <div class="row"><div class="chips" id="partChips"></div></div>
+      <div class="row"><div class="nm"><span>左右</span><span class="ends">ひだり ⇔ みぎ</span></div><input type="range" id="sPosX" min="-24" max="24" step="1"></div>
+      <div class="row"><div class="nm"><span>上下</span><span class="ends">うえ ⇔ した</span></div><input type="range" id="sPosY" min="-24" max="24" step="1"></div>
+      <div class="mini"><button id="resetPart">このパーツをもどす</button></div>
+    </div>
+
+    <div class="card">
+      <h2>🎨 はだ・かみのいろ</h2>
+      <div class="row"><div class="nm"><span>はだ</span></div><div class="swatches" id="skinSw"></div></div>
+      <div class="row"><div class="nm"><span>かみのいろ</span></div><div class="swatches" id="hairSw"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="mini"><button id="resetAll" style="color:var(--rose-d)">顔をぜんぶ さいしょにもどす</button></div>
+    </div>
+
+    <p class="hint">うごかすと すぐに反映されて、自動で保存されます。<br>ここで作った顔は ゲームにも反映されるよ。</p>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   キャラ工房（atelier）
+   本体 fantasy_market.html の描画エンジンを実行時に読み込んで使う。
+   → 描画ロジックは本体が唯一の真実。二重管理せず、ズレない。
+   ============================================================ */
+(async function(){
+  try{
+    await loadEngine();
+  }catch(e){
+    document.getElementById("loading").innerHTML = "エンジンの読み込みに失敗しました…<br><small>"+e+"</small>";
+    return;
+  }
+  initStudio();
+})();
+
+/* 本体の <script> を、DOMをスタブした状態で注入して関数とstateを取り込む */
+function loadEngine(){
+  return fetch("fantasy_market.html", {cache:"no-store"}).then(r=>r.text()).then(txt=>{
+    const m = txt.match(/<script>([\s\S]*?)<\/script>/);
+    if(!m) throw new Error("script not found");
+    const code = m[1];
+    const shim =
+      '(function(){' +
+        'var __real=document.getElementById.bind(document);' +
+        'var noop=function(){};' +
+        'function __el(){' +
+          'var ctx=new Proxy({},{get:function(t,k){return noop;},set:function(){return true;}});' +
+          'var e={classList:{add:noop,remove:noop,toggle:noop,contains:function(){return false;}},style:{},dataset:{},value:"",checked:false,' +
+            'getContext:function(){return ctx;},appendChild:function(c){return c;},removeChild:noop,setAttribute:noop,getAttribute:function(){return null;},' +
+            'addEventListener:noop,removeEventListener:noop,querySelector:function(){return __el();},querySelectorAll:function(){return [];},' +
+            'insertAdjacentHTML:noop,focus:noop,click:noop,remove:noop,' +
+            'getBoundingClientRect:function(){return {left:0,top:0,width:0,height:0,right:0,bottom:0};}};' +
+          'return new Proxy(e,{get:function(t,k){return (k in t)?t[k]:noop;},set:function(t,k,v){t[k]=v;return true;}});' +
+        '}' +
+        // atelier に実在する要素は本物、無い id はダミーを返す（本体の起動コードが落ちないように）
+        'window.__ATELIER_GEI=function(id){return __real(id)||__el();};' +
+        'document.getElementById=window.__ATELIER_GEI;' +
+      '})();\n';
+    const s=document.createElement("script");
+    s.textContent = shim + code;
+    document.head.appendChild(s);   // ここで本体が同期実行され、関数・state(S)が使えるようになる
+    if(typeof S==="undefined" || !S) throw new Error("state未初期化");
+  });
+}
+
+/* ============================================================ */
+let savedTimer=null;
+function flashSaved(){
+  const b=document.getElementById("saveBtn");
+  b.textContent="保存しました ♡";
+  clearTimeout(savedTimer);
+  savedTimer=setTimeout(()=>{ b.textContent="保存ずみ ✓"; }, 900);
+}
+function draw(){ try{ renderChar(); }catch(e){ console.warn(e); } }
+function persist(){ try{ save(); }catch(e){} flashSaved(); }
+
+function chipRow(boxId, entries, getCur, onPick){
+  const box=document.getElementById(boxId); box.innerHTML="";
+  entries.forEach(([k,label])=>{
+    const b=document.createElement("button");
+    b.className="chip"+(getCur()===k?" on":"");
+    b.textContent=label;
+    b.onclick=()=>{ onPick(k); refreshChips(); };
+    box.appendChild(b);
+  });
+}
+let _chipRefreshers=[];
+function refreshChips(){ _chipRefreshers.forEach(fn=>fn()); }
+
+function initStudio(){
+  const F=S.face;
+  // 念のため新キー補完（古いセーブ対策）
+  if(typeof F.faceW!=="number") F.faceW=70;
+  if(typeof F.faceH!=="number") F.faceH=74;
+  if(typeof F.chin!=="number")  F.chin=0;
+  if(typeof F.cheek!=="number") F.cheek=0;
+  if(!F.offsets) F.offsets={eyes:{x:0,y:0},brows:{x:0,y:0},mouth:{x:0,y:0},hairFront:{x:0,y:0}};
+  if(!F.selPart) F.selPart="eyes";
+
+  // ---- プリセット ----
+  const presetEntries=Object.keys(PRESETS).map(k=>[k,k]);
+  const mkPresets=()=>chipRow("presetChips", presetEntries, ()=>F.preset, (k)=>{
+    const p=PRESETS[k];
+    Object.assign(F,{preset:k,eye:p.eye,brow:p.brow,mouth:p.mouth,eyeSize:p.eyeSize,eyeGap:p.eyeGap});
+    syncSliders(); draw(); persist();
+  });
+  // ---- め・まゆ・くち ----
+  const mkEye=()=>chipRow("eyeChips", Object.entries(EYE_STYLES), ()=>F.eye, (k)=>{ F.eye=k; F.preset=""; draw(); persist(); });
+  const mkBrow=()=>chipRow("browChips", Object.entries(BROW_STYLES), ()=>F.brow, (k)=>{ F.brow=k; F.preset=""; draw(); persist(); });
+  const mkMouth=()=>chipRow("mouthChips", Object.entries(MOUTH_STYLES), ()=>F.mouth, (k)=>{ F.mouth=k; F.preset=""; draw(); persist(); });
+  // ---- パーツのいち ----
+  const mkPart=()=>chipRow("partChips", Object.entries(PART_LABELS), ()=>F.selPart, (k)=>{ F.selPart=k; syncSliders(); });
+  _chipRefreshers=[mkPresets,mkEye,mkBrow,mkMouth,mkPart];
+  refreshChips();
+
+  // ---- 肌・髪 スウォッチ ----
+  const skinSw=document.getElementById("skinSw"); skinSw.innerHTML="";
+  Object.entries(SKINS).forEach(([k,v])=>{
+    const b=document.createElement("div"); b.className="sw"+(F.skin===k?" on":"");
+    b.style.background=`linear-gradient(135deg,${v.s0},${v.s1})`;
+    b.onclick=()=>{ F.skin=k; skinSw.querySelectorAll(".sw").forEach(x=>x.classList.remove("on")); b.classList.add("on"); draw(); persist(); };
+    skinSw.appendChild(b);
+  });
+  const hairSw=document.getElementById("hairSw"); hairSw.innerHTML="";
+  Object.entries(HAIRBASE).forEach(([k,v])=>{
+    const b=document.createElement("div"); b.className="sw"+(F.hair===k?" on":"");
+    b.style.background=`linear-gradient(135deg,${v.tip},${v.root})`;
+    b.onclick=()=>{ F.hair=k; hairSw.querySelectorAll(".sw").forEach(x=>x.classList.remove("on")); b.classList.add("on"); draw(); persist(); };
+    hairSw.appendChild(b);
+  });
+
+  // ---- スライダー結線 ----
+  const bind=(id,key,parse)=>{
+    const el=document.getElementById(id);
+    el.addEventListener("input",e=>{ F[key]=parse(e.target.value); draw(); persist(); });
+  };
+  bind("sW","faceW",v=>parseInt(v));
+  bind("sH","faceH",v=>parseInt(v));
+  bind("sChin","chin",v=>parseFloat(v));
+  bind("sCheek","cheek",v=>parseFloat(v));
+  document.getElementById("sEyeSize").addEventListener("input",e=>{ F.eyeSize=parseFloat(e.target.value); F.preset=""; mkPresets(); draw(); persist(); });
+  document.getElementById("sEyeGap").addEventListener("input",e=>{ F.eyeGap=parseInt(e.target.value); F.preset=""; mkPresets(); draw(); persist(); });
+  document.getElementById("sPosX").addEventListener("input",e=>{ F.offsets[F.selPart].x=parseInt(e.target.value); draw(); persist(); });
+  document.getElementById("sPosY").addEventListener("input",e=>{ F.offsets[F.selPart].y=parseInt(e.target.value); draw(); persist(); });
+
+  document.getElementById("resetPart").onclick=()=>{ F.offsets[F.selPart]={x:0,y:0}; syncSliders(); draw(); persist(); };
+  document.getElementById("resetAll").onclick=()=>{
+    // F（=S.face）の中身だけを既定値に。オブジェクトの差し替えはしない（参照を保つ）
+    const d=defaultFace();
+    ["eye","brow","mouth","eyeSize","eyeGap","faceW","faceH","chin","cheek","preset"].forEach(k=>F[k]=d[k]);
+    Object.keys(F.offsets).forEach(k=>F.offsets[k]={x:0,y:0});
+    syncSliders(); refreshChips(); draw(); persist();
+  };
+  document.getElementById("saveBtn").onclick=()=>{ persist(); };
+
+  syncSliders();
+  draw();
+  document.getElementById("loading").style.display="none";
+  document.getElementById("ctrl").style.display="flex";
+}
+
+function syncSliders(){
+  const F=S.face;
+  const set=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val; };
+  set("sW",F.faceW); set("sH",F.faceH); set("sChin",F.chin); set("sCheek",F.cheek);
+  set("sEyeSize",F.eyeSize); set("sEyeGap",F.eyeGap);
+  const o=F.offsets[F.selPart]||{x:0,y:0};
+  set("sPosX",o.x); set("sPosY",o.y);
+}
+</script>
+</body>
+</html>
