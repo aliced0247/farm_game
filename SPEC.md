@@ -387,11 +387,30 @@
 
 ```
 farm_game/
-├── index.html   # ゲーム本体（すべてここに完結）
-└── SPEC.md      # この仕様書
+├── index.html           # 牧場ゲーム本体（この仕様書の対象。すべてここに完結）
+├── SPEC.md              # この仕様書（牧場ゲーム用）
+├── fantasy_market.html  # 別ゲーム「きせかえマーケット」（1ファイル完結・Phaser不使用）
+├── atelier.html         # きせかえ用「キャラ工房」（顔スタジオ＋作画スタジオ）
+├── ART_PIPELINE.md      # きせかえの作画SVG差し込み手順＋工房の使い方
+└── STATUS.md            # キャラ工房まわりの進捗ログ（常設）
 ```
 
 ### 動かし方
 - ブラウザで `index.html` を開くだけ（GitHub Pages 公開済み）
 - Phaser本体はCDNから読み込むため**ネット接続が必要**
+
+---
+
+## 10. 関連プロジェクト：きせかえマーケット＆キャラ工房（参照）
+
+この仕様書は牧場ゲーム（`index.html`）のもの。同リポジトリには別ゲーム
+**「きせかえマーケット」（`fantasy_market.html`）** と、その制作支援ツール
+**「キャラ工房」（`atelier.html`）** がある。
+
+- きせかえ側のアイテム作画の仕組み・座標系・工房の使い方は **`ART_PIPELINE.md`** を参照。
+- 工房の進捗・設計方針（本体エンジンを実行時読み込みして二重管理を避ける等）は **`STATUS.md`** を参照。
+- セーブは別キー（牧場=`farmgame_save_v3` ／ きせかえ=`fantasy_market_save_v1`）で互いに干渉しない。
+- 公開URL：
+  - きせかえ：`https://aliced0247.github.io/farm_game/fantasy_market.html`
+  - キャラ工房：`https://aliced0247.github.io/farm_game/atelier.html`
 </content>

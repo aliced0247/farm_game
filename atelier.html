@@ -368,7 +368,6 @@ function drawArtBase(){
 function drawRef(){
   const ref=document.getElementById("refLayer"); ref.innerHTML="";
   if(!document.getElementById("tgRef").checked) return;
-  if(artSlot==="acc"){ return; } // accは下じき省略
   let item=null;
   try{ item=ITEMS.find(i=>i.slot===artSlot && !i.art); }catch(e){}
   if(!item) return;
@@ -377,11 +376,15 @@ function drawRef(){
   try{ renderChar(); }catch(e){}
   const full=tmp.innerHTML; tmp.innerHTML=old;   // 本体は戻す（このあと drawArtBase が正規描画）
   S.equip[artSlot]=keep;
-  // 該当スロットのグループだけ抽出
-  const ids={hair:["hairBack","hairFront"],tops:["top"],bottoms:["bottom"],shoes:["shoes"],bg:["bgItem"]}[artSlot]||[];
+  // 該当スロットのグループだけ抽出（acc は id が "acc…" 可変なので前方一致）
   const buf=document.createElementNS("http://www.w3.org/2000/svg","svg"); buf.innerHTML=full;
   let out="";
-  ids.forEach(id=>{ const g=buf.querySelector("#"+CSS.escape(id)); if(g) out+=g.outerHTML; });
+  if(artSlot==="acc"){
+    buf.querySelectorAll('g[id^="acc"]').forEach(g=>out+=g.outerHTML);
+  }else{
+    const ids={hair:["hairBack","hairFront"],tops:["top"],bottoms:["bottom"],shoes:["shoes"],bg:["bgItem"]}[artSlot]||[];
+    ids.forEach(id=>{ const g=buf.querySelector("#"+CSS.escape(id)); if(g) out+=g.outerHTML; });
+  }
   ref.innerHTML=`<g opacity="0.32">${out}</g>`;
 }
 function drawGuide(){
