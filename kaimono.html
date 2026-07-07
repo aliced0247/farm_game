@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>かいものリスト</title>
+<meta name="theme-color" content="#ff8a5c">
+<link rel="manifest" href="kaimono.webmanifest">
+<link rel="apple-touch-icon" href="icons/kaimono-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="かいもの">
+<style>
+:root{
+  --bg:#fff7ef; --card:#ffffff; --ink:#4a3728; --sub:#a08a76;
+  --accent:#ff8a5c; --accent2:#ff6f91; --line:#f3e4d5; --done:#c9b8a8;
+  --green:#3dbf7a; --orange:#f5a623; --red:#e5484d; --gray:#c0b0a0;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0;}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+  font-size:16px; min-height:100dvh;
+  padding-bottom:calc(120px + env(safe-area-inset-bottom));
+  overscroll-behavior-y:contain;
+}
+button{font-family:inherit;}
+
+/* ---- header ---- */
+header{
+  position:sticky; top:0; z-index:20;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+  display:flex; align-items:center; gap:8px;
+  box-shadow:0 2px 10px rgba(255,120,80,.25);
+}
+header .ttl{flex:1; min-width:0;}
+header h1{margin:0; font-size:18px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+header .st{font-size:11px; opacity:.95; display:flex; align-items:center; gap:5px; margin-top:1px;}
+.dot{width:8px; height:8px; border-radius:50%; background:var(--gray); flex:none;}
+.dot.on{background:#8dffc0; box-shadow:0 0 6px #8dffc0;}
+.dot.wait{background:#ffe08a;}
+.dot.err{background:#ff9a9e;}
+header button{
+  background:rgba(255,255,255,.22); border:none; color:#fff; border-radius:12px;
+  width:40px; height:40px; font-size:19px; flex:none; cursor:pointer;
+}
+
+/* ---- share banner ---- */
+#shareBanner{
+  margin:12px 14px 0; padding:12px 14px; border-radius:14px;
+  background:#fff1e2; border:1.5px dashed #ffc9a3; color:#b06a35;
+  font-size:13.5px; font-weight:700; display:flex; align-items:center; gap:8px; cursor:pointer;
+}
+#shareBanner .x{margin-left:auto; color:#d8a476; font-size:16px; padding:4px 6px;}
+
+/* ---- list ---- */
+main{padding:6px 14px 0; max-width:560px; margin:0 auto;}
+.secHead{
+  display:flex; align-items:center; gap:8px; margin:16px 2px 8px;
+  font-size:13px; font-weight:800; color:var(--sub);
+}
+.secHead .clearBtn{
+  margin-left:auto; background:none; border:1.5px solid var(--line); color:var(--sub);
+  border-radius:99px; padding:5px 12px; font-size:12px; font-weight:700; cursor:pointer;
+}
+.item{
+  background:var(--card); border-radius:16px; padding:12px 12px;
+  display:flex; align-items:center; gap:11px; margin-bottom:8px;
+  box-shadow:0 1px 4px rgba(120,80,50,.07); cursor:pointer;
+  animation:pop .18s ease;
+}
+@keyframes pop{from{transform:scale(.97); opacity:.4;} to{transform:scale(1); opacity:1;}}
+.chk{
+  width:28px; height:28px; border-radius:50%; border:2.5px solid #ffd2b8;
+  flex:none; display:flex; align-items:center; justify-content:center;
+  color:transparent; font-size:15px; font-weight:900; transition:all .15s;
+}
+.item.done .chk{background:var(--green); border-color:var(--green); color:#fff;}
+.item .body{flex:1; min-width:0;}
+.item .nm{font-size:16.5px; font-weight:700; word-break:break-all;}
+.item.done .nm{color:var(--done); text-decoration:line-through;}
+.item .sub{font-size:11.5px; color:var(--sub); margin-top:2px;}
+.item.done .sub{color:#d5c8bb;}
+.item .del{
+  background:none; border:none; color:#dcc9b8; font-size:17px; padding:8px; flex:none; cursor:pointer;
+}
+.empty{
+  text-align:center; color:var(--sub); padding:52px 20px; font-size:14.5px; line-height:2;
+}
+.empty .big{font-size:44px;}
+
+/* ---- freq chips ---- */
+#freqWrap{max-width:560px; margin:0 auto; padding:0 14px;}
+#freqWrap .lbl{font-size:11px; color:var(--sub); font-weight:800; margin:14px 2px 6px;}
+#freq{display:flex; gap:7px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none;}
+#freq::-webkit-scrollbar{display:none;}
+#freq button{
+  flex:none; background:#fff; border:1.5px solid var(--line); color:var(--ink);
+  border-radius:99px; padding:8px 13px; font-size:13.5px; font-weight:700; cursor:pointer;
+}
+
+/* ---- bottom input bar ---- */
+#bar{
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  background:#fffdf9; border-top:1px solid var(--line);
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+}
+#bar .row{display:flex; gap:8px; max-width:560px; margin:0 auto;}
+#catBtn{
+  width:46px; height:46px; border-radius:14px; border:1.5px solid var(--line);
+  background:#fff; font-size:20px; flex:none; cursor:pointer;
+}
+#inp{
+  flex:1; min-width:0; height:46px; border-radius:14px; border:1.5px solid var(--line);
+  padding:0 14px; font-size:16px; background:#fff; color:var(--ink); outline:none;
+}
+#inp:focus{border-color:var(--accent);}
+#addBtn{
+  width:52px; height:46px; border-radius:14px; border:none; flex:none; cursor:pointer;
+  background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; font-size:23px; font-weight:800;
+  box-shadow:0 3px 8px rgba(255,120,80,.35);
+}
+#addBtn:active{transform:scale(.94);}
+
+/* ---- sheet (settings) ---- */
+#ovl{
+  position:fixed; inset:0; background:rgba(60,35,15,.35); z-index:40;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+#ovl.show{opacity:1; pointer-events:auto;}
+#sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:41;
+  background:var(--bg); border-radius:22px 22px 0 0; max-height:88dvh; overflow-y:auto;
+  padding:8px 18px calc(24px + env(safe-area-inset-bottom));
+  transform:translateY(105%); transition:transform .25s ease;
+  max-width:600px; margin:0 auto;
+}
+#sheet.show{transform:translateY(0);}
+#sheet .grip{width:40px; height:5px; border-radius:3px; background:#e5d5c5; margin:6px auto 12px;}
+#sheet h2{font-size:16px; margin:20px 0 10px; display:flex; align-items:center; gap:6px;}
+#sheet h2:first-of-type{margin-top:4px;}
+.fld{margin-bottom:10px;}
+.fld label{display:block; font-size:12px; font-weight:800; color:var(--sub); margin-bottom:5px;}
+.fld input{
+  width:100%; height:44px; border-radius:12px; border:1.5px solid var(--line);
+  padding:0 12px; font-size:15px; background:#fff; color:var(--ink); outline:none;
+}
+.fld input:focus{border-color:var(--accent);}
+.btn{
+  display:block; width:100%; border:none; border-radius:13px; padding:13px;
+  font-size:15px; font-weight:800; cursor:pointer; margin-bottom:9px;
+}
+.btn.pri{background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff;}
+.btn.sec{background:#fff; border:1.5px solid var(--line); color:var(--ink);}
+.btn.warn{background:#fff; border:1.5px solid #f5c6c6; color:var(--red);}
+.note{font-size:12.5px; color:var(--sub); line-height:1.75; margin:6px 0 12px;}
+.note b{color:#b06a35;}
+.card{background:#fff; border-radius:14px; padding:13px 14px; margin-bottom:10px; border:1.5px solid var(--line);}
+details{background:#fff; border:1.5px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px;}
+details summary{font-size:13.5px; font-weight:800; cursor:pointer; color:#b06a35;}
+details .note{margin-top:8px;}
+code{background:#fdf0e3; border-radius:6px; padding:1px 5px; font-size:12px; word-break:break-all;}
+pre{background:#fdf0e3; border-radius:10px; padding:10px; font-size:11px; overflow-x:auto; line-height:1.5;}
+.okmsg{font-size:13px; font-weight:800; color:var(--green); margin:4px 0 10px;}
+.errmsg{font-size:13px; font-weight:800; color:var(--red); margin:4px 0 10px;}
+
+/* ---- toast ---- */
+#toast{
+  position:fixed; left:50%; bottom:calc(88px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px);
+  background:#4a3728; color:#fff; border-radius:99px; padding:11px 18px; font-size:13.5px; font-weight:700;
+  z-index:50; opacity:0; pointer-events:none; transition:all .22s; display:flex; gap:14px; align-items:center;
+  white-space:nowrap; max-width:92vw;
+}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto;}
+#toast button{background:none; border:none; color:#ffb27a; font-size:13.5px; font-weight:800; cursor:pointer; padding:0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="ttl">
+    <h1 id="hTitle">🛒 かいものリスト</h1>
+    <div class="st"><span class="dot" id="dot"></span><span id="stTxt">このスマホだけ</span></div>
+  </div>
+  <button id="gear" aria-label="設定">⚙️</button>
+</header>
+
+<div id="shareBanner" style="display:none">
+  <span>👨‍👩‍👧</span><span>家族と共有できるよ！タップして設定</span><span class="x" id="bannerX">✕</span>
+</div>
+
+<main>
+  <div id="listWrap"></div>
+</main>
+
+<div id="freqWrap" style="display:none">
+  <div class="lbl">🔁 よく買うもの（タップで追加）</div>
+  <div id="freq"></div>
+</div>
+
+<div id="bar">
+  <div class="row">
+    <button id="catBtn" title="カテゴリ">🍎</button>
+    <input id="inp" type="text" placeholder="なにを買う？（例：牛乳）" enterkeyhint="done" autocomplete="off">
+    <button id="addBtn" aria-label="追加">＋</button>
+  </div>
+</div>
+
+<div id="ovl"></div>
+<div id="sheet">
+  <div class="grip"></div>
+
+  <h2>👤 あなたの名前</h2>
+  <div class="fld">
+    <input id="myName" type="text" placeholder="例：ママ、パパ、もえ" maxlength="10">
+  </div>
+  <div class="note">追加した品物に名前が表示されます。</div>
+
+  <h2>👨‍👩‍👧 家族と共有</h2>
+  <div id="syncArea"></div>
+
+  <h2>🗂 データ</h2>
+  <button class="btn sec" id="exportBtn">リストをコピー（バックアップ）</button>
+  <button class="btn warn" id="wipeBtn">このスマホのデータを全部消す</button>
+
+  <button class="btn sec" id="closeSheet" style="margin-top:14px">とじる</button>
+</div>
+
+<div id="toast"><span id="toastTxt"></span><button id="toastAct"></button></div>
+
+<script>
+"use strict";
+/* ========================================================================
+   かいものリスト — 家族共有ショッピングリスト
+   同期: Firebase Realtime Database の REST + SSE（SDK不使用・単体ファイル）
+   マージ: 品物ごとに updatedAt(t) の新しい方が勝つ（全自動・操作不要）
+   オフライン: 変更はキューに貯めて、つながったら自動送信
+   ======================================================================== */
+
+const LS = "kaimono_v1";
+const CATS = [
+  {id:"food",  e:"🍎", label:"食品"},
+  {id:"daily", e:"🧴", label:"日用品"},
+  {id:"other", e:"📦", label:"その他"},
+];
+const catOf = id => CATS.find(c=>c.id===id) || CATS[2];
+
+/* ---------- state ---------- */
+let S = load();
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(LS));
+    if(d && typeof d==="object") return Object.assign({name:"",cfg:null,items:{},pending:[],freq:{},hideBanner:false,catIdx:0}, d);
+  }catch(e){}
+  return {name:"", cfg:null, items:{}, pending:[], freq:{}, hideBanner:false, catIdx:0};
+}
+function save(){ try{ localStorage.setItem(LS, JSON.stringify(S)); }catch(e){} }
+
+const $ = id => document.getElementById(id);
+const now = () => Date.now();
+const rid = n => { let s=""; const A="abcdefghijklmnopqrstuvwxyz0123456789"; const r=crypto.getRandomValues(new Uint8Array(n)); for(const b of r) s+=A[b%A.length]; return s; };
+const newId = () => now().toString(36) + "-" + rid(6);
+const esc = s => String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- base64url (unicode対応) ---------- */
+const b64e = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const b64d = s => decodeURIComponent(escape(atob(s.replace(/-/g,"+").replace(/_/g,"/"))));
+
+/* ========================================================================
+   同期エンジン
+   ======================================================================== */
+let es=null, esOK=false, flushing=false, permErr=false, flushTimer=null;
+
+function baseURL(){ return S.cfg.url.replace(/\/+$/,""); }
+function roomURL(p){ return baseURL() + "/rooms/" + S.cfg.room + p; }
+function hasPending(id){ return S.pending.some(op=>op.id===id); }
+
+function connect(){
+  if(!S.cfg) return;
+  if(es){ es.close(); es=null; }
+  permErr = false;
+  es = new EventSource(roomURL("/items.json"));
+  es.onopen = ()=>{ esOK=true; setDot(); flush(); };
+  es.onerror = ()=>{ esOK=false; setDot(); };   // EventSourceが自動再接続する
+  es.addEventListener("put",   e=>onRemote("put",   JSON.parse(e.data)));
+  es.addEventListener("patch", e=>onRemote("patch", JSON.parse(e.data)));
+  es.addEventListener("cancel", ()=>{ esOK=false; setDot(); setTimeout(connect, 8000); });
+  es.addEventListener("auth_revoked", ()=>{ permErr=true; esOK=false; setDot(); });
+}
+function disconnect(){ if(es){ es.close(); es=null; } esOK=false; }
+
+/* サーバーからの変更をローカルへマージ（品物ごとにtが新しい方が勝つ） */
+function onRemote(type, msg){
+  if(!msg) return;
+  const path = msg.path || "/";
+  const data = msg.data;
+  if(path === "/"){
+    if(type === "put"){
+      const merged = {};
+      const sv = data || {};
+      for(const id in sv){
+        const l = S.items[id];
+        merged[id] = (l && l.t > (sv[id].t||0)) ? l : sv[id];
+      }
+      for(const id in S.items){           // サーバーに無い＝削除済み。ただし未送信の変更があるなら残す
+        if(!(id in merged) && hasPending(id)) merged[id] = S.items[id];
+      }
+      S.items = merged;
+    }else{ // 複数idまとめてのpatch
+      for(const id in (data||{})){
+        if(data[id]===null){ if(!hasPending(id)) delete S.items[id]; }
+        else mergeItem(id, data[id]);
+      }
+    }
+  }else{
+    const id = path.replace(/^\//,"").split("/")[0];
+    if(type === "put" && (path === "/"+id)){
+      if(data === null){ if(!hasPending(id)) delete S.items[id]; }
+      else{ const l=S.items[id]; if(!l || (data.t||0) >= (l.t||0)) S.items[id]=data; }
+    }else{
+      // 品物内のフィールド変更
+      const fields = (path === "/"+id) ? data : {[path.replace("/"+id+"/","")]: data};
+      mergeItem(id, fields||{});
+    }
+  }
+  save(); render();
+}
+function mergeItem(id, fields){
+  const l = S.items[id] || {};
+  if(!l.t || (fields.t||0) >= l.t) S.items[id] = Object.assign({}, l, fields);
+}
+
+/* 変更キュー（オフラインでも貯めて、つながったら順番に送る） */
+function queueOp(id, kind, data){
+  if(!S.cfg){ save(); render(); return; }
+  if(kind === "p"){
+    for(let i=S.pending.length-1; i>=0; i--){
+      const op = S.pending[i];
+      if(op.id !== id) continue;
+      if(op.k === "p"){ Object.assign(op.d, data); save(); render(); flush(); return; }
+      break; // 直近が削除なら新規opとして積む
+    }
+  }
+  S.pending.push(kind==="d" ? {id, k:"d"} : {id, k:"p", d:data});
+  save(); render(); flush();
+}
+
+async function flush(){
+  if(flushing || !S.cfg || !S.pending.length || !navigator.onLine) { setDot(); return; }
+  flushing = true;
+  while(S.pending.length){
+    const op = S.pending[0];
+    try{
+      const r = await fetch(roomURL("/items/"+op.id+".json"),
+        op.k==="d" ? {method:"DELETE"} : {method:"PATCH", body:JSON.stringify(op.d)});
+      if(r.status===401 || r.status===403){ permErr=true; break; }
+      if(!r.ok) break;
+      permErr = false;
+      S.pending.shift(); save();
+    }catch(e){ break; }
+  }
+  flushing = false;
+  setDot();
+  if(S.pending.length && !flushTimer){
+    flushTimer = setTimeout(()=>{ flushTimer=null; flush(); }, 15000);
+  }
+}
+window.addEventListener("online", ()=>{ flush(); setDot(); });
+window.addEventListener("offline", setDot);
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden){ flush(); if(S.cfg && (!es || es.readyState===2)) connect(); } });
+
+function setDot(){
+  const dot=$("dot"), tx=$("stTxt");
+  if(!S.cfg){ dot.className="dot"; tx.textContent="このスマホだけ"; return; }
+  if(permErr){ dot.className="dot err"; tx.textContent="接続エラー（設定を確認）"; return; }
+  if(S.pending.length){ dot.className="dot wait"; tx.textContent="送信まち "+S.pending.length+"件（自動で送るよ）"; return; }
+  if(esOK && navigator.onLine){ dot.className="dot on"; tx.textContent="家族と同期中"; return; }
+  dot.className="dot wait"; tx.textContent="オフライン（つながったら自動同期）";
+}
+
+/* ========================================================================
+   リスト操作
+   ======================================================================== */
+function addItem(name, catId){
+  name = name.trim();
+  if(!name) return;
+  // 同名の未チェック品があれば追加しない（重複防止）
+  for(const id in S.items){
+    const it=S.items[id];
+    if(!it.done && it.n===name){ toast("「"+name+"」はもうリストにあるよ"); return; }
+  }
+  const id = newId();
+  const t = now();
+  S.items[id] = {n:name, c:catId, done:false, by:S.name||"だれか", t, ct:t};
+  const f = S.freq[name] || {k:0};
+  S.freq[name] = {k:f.k+1, c:catId};
+  queueOp(id, "p", S.items[id]);
+  save(); render();
+}
+function toggle(id){
+  const it = S.items[id]; if(!it) return;
+  it.done = !it.done; it.t = now();
+  queueOp(id, "p", {done:it.done, t:it.t});
+  save(); render();
+}
+function removeItem(id){
+  const it = S.items[id]; if(!it) return;
+  const copy = Object.assign({}, it);
+  delete S.items[id];
+  queueOp(id, "d");
+  save(); render();
+  toast("「"+copy.n+"」を消したよ", "もどす", ()=>{
+    copy.t = now();
+    S.items[id] = copy;
+    queueOp(id, "p", copy);
+    save(); render();
+  });
+}
+function clearDone(){
+  const ids = Object.keys(S.items).filter(id=>S.items[id].done);
+  if(!ids.length) return;
+  const copies = ids.map(id=>[id, Object.assign({}, S.items[id])]);
+  ids.forEach(id=>{ delete S.items[id]; queueOp(id,"d"); });
+  save(); render();
+  toast(ids.length+"こ 片づけたよ ✨", "もどす", ()=>{
+    copies.forEach(([id,c])=>{ c.t=now(); S.items[id]=c; queueOp(id,"p",c); });
+    save(); render();
+  });
+}
+
+/* ========================================================================
+   描画
+   ======================================================================== */
+function render(){
+  const wrap = $("listWrap");
+  const all = Object.entries(S.items).map(([id,it])=>Object.assign({id}, it));
+  const todo = all.filter(i=>!i.done).sort((a,b)=>(a.ct||0)-(b.ct||0));
+  const done = all.filter(i=> i.done).sort((a,b)=>(b.t||0)-(a.t||0));
+
+  let h = "";
+  if(!all.length){
+    h = '<div class="empty"><div class="big">🛒</div>リストは空っぽ！<br>下の入力らんから追加してね</div>';
+  }else{
+    h += '<div class="secHead">🛍 買うもの（'+todo.length+'）</div>';
+    if(!todo.length) h += '<div class="empty" style="padding:18px">ぜんぶ買えたよ！えらい！ 🎉</div>';
+    h += todo.map(row).join("");
+    if(done.length){
+      h += '<div class="secHead">✅ かごに入れた（'+done.length+'）<button class="clearBtn" id="clearDone">まとめて片づける</button></div>';
+      h += done.map(row).join("");
+    }
+  }
+  wrap.innerHTML = h;
+  const cb = $("clearDone"); if(cb) cb.onclick = e=>{ e.stopPropagation(); clearDone(); };
+
+  wrap.querySelectorAll(".item").forEach(el=>{
+    const id = el.dataset.id;
+    el.onclick = ()=>toggle(id);
+    el.querySelector(".del").onclick = e=>{ e.stopPropagation(); removeItem(id); };
+  });
+
+  renderFreq(todo);
+  $("shareBanner").style.display = (!S.cfg && !S.hideBanner) ? "flex" : "none";
+  $("hTitle").textContent = "🛒 " + ((S.cfg && S.cfg.roomName) || "かいものリスト");
+  setDot();
+}
+function row(i){
+  const c = catOf(i.c);
+  const dt = i.ct ? fmtDay(i.ct) : "";
+  return '<div class="item'+(i.done?" done":"")+'" data-id="'+i.id+'">' +
+    '<div class="chk">✓</div>' +
+    '<div class="body"><div class="nm">'+esc(i.n)+'</div>' +
+    '<div class="sub">'+c.e+' '+c.label+'　'+esc(i.by||"")+(dt?"　"+dt:"")+'</div></div>' +
+    '<button class="del" aria-label="削除">✕</button></div>';
+}
+function fmtDay(t){
+  const d=new Date(t), n=new Date();
+  if(d.toDateString()===n.toDateString()) return "きょう";
+  return (d.getMonth()+1)+"/"+d.getDate();
+}
+function renderFreq(todo){
+  const active = new Set(todo.map(i=>i.n));
+  const top = Object.entries(S.freq)
+    .filter(([n])=>!active.has(n))
+    .sort((a,b)=>b[1].k-a[1].k).slice(0,10);
+  $("freqWrap").style.display = top.length ? "block" : "none";
+  $("freq").innerHTML = top.map(([n,f])=>'<button data-n="'+esc(n)+'" data-c="'+(f.c||"other")+'">'+catOf(f.c).e+' '+esc(n)+'</button>').join("");
+  $("freq").querySelectorAll("button").forEach(b=>{
+    b.onclick = ()=>addItem(b.dataset.n, b.dataset.c);
+  });
+}
+
+/* ---------- toast ---------- */
+let toastTimer=null, toastCb=null;
+function toast(msg, actLabel, cb){
+  $("toastTxt").textContent = msg;
+  const a = $("toastAct");
+  toastCb = cb || null;
+  a.textContent = actLabel || "";
+  a.style.display = actLabel ? "block" : "none";
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>$("toast").classList.remove("show"), 4000);
+}
+$("toastAct").onclick = ()=>{ if(toastCb) toastCb(); $("toast").classList.remove("show"); };
+
+/* ========================================================================
+   設定シート
+   ======================================================================== */
+function openSheet(){ renderSync(); $("myName").value=S.name; $("ovl").classList.add("show"); $("sheet").classList.add("show"); }
+function closeSheet(){ $("ovl").classList.remove("show"); $("sheet").classList.remove("show"); }
+$("gear").onclick = openSheet;
+$("ovl").onclick = closeSheet;
+$("closeSheet").onclick = closeSheet;
+$("shareBanner").onclick = e=>{ if(e.target.id==="bannerX"){ S.hideBanner=true; save(); render(); } else openSheet(); };
+$("myName").addEventListener("change", ()=>{ S.name=$("myName").value.trim(); save(); });
+
+function inviteLink(){
+  const payload = b64e(JSON.stringify({u:S.cfg.url, r:S.cfg.room, n:S.cfg.roomName}));
+  return location.origin + location.pathname + "#join=" + payload;
+}
+
+function renderSync(){
+  const el = $("syncArea");
+  if(S.cfg){
+    el.innerHTML =
+      '<div class="card"><div style="font-weight:800; font-size:14px">✅ 共有中：'+esc(S.cfg.roomName||"かいものリスト")+'</div>' +
+      '<div class="note" style="margin-bottom:0">家族が追加・チェックすると、このスマホにも自動で反映されます。マージ操作はいりません。</div></div>' +
+      '<button class="btn pri" id="shareLink">📨 招待リンクを家族に送る（LINEなど）</button>' +
+      '<button class="btn sec" id="copyLink">招待リンクをコピー</button>' +
+      '<div class="note">家族はリンクを開くだけで参加できます。</div>' +
+      '<details><summary>ホーム画面に追加したのに設定が消えた場合</summary><div class="note">' +
+      'iPhoneはホーム画面アプリとSafariでデータが別々です。アプリ内のこの設定画面で「招待リンクで参加」にLINEで送られたリンクを貼り付ければOK。</div></details>' +
+      '<button class="btn warn" id="leaveRoom">共有をやめる（リストはこのスマホに残る）</button>';
+    $("shareLink").onclick = async ()=>{
+      const url = inviteLink();
+      if(navigator.share){ try{ await navigator.share({title:"かいものリスト", text:"家族のかいものリストに参加してね🛒", url}); }catch(e){} }
+      else { await copyText(url); toast("リンクをコピーしたよ！LINEに貼ってね"); }
+    };
+    $("copyLink").onclick = async ()=>{ await copyText(inviteLink()); toast("招待リンクをコピーしたよ"); };
+    $("leaveRoom").onclick = ()=>{
+      if(!confirm("共有をやめる？（リストのデータはこのスマホに残ります）")) return;
+      disconnect(); S.cfg=null; S.pending=[]; save(); renderSync(); render();
+    };
+  }else{
+    el.innerHTML =
+      '<div class="note">一度設定すれば、あとは<b>ぜんぶ自動</b>。だれかが追加すればみんなのスマホに出て、チェックすればみんなのリストからチェックされます。</div>' +
+      '<div class="card"><div style="font-weight:800; font-size:14px; margin-bottom:6px">🔗 招待リンクで参加する</div>' +
+      '<div class="note" style="margin:0 0 8px">家族から送られたリンクを開くか、ここに貼り付け：</div>' +
+      '<div class="fld"><input id="joinInp" type="text" placeholder="https://…#join=…"></div>' +
+      '<button class="btn pri" id="joinBtn">参加する</button><div id="joinMsg"></div></div>' +
+      '<div class="card"><div style="font-weight:800; font-size:14px; margin-bottom:6px">🆕 あたらしく共有をはじめる（代表1人だけ）</div>' +
+      '<div class="note" style="margin:0 0 8px">最初の1人だけ、無料の保存場所（Firebase）を10分ほどで用意します。' +
+      '手順は <a href="https://github.com/aliced0247/farm_game/blob/claude/family-shopping-app-xdl5dv/KAIMONO_SETUP.md" target="_blank">くわしい説明</a> か、下の「かんたん手順」を見てね。</div>' +
+      '<details><summary>かんたん手順（タップで開く）</summary><div class="note">' +
+      '1. <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> をGoogleアカウントで開く<br>' +
+      '2. 「プロジェクトを追加」→ 名前は何でもOK（例：kaimono）→ Analyticsはオフで作成<br>' +
+      '3. 左メニュー「構築」→「<b>Realtime Database</b>」→「データベースを作成」→ 場所は Singapore →「<b>ロックモード</b>」で有効化<br>' +
+      '4. 「ルール」タブを開いて、中身をぜんぶ下のように書きかえて「公開」：' +
+      '<pre>{\n  "rules": {\n    "rooms": {\n      "$room": {\n        ".read": true,\n        ".write": true\n      }\n    }\n  }\n}</pre>' +
+      '5. 「データ」タブの上にある <code>https://〇〇.firebasedatabase.app/</code> というURLをコピーして、下に貼り付け！</div></details>' +
+      '<div class="fld"><label>データベースのURL</label><input id="dbUrl" type="url" placeholder="https://xxxx-default-rtdb.….firebasedatabase.app/"></div>' +
+      '<div class="fld"><label>リストの名前</label><input id="roomName" type="text" value="うちのかいもの" maxlength="15"></div>' +
+      '<button class="btn pri" id="createBtn">共有をはじめる</button><div id="createMsg"></div></div>';
+
+    $("joinBtn").onclick = async ()=>{
+      const v = $("joinInp").value.trim();
+      const m = v.match(/#join=([A-Za-z0-9_\-]+)/) || v.match(/^([A-Za-z0-9_\-]{30,})$/);
+      if(!m){ $("joinMsg").innerHTML='<div class="errmsg">リンクの形がちがうみたい。もう一度コピーして貼ってね。</div>'; return; }
+      const ok = await joinRoom(m[1]);
+      if(ok){ closeSheet(); }
+      else $("joinMsg").innerHTML='<div class="errmsg">参加できなかった…リンクが古いか、電波を確認してね。</div>';
+    };
+    $("createBtn").onclick = async ()=>{
+      const msg = $("createMsg");
+      let url = $("dbUrl").value.trim();
+      const rn  = $("roomName").value.trim() || "うちのかいもの";
+      if(!/^https:\/\/[a-z0-9\-]+.*\.(firebaseio\.com|firebasedatabase\.app)\/?$/i.test(url)){
+        msg.innerHTML = '<div class="errmsg">URLの形がちがうみたい。<code>https://〇〇.firebasedatabase.app/</code> を貼ってね。</div>'; return;
+      }
+      msg.innerHTML = '<div class="note">確認中…</div>';
+      const err = await createRoom(url, rn);
+      if(!err){
+        msg.innerHTML = '<div class="okmsg">✅ できた！家族に招待リンクを送ろう</div>';
+        setTimeout(()=>{ renderSync(); }, 900);
+      }else if(err === "perm"){
+        msg.innerHTML = '<div class="errmsg">書き込みできなかった…手順4の「ルール」の書きかえ＆公開ができているか確認してね。</div>';
+      }else{
+        msg.innerHTML = '<div class="errmsg">つながらなかった…URLと電波を確認してね。</div>';
+      }
+    };
+  }
+}
+
+async function createRoom(url, roomName){
+  url = url.replace(/\/+$/,"");
+  const room = rid(20);
+  try{
+    const r = await fetch(url+"/rooms/"+room+"/meta.json", {method:"PUT", body:JSON.stringify({name:roomName, created:now()})});
+    if(r.status===401 || r.status===403) return "perm";
+    if(!r.ok) return "net";
+  }catch(e){ return "net"; }
+  S.cfg = {url, room, roomName};
+  uploadAll();
+  save(); connect(); render();
+  return null;
+}
+async function joinRoom(payload){
+  let j;
+  try{ j = JSON.parse(b64d(payload)); }catch(e){ return false; }
+  if(!j.u || !j.r) return false;
+  S.cfg = {url:String(j.u).replace(/\/+$/,""), room:j.r, roomName:j.n || "かいものリスト"};
+  uploadAll();
+  save(); connect(); render();
+  toast("「"+S.cfg.roomName+"」に参加したよ 🎉");
+  return true;
+}
+function uploadAll(){  // いまローカルにある品物も共有リストへ持っていく
+  for(const id in S.items) S.pending.push({id, k:"p", d:S.items[id]});
+}
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); }
+  catch(e){
+    const ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy"); ta.remove();
+  }
+}
+
+/* ---------- データ ---------- */
+$("exportBtn").onclick = async ()=>{
+  await copyText(JSON.stringify({items:S.items, freq:S.freq}, null, 1));
+  toast("リストをコピーしたよ（メモ帳に貼って保存してね）");
+};
+$("wipeBtn").onclick = ()=>{
+  if(!confirm("このスマホのリスト・設定を全部消す？（共有中の家族のデータは消えません）")) return;
+  disconnect(); localStorage.removeItem(LS); S = load(); render(); renderSync(); closeSheet();
+};
+
+/* ========================================================================
+   入力バー
+   ======================================================================== */
+$("catBtn").onclick = ()=>{ S.catIdx=(S.catIdx+1)%CATS.length; save(); $("catBtn").textContent=CATS[S.catIdx].e; toast(CATS[S.catIdx].e+" "+CATS[S.catIdx].label); };
+$("addBtn").onclick = ()=>{ addItem($("inp").value, CATS[S.catIdx].id); $("inp").value=""; $("inp").focus(); };
+$("inp").addEventListener("keydown", e=>{
+  if(e.key==="Enter" && !e.isComposing){ e.preventDefault(); addItem($("inp").value, CATS[S.catIdx].id); $("inp").value=""; }
+});
+
+/* ========================================================================
+   起動
+   ======================================================================== */
+(function boot(){
+  $("catBtn").textContent = CATS[S.catIdx||0].e;
+
+  // 招待リンクで開かれた？
+  const m = location.hash.match(/#join=([A-Za-z0-9_\-]+)/);
+  if(m){
+    history.replaceState(null, "", location.pathname + location.search);
+    let j=null; try{ j=JSON.parse(b64d(m[1])); }catch(e){}
+    if(j && j.u && j.r && !(S.cfg && S.cfg.room===j.r)){
+      if(!S.cfg || confirm("いまの共有をやめて「"+(j.n||"かいものリスト")+"」に参加する？")){
+        if(!S.name){ const nm=prompt("あなたの名前は？（例：パパ）"); if(nm) S.name=nm.trim().slice(0,10); }
+        joinRoom(m[1]);
+      }
+    }
+  }
+
+  if(S.cfg) connect();
+  render();
+
+  if("serviceWorker" in navigator && location.protocol==="https:"){
+    navigator.serviceWorker.register("kaimono-sw.js").catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>
