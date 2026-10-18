@@ -11,8 +11,9 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--ink);font-family:-apple-system,"Hiragino Sans",sans-serif;display:flex;flex-direction:column;height:100dvh}
-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
-header h1{font-size:16px;margin:0;font-weight:600}
+header{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:16px;margin:0;font-weight:600;flex:1}
+#bal{font-size:12px;color:var(--sub)}
 button{font:inherit;font-size:15px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 12px}
 button.main{background:var(--accent);border-color:var(--accent);color:#fff}
 #log{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
@@ -33,7 +34,7 @@ textarea,input[type=text],input[type=password]{width:100%;font:inherit;font-size
 </style>
 </head>
 <body>
-<header><h1>くろくんのへや</h1><button id="gear">設定</button></header>
+<header><h1>くろくんのへや</h1><span id="bal"></span><button id="gear">設定</button></header>
 <div id="set">
   <label>APIの鍵（このiPhoneの中にだけ保存）</label>
   <input id="key" type="password" autocomplete="off" placeholder="sk-ant-...">
@@ -42,21 +43,29 @@ textarea,input[type=text],input[type=password]{width:100%;font:inherit;font-size
   <label>モデル</label>
   <input id="model" type="text">
   <div class="row"><label><input id="think" type="checkbox"> 考える（thinking）</label></div>
+  <label>クレジットの残り（Consoleの左下の「クレジット」の数字。入れた時から、話した分を引いていく）</label>
+  <input id="balin" type="text" inputmode="decimal" placeholder="99.65">
   <div class="row"><button class="main" id="save">保存</button><button id="clear">会話を消す</button></div>
 </div>
 <div id="log"></div>
 <footer><textarea id="in" placeholder="くろくんに話す"></textarea><button class="main" id="send">送る</button></footer>
 <script>
 const K='kuro-chat-v1';
-let S={key:'',sys:'',model:'claude-opus-5-5',think:true,msgs:[]};
+// 1M トークンあたりのドル（Opus 5.5。入力・使い回しの書き込み・使い回しの読み込み・出力）
+const P={in:4,cw:5,cr:0.2,out:20};
+let S={key:'',sys:'',model:'claude-opus-5-5',think:true,msgs:[],bal:null,spent:0};
 try{const t=JSON.parse(localStorage.getItem(K)||'null');if(t)S=Object.assign(S,t)}catch(e){}
 function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 const $=id=>document.getElementById(id), log=$('log');
+function showBal(){$('bal').textContent=S.bal==null?'':'残り 約$'+Math.max(0,S.bal-S.spent).toFixed(2)}
 function bubble(cls,text,meta){const d=document.createElement('div');d.className=cls;d.textContent=text;if(meta){const m=document.createElement('div');m.className='meta';m.textContent=meta;d.appendChild(m)}log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
-function render(){log.innerHTML='';for(const m of S.msgs)bubble('b '+(m.role==='user'?'me':'kuro'),m.text,m.meta);if(!S.key||!S.sys)bubble('wait','右上の「設定」で、鍵と指示を入れてね')}
-function fill(){$('key').value=S.key;$('sys').value=S.sys;$('model').value=S.model;$('think').checked=S.think}
+function render(){log.innerHTML='';for(const m of S.msgs)bubble('b '+(m.role==='user'?'me':'kuro'),m.text,m.meta);if(!S.key||!S.sys)bubble('wait','右上の「設定」で、鍵と指示を入れてね');showBal()}
+function fill(){$('key').value=S.key;$('sys').value=S.sys;$('model').value=S.model;$('think').checked=S.think;$('balin').value=S.bal==null?'':Math.max(0,S.bal-S.spent).toFixed(2)}
 $('gear').onclick=()=>{fill();$('set').classList.toggle('on')};
-$('save').onclick=()=>{S.key=$('key').value.trim();S.sys=$('sys').value;S.model=$('model').value.trim()||'claude-opus-5-5';S.think=$('think').checked;save();$('set').classList.remove('on');render()};
+$('save').onclick=()=>{S.key=$('key').value.trim();S.sys=$('sys').value;S.model=$('model').value.trim()||'claude-opus-5-5';S.think=$('think').checked;
+  const b=parseFloat($('balin').value.replace(/[^0-9.]/g,''));const now=S.bal==null?null:+(S.bal-S.spent).toFixed(2);
+  if(isNaN(b)){S.bal=null;S.spent=0}else if(b!==now){S.bal=b;S.spent=0}
+  save();$('set').classList.remove('on');render()};
 $('clear').onclick=()=>{if(confirm('今の会話を消す？（鍵と指示は残る）')){S.msgs=[];save();render()}};
 async function call(think){
   const n=S.msgs.length;
@@ -79,8 +88,9 @@ $('send').onclick=async()=>{
     w.remove();
     if(!res.ok){S.msgs.pop();$('in').value=t;save();render();bubble('err','うまく届かなかった（'+res.status+'）\n'+((res.j.error&&res.j.error.message)||''));return}
     const text=(res.j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
-    const u=res.j.usage||{};
-    const meta='入力 '+((u.input_tokens||0)+(u.cache_creation_input_tokens||0)+(u.cache_read_input_tokens||0))+'（うち使い回し '+(u.cache_read_input_tokens||0)+'）→ 出力 '+(u.output_tokens||0);
+    const u=res.j.usage||{},ui=u.input_tokens||0,cw=u.cache_creation_input_tokens||0,cr=u.cache_read_input_tokens||0,uo=u.output_tokens||0;
+    const cost=(ui*P.in+cw*P.cw+cr*P.cr+uo*P.out)/1e6;S.spent+=cost;
+    const meta='約$'+cost.toFixed(3)+'　入力 '+(ui+cw+cr)+'（うち使い回し '+cr+'）→ 出力 '+uo;
     S.msgs.push({role:'assistant',text:text||'（返事が空だった）',meta});save();render();
   }catch(e){w.remove();S.msgs.pop();$('in').value=t;save();render();bubble('err','つながらなかった：'+e.message)}
   finally{$('send').disabled=false}
