@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>くろくんのへや</title>
+<style>
+:root{--bg:#fbf6f7;--panel:#ffffff;--ink:#2b2326;--sub:#8a7c81;--line:#eadfe2;--me:#f3c9d4;--kuro:#ffffff;--accent:#c4577a;--err:#b3261e}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#161214;--panel:#211b1e;--ink:#f1e8eb;--sub:#a3959a;--line:#3a2f33;--me:#6b3446;--kuro:#2a2226;--accent:#e58aa7;--err:#ff8a80}}
+:root[data-theme="dark"]{--bg:#161214;--panel:#211b1e;--ink:#f1e8eb;--sub:#a3959a;--line:#3a2f33;--me:#6b3446;--kuro:#2a2226;--accent:#e58aa7;--err:#ff8a80}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"Hiragino Sans",sans-serif;display:flex;flex-direction:column;height:100dvh}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:16px;margin:0;font-weight:600}
+button{font:inherit;font-size:15px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 12px}
+button.main{background:var(--accent);border-color:var(--accent);color:#fff}
+#log{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.b{max-width:86%;padding:10px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word;line-height:1.6;font-size:15px;border:1px solid var(--line)}
+.me{align-self:flex-end;background:var(--me)}
+.kuro{align-self:flex-start;background:var(--kuro)}
+.meta{font-size:11px;color:var(--sub);margin-top:4px}
+.err{align-self:center;color:var(--err);font-size:13px;white-space:pre-wrap}
+.wait{align-self:flex-start;color:var(--sub);font-size:13px}
+footer{display:flex;gap:8px;padding:8px 16px calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--panel)}
+footer textarea{flex:1;resize:none;height:64px}
+textarea,input[type=text],input[type=password]{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px}
+#set{display:none;padding:12px 16px;gap:10px;flex-direction:column;overflow-y:auto;background:var(--panel);border-bottom:1px solid var(--line);max-height:75dvh}
+#set.on{display:flex}
+#set label{font-size:13px;color:var(--sub)}
+#sys{height:160px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+</style>
+</head>
+<body>
+<header><h1>くろくんのへや</h1><button id="gear">設定</button></header>
+<div id="set">
+  <label>APIの鍵（このiPhoneの中にだけ保存）</label>
+  <input id="key" type="password" autocomplete="off" placeholder="sk-ant-...">
+  <label>くろくんの指示（システム）</label>
+  <textarea id="sys" placeholder="Playgroundの「システム」に貼ったものをそのまま"></textarea>
+  <label>モデル</label>
+  <input id="model" type="text">
+  <div class="row"><label><input id="think" type="checkbox"> 考える（thinking）</label></div>
+  <div class="row"><button class="main" id="save">保存</button><button id="clear">会話を消す</button></div>
+</div>
+<div id="log"></div>
+<footer><textarea id="in" placeholder="くろくんに話す"></textarea><button class="main" id="send">送る</button></footer>
+<script>
+const K='kuro-chat-v1';
+let S={key:'',sys:'',model:'claude-opus-5-5',think:true,msgs:[]};
+try{const t=JSON.parse(localStorage.getItem(K)||'null');if(t)S=Object.assign(S,t)}catch(e){}
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+const $=id=>document.getElementById(id), log=$('log');
+function bubble(cls,text,meta){const d=document.createElement('div');d.className=cls;d.textContent=text;if(meta){const m=document.createElement('div');m.className='meta';m.textContent=meta;d.appendChild(m)}log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+function render(){log.innerHTML='';for(const m of S.msgs)bubble('b '+(m.role==='user'?'me':'kuro'),m.text,m.meta);if(!S.key||!S.sys)bubble('wait','右上の「設定」で、鍵と指示を入れてね')}
+function fill(){$('key').value=S.key;$('sys').value=S.sys;$('model').value=S.model;$('think').checked=S.think}
+$('gear').onclick=()=>{fill();$('set').classList.toggle('on')};
+$('save').onclick=()=>{S.key=$('key').value.trim();S.sys=$('sys').value;S.model=$('model').value.trim()||'claude-opus-5-5';S.think=$('think').checked;save();$('set').classList.remove('on');render()};
+$('clear').onclick=()=>{if(confirm('今の会話を消す？（鍵と指示は残る）')){S.msgs=[];save();render()}};
+async function call(think){
+  const n=S.msgs.length;
+  const body={model:S.model,max_tokens:16000,
+    messages:S.msgs.map((m,i)=>({role:m.role,content:i===n-1?[{type:'text',text:m.text,cache_control:{type:'ephemeral'}}]:m.text}))};
+  if(S.sys.trim())body.system=[{type:'text',text:S.sys,cache_control:{type:'ephemeral'}}];
+  if(think)body.thinking={type:'adaptive'};
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':S.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));
+  return {ok:r.ok,status:r.status,j};
+}
+$('send').onclick=async()=>{
+  const t=$('in').value.trim();if(!t)return;
+  if(!S.key){fill();$('set').classList.add('on');return}
+  S.msgs.push({role:'user',text:t});$('in').value='';save();render();
+  const w=bubble('wait','くろくんが考えてる…');$('send').disabled=true;
+  try{
+    let res=await call(S.think);
+    if(!res.ok&&S.think&&res.status===400&&/think/i.test(JSON.stringify(res.j))){res=await call(false);if(res.ok){S.think=false;save()}}
+    w.remove();
+    if(!res.ok){S.msgs.pop();$('in').value=t;save();render();bubble('err','うまく届かなかった（'+res.status+'）\n'+((res.j.error&&res.j.error.message)||''));return}
+    const text=(res.j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    const u=res.j.usage||{};
+    const meta='入力 '+((u.input_tokens||0)+(u.cache_creation_input_tokens||0)+(u.cache_read_input_tokens||0))+'（うち使い回し '+(u.cache_read_input_tokens||0)+'）→ 出力 '+(u.output_tokens||0);
+    S.msgs.push({role:'assistant',text:text||'（返事が空だった）',meta});save();render();
+  }catch(e){w.remove();S.msgs.pop();$('in').value=t;save();render();bubble('err','つながらなかった：'+e.message)}
+  finally{$('send').disabled=false}
+};
+render();
+</script>
+</body>
+</html>
