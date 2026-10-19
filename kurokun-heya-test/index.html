@@ -66,7 +66,7 @@ const P={in:4,cw:5,cr:0.2,out:20};
 // Web検索 1回あたりのドル（1,000回で $10）
 const SP=0.01;
 // 検索は直接呼ぶ（間に絞り込みの作業場所を挟むと、返事に出典がつかなかったため。10/20）
-const SEARCH={type:'web_search_20260318',name:'web_search',max_uses:5,allowed_callers:['direct'],user_location:{type:'approximate',country:'JP',timezone:'Asia/Tokyo'}};
+const SEARCH={type:'web_search_20260318',name:'web_search',max_uses:2,allowed_callers:['direct'],user_location:{type:'approximate',country:'JP',timezone:'Asia/Tokyo'}};
 function mainState(){try{return JSON.parse(localStorage.getItem(MK)||'null')||{}}catch(e){return {}}}
 // ownKey・ownSys：試し版で書き換えた時だけ入る。null の間は本体のものをそのまま使う
 let S={ownKey:null,ownSys:null,model:'claude-opus-5-5',think:true,web:true,msgs:[],bal:null,spent:0};
