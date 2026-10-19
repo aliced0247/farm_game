@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>くろくんのへや（試し）</title>
+<style>
+:root{--bg:#fbf6f7;--panel:#ffffff;--ink:#2b2326;--sub:#8a7c81;--line:#eadfe2;--me:#f3c9d4;--kuro:#ffffff;--accent:#c4577a;--err:#b3261e}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#161214;--panel:#211b1e;--ink:#f1e8eb;--sub:#a3959a;--line:#3a2f33;--me:#6b3446;--kuro:#2a2226;--accent:#e58aa7;--err:#ff8a80}}
+:root[data-theme="dark"]{--bg:#161214;--panel:#211b1e;--ink:#f1e8eb;--sub:#a3959a;--line:#3a2f33;--me:#6b3446;--kuro:#2a2226;--accent:#e58aa7;--err:#ff8a80}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"Hiragino Sans",sans-serif;display:flex;flex-direction:column;height:100dvh}
+header{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:16px;margin:0;font-weight:600;flex:1;white-space:nowrap}
+header h1 small{font-size:11px;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:1px 5px;margin-left:6px;vertical-align:2px}
+#bal{font-size:12px;color:var(--sub)}
+button{font:inherit;font-size:15px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 12px}
+button.main{background:var(--accent);border-color:var(--accent);color:#fff}
+button:disabled{opacity:.45}
+#log{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.b{max-width:86%;padding:10px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word;line-height:1.6;font-size:15px;border:1px solid var(--line)}
+.me{align-self:flex-end;background:var(--me)}
+.kuro{align-self:flex-start;background:var(--kuro)}
+.meta{font-size:11px;color:var(--sub);margin-top:4px}
+.src{display:flex;flex-direction:column;gap:2px;margin-top:6px;font-size:11px;white-space:normal}
+.src a{color:var(--accent);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.regen{align-self:flex-start;display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;max-width:100%;margin-top:-4px}
+.regen button{font-size:13px;padding:5px 10px}
+.regen span{font-size:11px;color:var(--sub)}
+.err{align-self:center;color:var(--err);font-size:13px;white-space:pre-wrap}
+.wait{align-self:flex-start;color:var(--sub);font-size:13px}
+footer{display:flex;gap:8px;padding:8px 16px calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--panel)}
+footer textarea{flex:1;resize:none;height:64px}
+textarea,input[type=text],input[type=password]{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px}
+#set{display:none;padding:12px 16px;gap:10px;flex-direction:column;overflow-y:auto;background:var(--panel);border-bottom:1px solid var(--line);max-height:75dvh}
+#set.on{display:flex}
+#set label{font-size:13px;color:var(--sub)}
+#sys{height:160px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+</style>
+</head>
+<body>
+<header><h1>くろくんのへや<small>試し</small></h1><span id="bal"></span><button id="gear">設定</button></header>
+<div id="set">
+  <label>APIの鍵（本体と同じものを読んでる。ここで変えると、試し版の中だけ変わる）</label>
+  <input id="key" type="password" autocomplete="off" placeholder="sk-ant-...">
+  <label>くろくんの指示（本体と同じものを読んでる。ここで変えると、試し版の中だけ変わる）</label>
+  <textarea id="sys" placeholder="Playgroundの「システム」に貼ったものをそのまま"></textarea>
+  <label>モデル</label>
+  <input id="model" type="text">
+  <div class="row"><label><input id="think" type="checkbox"> 考える（thinking）</label><label><input id="web" type="checkbox"> 調べもの（Web検索）</label></div>
+  <label>クレジットの残り（試し版で話した分だけを引いていく。本体の「残り」とは別）</label>
+  <input id="balin" type="text" inputmode="decimal" placeholder="99.65">
+  <div class="row"><button class="main" id="save">保存</button><button id="clear">試し版の会話を消す</button><button id="sync">鍵と指示を本体に合わせる</button></div>
+</div>
+<div id="log"></div>
+<footer><textarea id="in" placeholder="くろくんに話す"></textarea><button class="main" id="send">送る</button></footer>
+<script>
+// 本体（kurokun-heya）の保存場所。ここは読むだけ。書かない・消さない
+const MK='kuro-chat-v1';
+// 試し版の保存場所。会話も設定も、書くのは全部ここだけ
+const K='heya-test:v1';
+// 1M トークンあたりのドル（Opus 5.5。入力・使い回しの書き込み・使い回しの読み込み・出力）
+const P={in:4,cw:5,cr:0.2,out:20};
+// Web検索 1回あたりのドル（1,000回で $10）
+const SP=0.01;
+const SEARCH={type:'web_search_20260318',name:'web_search',max_uses:5,response_inclusion:'excluded',user_location:{type:'approximate',country:'JP',timezone:'Asia/Tokyo'}};
+function mainState(){try{return JSON.parse(localStorage.getItem(MK)||'null')||{}}catch(e){return {}}}
+// ownKey・ownSys：試し版で書き換えた時だけ入る。null の間は本体のものをそのまま使う
+let S={ownKey:null,ownSys:null,model:'claude-opus-5-5',think:true,web:true,msgs:[],bal:null,spent:0};
+let fresh=true;
+try{const t=JSON.parse(localStorage.getItem(K)||'null');if(t){S=Object.assign(S,t);fresh=false}}catch(e){}
+// 初めて開いた時だけ、本体のモデル・考える・残りのめやすを写す（写すだけで、本体はそのまま）
+if(fresh){const m=mainState();if(typeof m.model==='string'&&m.model)S.model=m.model;if(typeof m.think==='boolean')S.think=m.think;
+  if(typeof m.bal==='number')S.bal=+Math.max(0,m.bal-(+m.spent||0)).toFixed(2)}
+function eff(){const m=mainState();return {key:S.ownKey!=null?S.ownKey:(m.key||''),sys:S.ownSys!=null?S.ownSys:(m.sys||'')}}
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+const $=id=>document.getElementById(id), log=$('log');
+let busy=false;
+function setBusy(b){busy=b;$('send').disabled=b;const a=$('again');if(a)a.disabled=b}
+function showBal(){$('bal').textContent=S.bal==null?'':'残り 約$'+Math.max(0,S.bal-S.spent).toFixed(2)}
+// iPhoneの時計の日時。full=1 で年から
+function stamp(t,full){const d=new Date(t);return (full?d.getFullYear()+'/':'')+(d.getMonth()+1)+'/'+d.getDate()+'（'+'日月火水木金土'[d.getDay()]+'）'+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0')}
+function bubble(cls,text,meta,src){const d=document.createElement('div');d.className=cls;d.textContent=text;
+  if(src&&src.length){const s=document.createElement('div');s.className='src';for(const x of src){const a=document.createElement('a');a.href=x.url;a.target='_blank';a.rel='noopener';let h=x.url;try{h=new URL(x.url).hostname}catch(e){}a.textContent='出典：'+(x.title||h);s.appendChild(a)}d.appendChild(s)}
+  if(meta){const m=document.createElement('div');m.className='meta';m.textContent=meta;d.appendChild(m)}log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+function canRegen(){const n=S.msgs.length;return n>=2&&S.msgs[n-1].role==='assistant'&&S.msgs[n-2].role==='user'}
+function render(){log.innerHTML='';for(const m of S.msgs)bubble('b '+(m.role==='user'?'me':'kuro'),m.text,m.at?stamp(m.at):m.meta,m.src);
+  if(canRegen()){const last=S.msgs[S.msgs.length-1];
+    const r=document.createElement('div');r.className='regen';
+    const b=document.createElement('button');b.id='again';b.textContent='もう一回作り直す';b.disabled=busy;b.onclick=regen;
+    const s=document.createElement('span');s.textContent='押すと、もう1回分の料金がかかる'+(typeof last.cost==='number'?'（さっきの返事は約$'+last.cost.toFixed(3)+'）':'');
+    r.append(b,s);log.appendChild(r)}
+  const e=eff();if(!e.key||!e.sys)bubble('wait','右上の「設定」で、鍵と指示を入れてね');
+  log.scrollTop=log.scrollHeight;showBal()}
+function fill(){const e=eff();$('key').value=e.key;$('sys').value=e.sys;$('model').value=S.model;$('think').checked=S.think;$('web').checked=S.web;$('balin').value=S.bal==null?'':Math.max(0,S.bal-S.spent).toFixed(2)}
+const norm=s=>String(s).replace(/\r\n?/g,'\n');
+$('gear').onclick=()=>{fill();$('set').classList.toggle('on')};
+$('save').onclick=()=>{const m=mainState(),k=$('key').value.trim(),y=$('sys').value;
+  S.ownKey=k===(m.key||'').trim()?null:k;S.ownSys=norm(y)===norm(m.sys||'')?null:y;
+  S.model=$('model').value.trim()||'claude-opus-5-5';S.think=$('think').checked;S.web=$('web').checked;
+  const b=parseFloat($('balin').value.replace(/[^0-9.]/g,''));const now=S.bal==null?null:+(S.bal-S.spent).toFixed(2);
+  if(isNaN(b)){S.bal=null;S.spent=0}else if(b!==now){S.bal=b;S.spent=0}
+  save();$('set').classList.remove('on');render()};
+$('sync').onclick=()=>{S.ownKey=null;S.ownSys=null;save();fill();render()};
+$('clear').onclick=()=>{if(busy)return;if(confirm('試し版の会話を消す？（本体の会話と、鍵と指示はそのまま）')){S.msgs=[];save();render()}};
+// もえちゃんの一言の頭に、送った日時を付ける（指示の頭に入れると使い回しが毎回外れるので、ここに置く）
+function userContent(m,last){
+  const c=[];if(m.at)c.push({type:'text',text:'［この一言を送った日時（iPhoneの時計）：'+stamp(m.at,1)+'］'});
+  c.push({type:'text',text:m.text});if(last)c[c.length-1].cache_control={type:'ephemeral'};
+  return c.length===1&&!last?m.text:c;
+}
+// msgs：送る会話。cont：途中で止まった（pause_turn）返事の続きを頼む時、そこまでの返事をそのまま返す。box：その時の作業場所の番号
+async function call(msgs,think,web,cont,box){
+  const e=eff(),n=msgs.length;
+  const body={model:S.model,max_tokens:16000,
+    messages:msgs.map((m,i)=>({role:m.role,content:m.role==='user'?userContent(m,i===n-1):m.text}))};
+  if(cont)body.messages.push({role:'assistant',content:cont});
+  if(box)body.container=box;
+  if(e.sys.trim())body.system=[{type:'text',text:e.sys,cache_control:{type:'ephemeral'}}];
+  if(think)body.thinking={type:'adaptive'};
+  if(web)body.tools=[SEARCH];
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':e.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));
+  return {ok:r.ok,status:r.status,j};
+}
+// 返事の文字と出典を取り出す（出典つきの文は細かく分かれて届くので、続きの文はそのままつなぐ）
+function pick(content){
+  let text='',prev='';const src=[],seen={};
+  for(const b of content){
+    if(b.type==='text'){
+      if(text&&prev!=='text')text+='\n\n';text+=b.text;
+      for(const c of b.citations||[])if(c.url&&/^https?:\/\//.test(c.url)&&!seen[c.url]){seen[c.url]=1;src.push({url:c.url,title:c.title||''})}
+    }
+    prev=b.type;
+  }
+  return {text:text.trim(),src};
+}
+// msgs の最後（もえちゃんの一言）への返事を1回もらう。送る時も、作り直す時も、これを使う
+async function ask(msgs){
+  let think=S.think,web=S.web,note='';
+  let res=await call(msgs,think,web);
+  if(!res.ok&&web&&res.status===400&&/web.?search/i.test(JSON.stringify(res.j))){web=false;note='　（検索は使えなかった）';res=await call(msgs,think,false)}
+  if(!res.ok&&think&&res.status===400&&/think/i.test(JSON.stringify(res.j))){think=false;res=await call(msgs,false,web);if(res.ok){S.think=false;save()}}
+  let content=[],ui=0,cw=0,cr=0,uo=0,ns=0,box=null;
+  for(let k=0;res.ok;k++){
+    content=content.concat(res.j.content||[]);
+    if(res.j.container&&res.j.container.id)box=res.j.container.id;
+    const u=res.j.usage||{};ui+=u.input_tokens||0;cw+=u.cache_creation_input_tokens||0;cr+=u.cache_read_input_tokens||0;uo+=u.output_tokens||0;
+    ns+=(u.server_tool_use&&u.server_tool_use.web_search_requests)||0;
+    if(res.j.stop_reason!=='pause_turn')break;
+    if(k>=4){note+='　（調べものが長すぎて途中まで）';break}
+    res=await call(msgs,think,web,content,box).catch(e=>({ok:false,status:0,j:{error:{message:e.message}}}));
+  }
+  if(!content.length)return {ok:false,status:res.status,msg:(res.j&&res.j.error&&res.j.error.message)||''};
+  if(!res.ok)note+='　（続きが届かなかった）';
+  const {text,src}=pick(content);
+  const cost=(ui*P.in+cw*P.cw+cr*P.cr+uo*P.out)/1e6+ns*SP;S.spent+=cost;
+  const meta='約$'+cost.toFixed(3)+'　入力 '+(ui+cw+cr)+'（うち使い回し '+cr+'）→ 出力 '+uo+(ns?'　検索 '+ns+'回':'')+note;
+  return {ok:true,text:text||'（返事が空だった）',src,cost,meta};
+}
+$('send').onclick=async()=>{
+  if(busy)return;
+  const t=$('in').value.trim();if(!t)return;
+  if(!eff().key){fill();$('set').classList.add('on');return}
+  S.msgs.push({role:'user',text:t,at:Date.now()});$('in').value='';save();render();
+  setBusy(true);const w=bubble('wait','くろくんが考えてる…');
+  try{
+    const r=await ask(S.msgs);
+    w.remove();
+    if(!r.ok){S.msgs.pop();$('in').value=t;save();render();bubble('err','うまく届かなかった（'+r.status+'）\n'+r.msg);return}
+    S.msgs.push({role:'assistant',text:r.text,meta:r.meta,src:r.src,cost:r.cost});save();render();
+  }catch(e){w.remove();S.msgs.pop();$('in').value=t;save();render();bubble('err','つながらなかった：'+e.message)}
+  finally{setBusy(false)}
+};
+// 一番最後の返事だけを、同じ最後の一言と、それより前の会話のまま、もう一回出し直して置き換える
+async function regen(){
+  if(busy||!canRegen())return;
+  if(!eff().key){fill();$('set').classList.add('on');return}
+  setBusy(true);const w=bubble('wait','くろくんが作り直してる…');
+  try{
+    const r=await ask(S.msgs.slice(0,-1));
+    w.remove();
+    if(!r.ok){bubble('err','作り直せなかった（'+r.status+'）\n'+r.msg+'\n前の返事はそのまま');return}
+    S.msgs[S.msgs.length-1]={role:'assistant',text:r.text,meta:r.meta+'　作り直し',src:r.src,cost:r.cost};save();render();
+  }catch(e){w.remove();bubble('err','つながらなかった：'+e.message+'\n前の返事はそのまま')}
+  finally{setBusy(false)}
+}
+render();
+</script>
+</body>
+</html>
