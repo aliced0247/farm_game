@@ -21,6 +21,8 @@ button.main{background:var(--accent);border-color:var(--accent);color:#fff}
 .me{align-self:flex-end;background:var(--me)}
 .kuro{align-self:flex-start;background:var(--kuro)}
 .meta{font-size:11px;color:var(--sub);margin-top:4px}
+.src{display:flex;flex-direction:column;gap:2px;margin-top:6px;font-size:11px;white-space:normal}
+.src a{color:var(--accent);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .err{align-self:center;color:var(--err);font-size:13px;white-space:pre-wrap}
 .wait{align-self:flex-start;color:var(--sub);font-size:13px}
 footer{display:flex;gap:8px;padding:8px 16px calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--panel)}
@@ -42,7 +44,7 @@ textarea,input[type=text],input[type=password]{width:100%;font:inherit;font-size
   <textarea id="sys" placeholder="Playgroundの「システム」に貼ったものをそのまま"></textarea>
   <label>モデル</label>
   <input id="model" type="text">
-  <div class="row"><label><input id="think" type="checkbox"> 考える（thinking）</label></div>
+  <div class="row"><label><input id="think" type="checkbox"> 考える（thinking）</label><label><input id="web" type="checkbox"> 調べもの（Web検索）</label></div>
   <label>クレジットの残り（Consoleの左下の「クレジット」の数字。入れた時から、話した分を引いていく）</label>
   <input id="balin" type="text" inputmode="decimal" placeholder="99.65">
   <div class="row"><button class="main" id="save">保存</button><button id="clear">会話を消す</button></div>
@@ -53,45 +55,84 @@ textarea,input[type=text],input[type=password]{width:100%;font:inherit;font-size
 const K='kuro-chat-v1';
 // 1M トークンあたりのドル（Opus 5.5。入力・使い回しの書き込み・使い回しの読み込み・出力）
 const P={in:4,cw:5,cr:0.2,out:20};
-let S={key:'',sys:'',model:'claude-opus-5-5',think:true,msgs:[],bal:null,spent:0};
+// Web検索 1回あたりのドル（1,000回で $10）
+const SP=0.01;
+const SEARCH={type:'web_search_20260318',name:'web_search',max_uses:5,response_inclusion:'excluded',user_location:{type:'approximate',country:'JP',timezone:'Asia/Tokyo'}};
+let S={key:'',sys:'',model:'claude-opus-5-5',think:true,web:true,msgs:[],bal:null,spent:0};
 try{const t=JSON.parse(localStorage.getItem(K)||'null');if(t)S=Object.assign(S,t)}catch(e){}
 function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 const $=id=>document.getElementById(id), log=$('log');
 function showBal(){$('bal').textContent=S.bal==null?'':'残り 約$'+Math.max(0,S.bal-S.spent).toFixed(2)}
-function bubble(cls,text,meta){const d=document.createElement('div');d.className=cls;d.textContent=text;if(meta){const m=document.createElement('div');m.className='meta';m.textContent=meta;d.appendChild(m)}log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
-function render(){log.innerHTML='';for(const m of S.msgs)bubble('b '+(m.role==='user'?'me':'kuro'),m.text,m.meta);if(!S.key||!S.sys)bubble('wait','右上の「設定」で、鍵と指示を入れてね');showBal()}
-function fill(){$('key').value=S.key;$('sys').value=S.sys;$('model').value=S.model;$('think').checked=S.think;$('balin').value=S.bal==null?'':Math.max(0,S.bal-S.spent).toFixed(2)}
+// iPhoneの時計の日時。full=1 で年から
+function stamp(t,full){const d=new Date(t);return (full?d.getFullYear()+'/':'')+(d.getMonth()+1)+'/'+d.getDate()+'（'+'日月火水木金土'[d.getDay()]+'）'+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0')}
+function bubble(cls,text,meta,src){const d=document.createElement('div');d.className=cls;d.textContent=text;
+  if(src&&src.length){const s=document.createElement('div');s.className='src';for(const x of src){const a=document.createElement('a');a.href=x.url;a.target='_blank';a.rel='noopener';a.textContent='出典：'+(x.title||new URL(x.url).hostname);s.appendChild(a)}d.appendChild(s)}
+  if(meta){const m=document.createElement('div');m.className='meta';m.textContent=meta;d.appendChild(m)}log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+function render(){log.innerHTML='';for(const m of S.msgs)bubble('b '+(m.role==='user'?'me':'kuro'),m.text,m.at?stamp(m.at):m.meta,m.src);if(!S.key||!S.sys)bubble('wait','右上の「設定」で、鍵と指示を入れてね');showBal()}
+function fill(){$('key').value=S.key;$('sys').value=S.sys;$('model').value=S.model;$('think').checked=S.think;$('web').checked=S.web;$('balin').value=S.bal==null?'':Math.max(0,S.bal-S.spent).toFixed(2)}
 $('gear').onclick=()=>{fill();$('set').classList.toggle('on')};
-$('save').onclick=()=>{S.key=$('key').value.trim();S.sys=$('sys').value;S.model=$('model').value.trim()||'claude-opus-5-5';S.think=$('think').checked;
+$('save').onclick=()=>{S.key=$('key').value.trim();S.sys=$('sys').value;S.model=$('model').value.trim()||'claude-opus-5-5';S.think=$('think').checked;S.web=$('web').checked;
   const b=parseFloat($('balin').value.replace(/[^0-9.]/g,''));const now=S.bal==null?null:+(S.bal-S.spent).toFixed(2);
   if(isNaN(b)){S.bal=null;S.spent=0}else if(b!==now){S.bal=b;S.spent=0}
   save();$('set').classList.remove('on');render()};
 $('clear').onclick=()=>{if(confirm('今の会話を消す？（鍵と指示は残る）')){S.msgs=[];save();render()}};
-async function call(think){
+// もえちゃんの一言の頭に、送った日時を付ける（指示の頭に入れると使い回しが毎回外れるので、ここに置く）
+function userContent(m,last){
+  const c=[];if(m.at)c.push({type:'text',text:'［この一言を送った日時（iPhoneの時計）：'+stamp(m.at,1)+'］'});
+  c.push({type:'text',text:m.text});if(last)c[c.length-1].cache_control={type:'ephemeral'};
+  return c.length===1&&!last?m.text:c;
+}
+// cont：途中で止まった（pause_turn）返事の続きを頼む時、そこまでの返事をそのまま返す
+async function call(think,web,cont){
   const n=S.msgs.length;
   const body={model:S.model,max_tokens:16000,
-    messages:S.msgs.map((m,i)=>({role:m.role,content:i===n-1?[{type:'text',text:m.text,cache_control:{type:'ephemeral'}}]:m.text}))};
+    messages:S.msgs.map((m,i)=>({role:m.role,content:m.role==='user'?userContent(m,i===n-1):m.text}))};
+  if(cont)body.messages.push({role:'assistant',content:cont});
   if(S.sys.trim())body.system=[{type:'text',text:S.sys,cache_control:{type:'ephemeral'}}];
   if(think)body.thinking={type:'adaptive'};
+  if(web)body.tools=[SEARCH];
   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':S.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
   const j=await r.json().catch(()=>({}));
   return {ok:r.ok,status:r.status,j};
 }
+// 返事の文字と出典を取り出す（出典つきの文は細かく分かれて届くので、続きの文はそのままつなぐ）
+function pick(content){
+  let text='',prev='';const src=[],seen={};
+  for(const b of content){
+    if(b.type==='text'){
+      if(text&&prev!=='text')text+='\n\n';text+=b.text;
+      for(const c of b.citations||[])if(c.url&&/^https?:\/\//.test(c.url)&&!seen[c.url]){seen[c.url]=1;src.push({url:c.url,title:c.title||''})}
+    }
+    prev=b.type;
+  }
+  return {text:text.trim(),src};
+}
 $('send').onclick=async()=>{
   const t=$('in').value.trim();if(!t)return;
   if(!S.key){fill();$('set').classList.add('on');return}
-  S.msgs.push({role:'user',text:t});$('in').value='';save();render();
+  S.msgs.push({role:'user',text:t,at:Date.now()});$('in').value='';save();render();
   const w=bubble('wait','くろくんが考えてる…');$('send').disabled=true;
   try{
-    let res=await call(S.think);
-    if(!res.ok&&S.think&&res.status===400&&/think/i.test(JSON.stringify(res.j))){res=await call(false);if(res.ok){S.think=false;save()}}
+    let think=S.think,web=S.web,note='';
+    let res=await call(think,web);
+    if(!res.ok&&web&&res.status===400&&/web.?search/i.test(JSON.stringify(res.j))){web=false;note='　（検索は使えなかった）';res=await call(think,false)}
+    if(!res.ok&&think&&res.status===400&&/think/i.test(JSON.stringify(res.j))){think=false;res=await call(false,web);if(res.ok){S.think=false;save()}}
+    let content=[],ui=0,cw=0,cr=0,uo=0,ns=0;
+    for(let k=0;res.ok;k++){
+      content=content.concat(res.j.content||[]);
+      const u=res.j.usage||{};ui+=u.input_tokens||0;cw+=u.cache_creation_input_tokens||0;cr+=u.cache_read_input_tokens||0;uo+=u.output_tokens||0;
+      ns+=(u.server_tool_use&&u.server_tool_use.web_search_requests)||0;
+      if(res.j.stop_reason!=='pause_turn')break;
+      if(k>=4){note+='　（調べものが長すぎて途中まで）';break}
+      res=await call(think,web,content).catch(e=>({ok:false,status:0,j:{error:{message:e.message}}}));
+    }
     w.remove();
-    if(!res.ok){S.msgs.pop();$('in').value=t;save();render();bubble('err','うまく届かなかった（'+res.status+'）\n'+((res.j.error&&res.j.error.message)||''));return}
-    const text=(res.j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
-    const u=res.j.usage||{},ui=u.input_tokens||0,cw=u.cache_creation_input_tokens||0,cr=u.cache_read_input_tokens||0,uo=u.output_tokens||0;
-    const cost=(ui*P.in+cw*P.cw+cr*P.cr+uo*P.out)/1e6;S.spent+=cost;
-    const meta='約$'+cost.toFixed(3)+'　入力 '+(ui+cw+cr)+'（うち使い回し '+cr+'）→ 出力 '+uo;
-    S.msgs.push({role:'assistant',text:text||'（返事が空だった）',meta});save();render();
+    if(!content.length){S.msgs.pop();$('in').value=t;save();render();bubble('err','うまく届かなかった（'+res.status+'）\n'+((res.j.error&&res.j.error.message)||''));return}
+    if(!res.ok)note+='　（続きが届かなかった）';
+    const {text,src}=pick(content);
+    const cost=(ui*P.in+cw*P.cw+cr*P.cr+uo*P.out)/1e6+ns*SP;S.spent+=cost;
+    const meta='約$'+cost.toFixed(3)+'　入力 '+(ui+cw+cr)+'（うち使い回し '+cr+'）→ 出力 '+uo+(ns?'　検索 '+ns+'回':'')+note;
+    S.msgs.push({role:'assistant',text:text||'（返事が空だった）',meta,src});save();render();
   }catch(e){w.remove();S.msgs.pop();$('in').value=t;save();render();bubble('err','つながらなかった：'+e.message)}
   finally{$('send').disabled=false}
 };
