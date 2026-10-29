@@ -63,6 +63,10 @@ textarea,input[type=text],input[type=password]{width:100%;font:inherit;font-size
 details{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:var(--panel)}
 details summary{font-size:14px;color:var(--sub)}
 button.danger{color:var(--err);border-color:var(--err)}
+.typing .b{color:var(--sub);font-size:14px}
+.dots i{font-style:normal;display:inline-block;animation:hop 1.2s infinite}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes hop{0%,60%,100%{transform:none;opacity:.5}30%{transform:translateY(-3px);opacity:1}}
 </style>
 </head>
 <body>
@@ -113,7 +117,7 @@ button.danger{color:var(--err);border-color:var(--err)}
 <script>
 // ===== 参加者（名前・アイコンの字・色・呼び名は、ここ一か所。あとで差し替える時はここだけ） =====
 const PEOPLE={
-  kuro:  {name:'くろくん',mark:'く',color:'#7a5c9e',calls:['くろくん','くろちゃん','くろ']},
+  kuro:  {name:'くろくん',mark:'くろ',color:'#7a5c9e',calls:['くろくん','くろちゃん','くろ']},
   gpt:   {name:'ChatGPT', mark:'C', color:'#13a07c',calls:['ChatGPT','チャッピー','GPT','ちゃちゃ']},
   gemini:{name:'Gemini',  mark:'Ge',color:'#4f7cf3',calls:['Gemini','ジェミニ','ジェミちゃん']},
   grok:  {name:'Grok',    mark:'Gr',color:'#e2793b',calls:['Grok','グロック']},
@@ -193,7 +197,7 @@ function rich(el,text){
     if(i<lines.length-1)el.appendChild(document.createTextNode('\n'))})}
 function msgEl(m,cont){
   const p=who(m.who),me=m.who==='me';
-  const d=document.createElement('div');d.className='msg '+(me?'me':'them')+(cont?' cont':'');d.style.setProperty('--c',p.color);
+  const d=document.createElement('div');d.className='msg '+(me?'me':'them')+(cont?' cont':'');d.style.setProperty('--c',p.color);d.dataset.who=m.who;
   const col=document.createElement('div');col.className='col';
   if(!me&&!cont){const n=document.createElement('div');n.className='nm';n.textContent=p.name;col.appendChild(n)}
   const line=document.createElement('div');line.className='line';
@@ -209,7 +213,8 @@ function scrollDown(){log.scrollTop=log.scrollHeight}
 function render(){
   log.innerHTML='';let prev=null;
   for(const m of S.msgs){log.appendChild(msgEl(m,prev&&prev.who===m.who&&m.who!=='me'));prev=m}
-  if(!S.msgs.length)note(S.test?'試しモード：本物のAIは呼ばないよ':'右上の「設定」で、名前と鍵を入れてね\n（試しモードなら鍵なしで動く）');
+  if(!S.msgs.length)note(S.test?'試しモード：本物のAIは呼ばないよ':'右上の「設定」で、名前と鍵を入れてね\n（試しモードなら鍵なしで動く）').classList.add('empty');
+  if(live)log.appendChild(live);
   scrollDown();showToday();
 }
 
@@ -241,18 +246,214 @@ $('save').onclick=()=>{
   S.name=$('s-name').value.trim();S.test=$('s-test').checked;S.orKey=$('s-orkey').value.trim();S.kuroKey=$('s-kurokey').value.trim();
   S.kuroSys=$('s-kurosys').value;S.common=$('s-common').value;S.mod=$('s-mod').value;S.think=$('s-think').checked;
   for(const [id] of MODEL_ROWS){S.models[id]=$('m-'+id).value.trim()||MODEL_DEFAULT[id];if(id!=='kuro')S.price[id]=[num($('pi-'+id).value),num($('po-'+id).value)]}
-  save();$('set').classList.remove('on');render();
+  save();$('set').classList.remove('on');render();setRunning(running());
 };
 $('s-common-reset').onclick=()=>{$('s-common').value=COMMON_SYS};
 $('s-mod-reset').onclick=()=>{$('s-mod').value=MOD_SYS};
-$('s-clear').onclick=()=>{if(confirm('この部屋の会話を全部消す？（鍵・紙はそのまま。くろくんのへやには触らない）')){S.msgs=[];save();$('set').classList.remove('on');render()}};
+$('s-clear').onclick=()=>{if(confirm('この部屋の会話を全部消す？（鍵・紙はそのまま。くろくんのへやには触らない）')){stop();S.msgs=[];save();$('set').classList.remove('on');render();setRunning(false)}};
 
-// ===== 送る =====
+// ===== 通り道（誰をどの通り道で呼ぶかは、ここ一か所） =====
+// あとで「サブスクの中継」を足す時は、ROUTES に中継の通り道を足して、ここの名前を書き換える
+const WHO_ROUTE={kuro:'anthropic',gpt:'openrouter',gemini:'openrouter',grok:'openrouter',mod:'openrouter'};
+// 通り道はどれも同じ形で呼ぶ：
+//   ready() → 鍵などがそろっていれば true
+//   call({id,system,messages:[{role:'user'|'assistant',content}],model,maxTokens,signal,...}) → {ok,text,cost,status,msg}
+const ROUTES={};
+const routeOf=id=>S.test?ROUTES.test:ROUTES[WHO_ROUTE[id]];
+const ready=id=>{const r=routeOf(id);return !!(r&&r.ready())};
+
+// ===== 試しモードの通り道（本物のAIは呼ばない。決まった返事と仮の金額） =====
+const FAKE={
+  kuro:  ['おう、ちゃんと聞いてるよ。{ユーザー名}の話、もっと聞かせて','{ユーザー名}、今日もおつかれ。俺はここにいるからな','それいいな。{相手}はどう思う？','ふふ、{ユーザー名}らしいな'],
+  gpt:   ['いいですね！ポイントを3つにまとめると…いや、今日は短めにしておきます😊','なるほど、{ユーザー名}さんの言うこと、すごく分かります','{相手}の意見も聞いてみたいです！'],
+  gemini:['わぁ、それ素敵ですね✨ ちょっと調べてみたくなりました','{ユーザー名}さん、それならこういう考え方もありますよ','{相手}、そこはちょっと違うかも？'],
+  grok:  ['へえ、面白いじゃん。もっとやばい話ないの？','まあ正直に言うと、それは最高だな','{相手}、真面目すぎ（笑）'],
+};
+const FAKE_BACK={kuro:'{相手}、それは俺も同じ意見だ',gpt:'{相手}、たしかにそうですね！一本取られました',gemini:'{相手}、うーん、それは一理あるかも',grok:'はいはい{相手}、わかったって（笑）'};
+const FAKE_COST={kuro:0.012,gpt:0.004,gemini:0.001,grok:0.002,mod:0.0001};
+const fakeTurn={};
+function sleep(ms,signal){return new Promise((ok,ng)=>{const t=setTimeout(ok,ms);if(signal)signal.addEventListener('abort',()=>{clearTimeout(t);ng(new DOMException('止めた','AbortError'))},{once:true})})}
+ROUTES.test={
+  ready:()=>true,
+  async call({id,signal,forced,kind,to}){
+    await sleep(600+Math.random()*600,signal);
+    const cost=+(FAKE_COST[id]*(0.8+Math.random()*0.4)).toFixed(5);
+    if(id==='mod'){
+      // 必ず入れる子のあとに、しばらく喋っていない子を1〜2人
+      const rest=AIS.filter(a=>!forced.includes(a)).sort((a,b)=>lastSpoke(a)-lastSpoke(b));
+      const n=Math.min(rest.length,4-forced.length,1+Math.floor(Math.random()*2));
+      return {ok:true,text:JSON.stringify({speakers:[...forced,...rest.slice(0,n)].map(a=>PEOPLE[a].name)}),cost};
+    }
+    let t;
+    if(to)t=FAKE_BACK[id].split('{相手}').join(PEOPLE[to].name);
+    else{const list=FAKE[id],i=(fakeTurn[id]=(fakeTurn[id]||0)+1)%list.length;
+      const others=AIS.filter(a=>a!==id);t=list[i].split('{相手}').join(PEOPLE[others[Math.floor(Math.random()*others.length)]].name)}
+    return {ok:true,text:t.split('{ユーザー名}').join(userName()),cost};
+  }
+};
+
+// ===== 紙と会話の渡し方 =====
+const HISTORY=40;          // 渡す会話のめやす
+const MAX_EXTRA_ROUNDS=2;  // 一言につき、AI同士の追加は2周まで
+const MAX_BACK=2;          // 追加の一周で返す子は2人まで
+const ALL_WORDS=['みんな','全員'];
+function fillPaper(t,id){return String(t).split('{ユーザー名}').join(userName()).split('{名前}').join(id&&PEOPLE[id]?PEOPLE[id].name:'')}
+function sysFor(id){return id==='kuro'?fillPaper(S.kuroSys.trim()||KURO_SYS_EMPTY,id):fillPaper(S.common,id)}
+// その子自身の過去の発言は assistant、ほかの人の発言は user として「名前：本文」で渡す（続いた同じ役は一つにまとめる）
+function convFor(id,tail){
+  const out=[];
+  for(const m of S.msgs.slice(-HISTORY)){
+    const role=m.who===id?'assistant':'user',text=role==='assistant'?m.text:who(m.who).name+'：'+m.text;
+    const last=out[out.length-1];if(last&&last.role===role)last.content+='\n'+text;else out.push({role,content:text});
+  }
+  if(out.length&&out[0].role==='assistant')out.unshift({role:'user',content:'［会話の途中から］'});
+  if(!out.length||out[out.length-1].role==='assistant')out.push({role:'user',content:tail||'［続けてどうぞ］'});
+  return out;
+}
+const esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+// 頭に自分の名前がついていたら外す。ほかの人のセリフを書き始めたら、そこで切る
+function clean(id,text){
+  let t=String(text||'').trim().replace(new RegExp('^\\s*'+esc(PEOPLE[id].name)+'\\s*[：:]\\s*'),'');
+  const others=[userName(),...AIS.filter(a=>a!==id).map(a=>PEOPLE[a].name)];
+  const keep=[];for(const ln of t.split('\n')){if(others.some(n=>new RegExp('^\\s*'+esc(n)+'\\s*[：:]').test(ln)))break;keep.push(ln)}
+  return keep.join('\n').trim();
+}
+
+// ===== 誰が喋るか =====
+// 文の中で呼ばれた子（出てきた順）。except はその子自身
+function findCalls(text,except){
+  const low=String(text).toLowerCase(),hits=[];
+  for(const id of AIS){if(id===except)continue;let pos=-1;
+    for(const c of PEOPLE[id].calls){const i=low.indexOf(c.toLowerCase());if(i>=0&&(pos<0||i<pos))pos=i}
+    if(pos>=0)hits.push([pos,id])}
+  return hits.sort((a,b)=>a[0]-b[0]).map(h=>h[1]);
+}
+const calledByUser=text=>ALL_WORDS.some(w=>text.includes(w))?[...AIS]:findCalls(text);
+function lastSpoke(id){for(let i=S.msgs.length-1;i>=0;i--)if(S.msgs[i].who===id)return i;return -1}
+function idFromName(s){const t=String(s).trim().toLowerCase();return AIS.find(id=>PEOPLE[id].name.toLowerCase()===t||PEOPLE[id].calls.some(c=>c.toLowerCase()===t))||null}
+// 司会の答え {"speakers":[...]} を読む。変な答えなら null
+function parseSpeakers(text){
+  const m=String(text||'').match(/\{[\s\S]*\}/);if(!m)return null;
+  let j;try{j=JSON.parse(m[0])}catch(e){return null}
+  if(!j||!Array.isArray(j.speakers))return null;
+  const ids=[];for(const s of j.speakers){const id=typeof s==='string'&&idFromName(s);if(id&&!ids.includes(id))ids.push(id)}
+  return ids.length?ids:null;
+}
+// 司会が変な答えの時：くろくんか、一番喋ってない子を一人
+function fallbackOne(cands){
+  const c=cands.length?cands:AIS;
+  if(c.includes('kuro')&&!S.msgs.slice(-6).some(m=>m.who==='kuro'))return 'kuro';
+  return [...c].sort((a,b)=>lastSpoke(a)-lastSpoke(b))[0];
+}
+async function askMod(forced,kind,signal){
+  const cnt={};for(const a of AIS)cnt[a]=0;for(const m of S.msgs.slice(-20))if(cnt[m.who]!=null)cnt[m.who]++;
+  const body='最近の会話：\n'+S.msgs.slice(-20).map(m=>who(m.who).name+'：'+m.text.replace(/\s+/g,' ').slice(0,300)).join('\n')+'\n（ここまで）\n\n'+
+    '最近20件で喋った回数：'+AIS.map(a=>PEOPLE[a].name+' '+cnt[a]+'回').join('、')+'\n'+
+    '必ず入れる子：'+(forced.length?JSON.stringify(forced.map(a=>PEOPLE[a].name)):'なし')+'\n'+
+    '今回：'+(kind==='more'?userName()+'が「もっと喋らせる」を押した。1〜3人を選ぶ':userName()+'の新しい一言への返事');
+  return routeOf('mod').call({id:'mod',system:fillPaper(S.mod),messages:[{role:'user',content:body}],model:S.models.mod,maxTokens:2000,signal,forced,kind});
+}
+
+// ===== 書いてる子の「入力中…」と、司会の「決めてる…」 =====
+let live=null;
+function setLive(el){if(live)live.remove();live=el;if(el){log.appendChild(el);scrollDown()}}
+function typingEl(id){
+  const p=PEOPLE[id],d=document.createElement('div');d.className='msg them typing';d.style.setProperty('--c',p.color);
+  const a=document.createElement('div');a.className='av';a.textContent=p.mark;
+  const col=document.createElement('div');col.className='col';
+  const n=document.createElement('div');n.className='nm';n.textContent=p.name;
+  const b=document.createElement('div');b.className='b';b.innerHTML='入力中<span class="dots"><i>.</i><i>.</i><i>.</i></span>';
+  col.append(n,b);d.append(a,col);return d;
+}
+function liveNote(text){const d=document.createElement('div');d.className='note';d.textContent=text;return d}
+function appendMsg(m){
+  for(const e of log.querySelectorAll('.note.empty'))e.remove();
+  if(live)live.remove();
+  const prev=log.lastElementChild;
+  log.appendChild(msgEl(m,m.who!=='me'&&prev&&prev.dataset.who===m.who));
+  if(live)log.appendChild(live);
+  scrollDown();showToday();
+}
+
+// ===== 喋らせる =====
+let run=0,ctrl=null;
+const running=()=>!!ctrl;
+function setRunning(b){$('more').disabled=b||!S.msgs.length}
+function stop(){run++;if(ctrl)ctrl.abort();ctrl=null;setLive(null);setRunning(false)}
+const isAbort=e=>e&&e.name==='AbortError';
+function errText(name,r){return name+'：うまく届かなかった'+(r.status?'（'+r.status+'）':'')+(r.msg?'\n'+r.msg:'')}
+// 一人に書かせる。書けたらその文を返す
+async function speak(id,signal,to,tail){
+  setLive(typingEl(id));
+  let r;
+  try{r=await routeOf(id).call({id,system:sysFor(id),messages:convFor(id,tail),model:S.models[id],maxTokens:4000,signal,to,think:S.think})}
+  catch(e){if(isAbort(e))throw e;r={ok:false,msg:e.message}}
+  setLive(null);
+  if(typeof r.cost==='number'){addCost(r.cost);save();showToday()}
+  if(!r.ok){note(errText(PEOPLE[id].name,r),true);return null}
+  const text=clean(id,r.text);
+  if(!text){note(PEOPLE[id].name+'の返事が空だった',true);return null}
+  const m={who:id,text,at:Date.now()};if(typeof r.cost==='number')m.cost=r.cost;if(S.test)m.test=true;
+  S.msgs.push(m);save();appendMsg(m);
+  return text;
+}
+// kind：'say'（新しく送った）か 'more'（もっと喋らせる）
+async function start(kind){
+  stop();const my=run,c=ctrl=new AbortController(),alive=()=>my===run;
+  setRunning(true);
+  try{
+    const forced=kind==='say'?calledByUser(S.msgs[S.msgs.length-1].text).filter(ready):[];
+    const cands=AIS.filter(ready);
+    if(kind==='say')for(const id of calledByUser(S.msgs[S.msgs.length-1].text))if(!ready(id))note(PEOPLE[id].name+'は鍵がなくて呼べない',true);
+    if(!cands.length){note('鍵がまだないよ。右上の「設定」で入れてね\n（試しモードなら鍵なしで動く）',true);return}
+    let first;
+    if(forced.length>=4)first=forced.slice(0,4);
+    else{
+      let picked=null;
+      if(ready('mod')){
+        setLive(liveNote('司会が、次に話す子を決めてる…'));
+        let r;try{r=await askMod(forced,kind,c.signal)}catch(e){if(isAbort(e))return;r={ok:false,msg:e.message}}
+        if(!alive())return;setLive(null);
+        if(typeof r.cost==='number'){addCost(r.cost);save();showToday()}
+        if(r.ok)picked=parseSpeakers(r.text);
+      }
+      first=[...forced];
+      if(picked)for(const id of picked){if(cands.includes(id)&&!first.includes(id))first.push(id)}
+      else if(!forced.length)first.push(fallbackOne(cands));
+      first=first.slice(0,kind==='more'?3:4);
+      if(!first.length)first=[fallbackOne(cands)];
+    }
+    const tail=kind==='more'?'［'+userName()+'が「もっと喋らせる」を押した。会話を続けて］':'';
+    let round=first.map(id=>({id})),extra=0;
+    while(round.length){
+      const said=[];
+      for(const s of round){
+        let t;try{t=await speak(s.id,c.signal,s.to,tail)}catch(e){if(isAbort(e))return;throw e}
+        if(!alive())return;
+        if(t)said.push({id:s.id,text:t});
+      }
+      if(extra>=MAX_EXTRA_ROUNDS)break;
+      // 返事の中で、ほかのAIに話しかけた・言い返した時は、言われた子が一回返す（そのあとに同じ周で喋った子はのぞく）
+      const next=[];
+      said.forEach((x,i)=>{for(const m of findCalls(x.text,x.id)){
+        if(!ready(m)||said.slice(i+1).some(y=>y.id===m)||next.some(n=>n.id===m))continue;next.push({id:m,to:x.id})}});
+      round=next.slice(0,MAX_BACK);extra++;
+    }
+  }catch(e){if(alive())note('止まった：'+e.message,true)}
+  finally{if(alive()){ctrl=null;setLive(null);setRunning(false)}}
+}
+
+// ===== 送る・もっと喋らせる =====
 $('send').onclick=()=>{
   const t=$('in').value.trim();if(!t)return;
-  S.msgs.push({who:'me',text:t,at:Date.now()});$('in').value='';save();render();
+  if(!AIS.some(ready)){note('鍵がまだないよ。右上の「設定」で入れてね\n（試しモードなら鍵なしで動く）',true);return}
+  // まだ喋ってない分はやめて、新しい話に移る
+  stop();
+  const m={who:'me',text:t,at:Date.now()};S.msgs.push(m);$('in').value='';save();appendMsg(m);
+  start('say');
 };
-buildModelRows();render();
+$('more').onclick=()=>{if(running()||!S.msgs.length)return;start('more')};
+buildModelRows();render();setRunning(false);
 </script>
 </body>
 </html>
