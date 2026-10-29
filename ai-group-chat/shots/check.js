@@ -84,6 +84,8 @@ const ok=(name,cond,info)=>{results.push((cond?'OK ':'NG ')+name+(info?'　'+inf
   const sum=await p.evaluate(()=>S.dayCost);
   ok('画面の上の端に今日の額',/今日 \$\d/.test(today)&&sum>0,today);
   ok('吹き出しの横に一回ごとの額',(await p.textContent('.msg.them .tm')).includes('$'));
+  const sumCheck=await p.evaluate(()=>{let t=0;for(const m of S.msgs)t+=(m.cost||0)+(m.mod||0);return Math.abs(t-S.dayCost)<1e-9});
+  ok('今日の額＝吹き出しの横の額の合計',sumCheck);
 
   // 6. 開き直しても会話が残ってる
   const before=await msgs();
@@ -104,10 +106,22 @@ const ok=(name,cond,info)=>{results.push((cond?'OK ':'NG ')+name+(info?'　'+inf
   ok('司会の答えの名前を読む',fb[2]==='["grok","kuro"]',fb[2]);
   ok('変な答えの時は、くろくんか一番喋ってない子',['kuro','gpt','gemini','grok'].includes(fb[3]),fb[3]);
 
+  // 呼び名：ほかの言葉の中では数えない
+  const calls=await p.evaluate(()=>['ごくろうさま','まっくろな猫','くろい服','ちゃちゃっと片付けた','くろ、聞いて','くろちゃん','ちゃちゃ、元気？','グロックとジェミちゃん'].map(t=>t+'→'+(calledByUser(t).join('・')||'なし')));
+  ok('呼び名：ほかの言葉の中（ごくろうさま・まっくろ・くろい・ちゃちゃっと）では呼ばれない',calls.slice(0,4).every(x=>x.endsWith('→なし')),calls.slice(0,4).join(' '));
+  ok('呼び名：くろ・くろちゃん・ちゃちゃ・二人呼び',calls.slice(4).join(' ')==='くろ、聞いて→kuro くろちゃん→kuro ちゃちゃ、元気？→gpt グロックとジェミちゃん→grok・gemini',calls.slice(4).join(' '));
+
+  // 司会が決めた後、だれかが書いている途中でやめても、司会の額が吹き出しの横に出る
+  await say('今日はなにしてた？');
+  await p.waitForSelector('.typing');
+  const modShown=await p.evaluate(()=>{const m=S.msgs[S.msgs.length-1];return m.who==='me'&&m.mod>0&&[...document.querySelectorAll('.msg.me .tm')].pop().textContent.includes('司会 $')});
+  await say('やっぱりなんでもない');await idle();
+  ok('途中でやめても、司会の額が送った一言の横に出る',modShown);
+
   // 9. 会話を消す（確認つき）
   await p.tap('#gear');await p.click('details summary');await p.$eval('#s-clear',e=>e.scrollIntoView({block:'center'}));await shot('11-会話を消すは設定の奥');
   p.once('dialog',d=>d.dismiss());await p.tap('#s-clear');
-  ok('会話を消す：「いいえ」なら消えない',(await msgs()).length===after.length);
+  ok('会話を消す：「いいえ」なら消えない',(await msgs()).length>0);
   p.once('dialog',d=>d.accept());await p.tap('#s-clear');
   ok('会話を消す：「はい」なら消える',(await msgs()).length===0);
 

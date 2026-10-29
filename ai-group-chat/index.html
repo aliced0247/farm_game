@@ -67,6 +67,7 @@ textarea,input[type=text],input[type=password]{width:100%;font:inherit;font-size
 .mrow .pr input{width:5.5em;font-size:14px;padding:4px 6px}
 details{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:var(--panel)}
 details summary{font-size:14px;color:var(--sub)}
+#set details .hint{margin:8px 0}
 button.danger{color:var(--err);border-color:var(--err)}
 .typing .b{color:var(--sub);font-size:14px}
 .dots i{font-style:normal;display:inline-block;animation:hop 1.2s infinite}
@@ -200,6 +201,8 @@ function rich(el,text){
   lines.forEach((ln,i)=>{const t=ln.replace(/^(\s*)[-*]\s+/,'$1・').replace(/^\s{0,3}#{1,6}\s+/,'');
     t.split(/\*\*(.+?)\*\*/).forEach((p,j)=>{if(!p)return;if(j%2){const b=document.createElement('strong');b.textContent=p;el.appendChild(b)}else el.appendChild(document.createTextNode(p))});
     if(i<lines.length-1)el.appendChild(document.createTextNode('\n'))})}
+const tmText=m=>(m.at?hm(m.at):'')+(typeof m.cost==='number'?'\n'+money(m.cost):'')+(m.mod?'\n司会 '+money(m.mod):'')+(m.test?'\n試し':'');
+function refreshTm(m){const els=log.querySelectorAll('.msg:not(.typing)');const i=S.msgs.indexOf(m);if(i>=0&&els.length===S.msgs.length)els[i].querySelector('.tm').textContent=tmText(m)}
 function msgEl(m,cont){
   const p=who(m.who),me=m.who==='me';
   const d=document.createElement('div');d.className='msg '+(me?'me':'them')+(cont?' cont':'');d.style.setProperty('--c',p.color);d.dataset.who=m.who;
@@ -207,7 +210,7 @@ function msgEl(m,cont){
   if(!me&&!cont){const n=document.createElement('div');n.className='nm';n.textContent=p.name;col.appendChild(n)}
   const line=document.createElement('div');line.className='line';
   const b=document.createElement('div');b.className='b';rich(b,m.text);
-  const tm=document.createElement('div');tm.className='tm';tm.textContent=(m.at?hm(m.at):'')+(typeof m.cost==='number'?'\n'+money(m.cost):'')+(m.mod?'\n司会 '+money(m.mod):'')+(m.test?'\n試し':'');tm.style.whiteSpace='pre';
+  const tm=document.createElement('div');tm.className='tm';tm.textContent=tmText(m);tm.style.whiteSpace='pre';
   if(me)line.append(tm,b);else line.append(b,tm);
   col.appendChild(line);
   if(!me){const a=document.createElement('div');a.className='av';a.textContent=p.mark;d.append(a,col)}else d.appendChild(col);
@@ -375,10 +378,20 @@ function clean(id,text){
 
 // ===== 誰が喋るか =====
 // 文の中で呼ばれた子（出てきた順）。except はその子自身
+// 短い呼び名は、ほかの言葉の中（ごくろうさま・まっくろ・くろい・くろう・ちゃちゃっと）では数えない
+const KANA=/[ぁ-ゖ]/;
+const CALL_GUARD={'くろ':{before:KANA,after:/[いう]/},'ちゃちゃ':{before:KANA,after:/っ/}};
+function callAt(low,c){
+  const g=CALL_GUARD[c];
+  for(let i=low.indexOf(c);i>=0;i=low.indexOf(c,i+1)){
+    if(!g||!(i>0&&g.before.test(low[i-1]))&&!g.after.test(low[i+c.length]||''))return i;
+  }
+  return -1;
+}
 function findCalls(text,except){
   const low=String(text).toLowerCase(),hits=[];
   for(const id of AIS){if(id===except)continue;let pos=-1;
-    for(const c of PEOPLE[id].calls){const i=low.indexOf(c.toLowerCase());if(i>=0&&(pos<0||i<pos))pos=i}
+    for(const c of PEOPLE[id].calls){const i=callAt(low,c.toLowerCase());if(i>=0&&(pos<0||i<pos))pos=i}
     if(pos>=0)hits.push([pos,id])}
   return hits.sort((a,b)=>a[0]-b[0]).map(h=>h[1]);
 }
@@ -437,7 +450,7 @@ function stop(){run++;if(ctrl)ctrl.abort();ctrl=null;setLive(null);setRunning(fa
 const isAbort=e=>e&&e.name==='AbortError';
 function errText(name,r){return name+'：うまく届かなかった'+(r.status?'（'+r.status+'）':'')+(r.msg?'\n'+r.msg:'')}
 // 一人に書かせる。書けたらその文を返す
-async function speak(id,signal,to,tail,modCost){
+async function speak(id,signal,to,tail){
   setLive(typingEl(id));
   let r;
   try{r=await routeOf(id).call({id,system:sysFor(id),messages:convFor(id,tail),model:S.models[id],maxTokens:4000,signal,to,think:S.think})}
@@ -448,7 +461,7 @@ async function speak(id,signal,to,tail,modCost){
   if(!r.ok){note(errText(PEOPLE[id].name,r),true);return null}
   const text=clean(id,r.text);
   if(!text){note(PEOPLE[id].name+'の返事が空だった',true);return null}
-  const m={who:id,text,at:Date.now()};if(typeof r.cost==='number')m.cost=r.cost;if(modCost)m.mod=modCost;if(S.test)m.test=true;
+  const m={who:id,text,at:Date.now()};if(typeof r.cost==='number')m.cost=r.cost;if(S.test)m.test=true;
   S.msgs.push(m);save();appendMsg(m);
   return text;
 }
@@ -461,7 +474,7 @@ async function start(kind){
     const cands=AIS.filter(ready);
     if(kind==='say')for(const id of calledByUser(S.msgs[S.msgs.length-1].text))if(!ready(id))note(PEOPLE[id].name+'は鍵がなくて呼べない',true);
     if(!cands.length){note('鍵がまだないよ。右上の「設定」で入れてね\n（試しモードなら鍵なしで動く）',true);return}
-    let first,modCost=0;
+    let first;
     if(forced.length>=4)first=forced.slice(0,4);
     else{
       let picked=null;
@@ -469,7 +482,7 @@ async function start(kind){
         setLive(liveNote('司会が、次に話す子を決めてる…'));
         let r;try{r=await askMod(forced,kind,c.signal)}catch(e){if(isAbort(e))return;r={ok:false,msg:e.message}}
         if(!alive())return;setLive(null);
-        if(typeof r.cost==='number'){addCost(r.cost);modCost=r.cost;save();showToday()}
+        if(typeof r.cost==='number'){const last=S.msgs[S.msgs.length-1];addCost(r.cost);if(last){last.mod=(last.mod||0)+r.cost;refreshTm(last)}save();showToday()}
         if(r.ok)picked=parseSpeakers(r.text);
       }
       first=[...forced];
@@ -483,9 +496,9 @@ async function start(kind){
     while(round.length){
       const said=[];
       for(const s of round){
-        let t;try{t=await speak(s.id,c.signal,s.to,tail,modCost)}catch(e){if(isAbort(e))return;throw e}
+        let t;try{t=await speak(s.id,c.signal,s.to,tail)}catch(e){if(isAbort(e))return;throw e}
         if(!alive())return;
-        if(t){said.push({id:s.id,text:t});modCost=0}
+        if(t)said.push({id:s.id,text:t});
       }
       if(extra>=MAX_EXTRA_ROUNDS)break;
       // 返事の中で、ほかのAIに話しかけた・言い返した時は、言われた子が一回返す（そのあとに同じ周で喋った子はのぞく）
