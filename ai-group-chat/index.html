@@ -176,7 +176,7 @@ let S={name:'',test:false,orKey:'',kuroKey:'',kuroSys:'',common:COMMON_SYS,mod:M
   models:{...MODEL_DEFAULT},price:JSON.parse(JSON.stringify(PRICE_DEFAULT)),think:true,
   msgs:[],day:'',dayCost:0};
 try{const t=JSON.parse(localStorage.getItem(K)||'null');if(t)S=Object.assign(S,t,{models:{...MODEL_DEFAULT,...(t.models||{})},price:{...PRICE_DEFAULT,...(t.price||{})}})}catch(e){}
-function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+function save(){if(S.msgs.length>2000)S.msgs=S.msgs.slice(-2000);try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 // へやの鍵（読むだけ）
 function heyaKey(){try{const m=JSON.parse(localStorage.getItem(HEYA)||'null');return m&&typeof m.key==='string'?m.key.trim():''}catch(e){return ''}}
 // くろくんに使う鍵：ここで貼った鍵があればそれ、なければへやの鍵
@@ -207,7 +207,7 @@ function msgEl(m,cont){
   if(!me&&!cont){const n=document.createElement('div');n.className='nm';n.textContent=p.name;col.appendChild(n)}
   const line=document.createElement('div');line.className='line';
   const b=document.createElement('div');b.className='b';rich(b,m.text);
-  const tm=document.createElement('div');tm.className='tm';tm.textContent=(m.at?hm(m.at):'')+(typeof m.cost==='number'?'\n'+money(m.cost):'')+(m.test?'\n試し':'');tm.style.whiteSpace='pre';
+  const tm=document.createElement('div');tm.className='tm';tm.textContent=(m.at?hm(m.at):'')+(typeof m.cost==='number'?'\n'+money(m.cost):'')+(m.mod?'\n司会 '+money(m.mod):'')+(m.test?'\n試し':'');tm.style.whiteSpace='pre';
   if(me)line.append(tm,b);else line.append(b,tm);
   col.appendChild(line);
   if(!me){const a=document.createElement('div');a.className='av';a.textContent=p.mark;d.append(a,col)}else d.appendChild(col);
@@ -352,9 +352,11 @@ const ALL_WORDS=['みんな','全員'];
 function fillPaper(t,id){return String(t).split('{ユーザー名}').join(userName()).split('{名前}').join(id&&PEOPLE[id]?PEOPLE[id].name:'')}
 function sysFor(id){return id==='kuro'?fillPaper(S.kuroSys.trim()||KURO_SYS_EMPTY,id):fillPaper(S.common,id)}
 // その子自身の過去の発言は assistant、ほかの人の発言は user として「名前：本文」で渡す（続いた同じ役は一つにまとめる）
+// 試しモードで流れた会話は、本物のAIには渡さない
+const history=()=>S.test?S.msgs:S.msgs.filter(m=>!m.test);
 function convFor(id,tail){
   const out=[];
-  for(const m of S.msgs.slice(-HISTORY)){
+  for(const m of history().slice(-HISTORY)){
     const role=m.who===id?'assistant':'user',text=role==='assistant'?m.text:who(m.who).name+'：'+m.text;
     const last=out[out.length-1];if(last&&last.role===role)last.content+='\n'+text;else out.push({role,content:text});
   }
@@ -398,8 +400,8 @@ function fallbackOne(cands){
   return [...c].sort((a,b)=>lastSpoke(a)-lastSpoke(b))[0];
 }
 async function askMod(forced,kind,signal){
-  const cnt={};for(const a of AIS)cnt[a]=0;for(const m of S.msgs.slice(-20))if(cnt[m.who]!=null)cnt[m.who]++;
-  const body='最近の会話：\n'+S.msgs.slice(-20).map(m=>who(m.who).name+'：'+m.text.replace(/\s+/g,' ').slice(0,300)).join('\n')+'\n（ここまで）\n\n'+
+  const h=history().slice(-20),cnt={};for(const a of AIS)cnt[a]=0;for(const m of h)if(cnt[m.who]!=null)cnt[m.who]++;
+  const body='最近の会話：\n'+h.map(m=>who(m.who).name+'：'+m.text.replace(/\s+/g,' ').slice(0,300)).join('\n')+'\n（ここまで）\n\n'+
     '最近20件で喋った回数：'+AIS.map(a=>PEOPLE[a].name+' '+cnt[a]+'回').join('、')+'\n'+
     '必ず入れる子：'+(forced.length?JSON.stringify(forced.map(a=>PEOPLE[a].name)):'なし')+'\n'+
     '今回：'+(kind==='more'?userName()+'が「もっと喋らせる」を押した。1〜3人を選ぶ':userName()+'の新しい一言への返事');
@@ -435,17 +437,18 @@ function stop(){run++;if(ctrl)ctrl.abort();ctrl=null;setLive(null);setRunning(fa
 const isAbort=e=>e&&e.name==='AbortError';
 function errText(name,r){return name+'：うまく届かなかった'+(r.status?'（'+r.status+'）':'')+(r.msg?'\n'+r.msg:'')}
 // 一人に書かせる。書けたらその文を返す
-async function speak(id,signal,to,tail){
+async function speak(id,signal,to,tail,modCost){
   setLive(typingEl(id));
   let r;
   try{r=await routeOf(id).call({id,system:sysFor(id),messages:convFor(id,tail),model:S.models[id],maxTokens:4000,signal,to,think:S.think})}
   catch(e){if(isAbort(e))throw e;r={ok:false,msg:e.message}}
+  if(signal.aborted)throw new DOMException('止めた','AbortError');
   setLive(null);
   if(typeof r.cost==='number'){addCost(r.cost);save();showToday()}
   if(!r.ok){note(errText(PEOPLE[id].name,r),true);return null}
   const text=clean(id,r.text);
   if(!text){note(PEOPLE[id].name+'の返事が空だった',true);return null}
-  const m={who:id,text,at:Date.now()};if(typeof r.cost==='number')m.cost=r.cost;if(S.test)m.test=true;
+  const m={who:id,text,at:Date.now()};if(typeof r.cost==='number')m.cost=r.cost;if(modCost)m.mod=modCost;if(S.test)m.test=true;
   S.msgs.push(m);save();appendMsg(m);
   return text;
 }
@@ -458,7 +461,7 @@ async function start(kind){
     const cands=AIS.filter(ready);
     if(kind==='say')for(const id of calledByUser(S.msgs[S.msgs.length-1].text))if(!ready(id))note(PEOPLE[id].name+'は鍵がなくて呼べない',true);
     if(!cands.length){note('鍵がまだないよ。右上の「設定」で入れてね\n（試しモードなら鍵なしで動く）',true);return}
-    let first;
+    let first,modCost=0;
     if(forced.length>=4)first=forced.slice(0,4);
     else{
       let picked=null;
@@ -466,7 +469,7 @@ async function start(kind){
         setLive(liveNote('司会が、次に話す子を決めてる…'));
         let r;try{r=await askMod(forced,kind,c.signal)}catch(e){if(isAbort(e))return;r={ok:false,msg:e.message}}
         if(!alive())return;setLive(null);
-        if(typeof r.cost==='number'){addCost(r.cost);save();showToday()}
+        if(typeof r.cost==='number'){addCost(r.cost);modCost=r.cost;save();showToday()}
         if(r.ok)picked=parseSpeakers(r.text);
       }
       first=[...forced];
@@ -480,9 +483,9 @@ async function start(kind){
     while(round.length){
       const said=[];
       for(const s of round){
-        let t;try{t=await speak(s.id,c.signal,s.to,tail)}catch(e){if(isAbort(e))return;throw e}
+        let t;try{t=await speak(s.id,c.signal,s.to,tail,modCost)}catch(e){if(isAbort(e))return;throw e}
         if(!alive())return;
-        if(t)said.push({id:s.id,text:t});
+        if(t){said.push({id:s.id,text:t});modCost=0}
       }
       if(extra>=MAX_EXTRA_ROUNDS)break;
       // 返事の中で、ほかのAIに話しかけた・言い返した時は、言われた子が一回返す（そのあとに同じ周で喋った子はのぞく）
@@ -496,12 +499,14 @@ async function start(kind){
 }
 
 // ===== 送る・もっと喋らせる =====
+function grow(){const i=$('in');i.style.height='';i.style.height=Math.min(i.scrollHeight+2,120)+'px'}
+$('in').addEventListener('input',grow);
 $('send').onclick=()=>{
   const t=$('in').value.trim();if(!t)return;
   if(!AIS.some(ready)){note('鍵がまだないよ。右上の「設定」で入れてね\n（試しモードなら鍵なしで動く）',true);return}
   // まだ喋ってない分はやめて、新しい話に移る
   stop();
-  const m={who:'me',text:t,at:Date.now()};S.msgs.push(m);$('in').value='';save();appendMsg(m);
+  const m={who:'me',text:t,at:Date.now()};if(S.test)m.test=true;S.msgs.push(m);$('in').value='';grow();save();appendMsg(m);
   start('say');
 };
 $('more').onclick=()=>{if(running()||!S.msgs.length)return;start('more')};
