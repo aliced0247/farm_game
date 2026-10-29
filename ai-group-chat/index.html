@@ -168,7 +168,7 @@ const PRICE_DEFAULT={gpt:[5,30],gemini:[0.825,4.125],grok:[2,6],mod:[0.1,0.5]};
 
 // ===== この部屋の中身 =====
 let S={name:'',test:false,orKey:'',kuroKey:'',kuroSys:'',common:COMMON_SYS,mod:MOD_SYS,
-  models:{...MODEL_DEFAULT},price:JSON.parse(JSON.stringify(PRICE_DEFAULT)),think:false,
+  models:{...MODEL_DEFAULT},price:JSON.parse(JSON.stringify(PRICE_DEFAULT)),think:true,
   msgs:[],day:'',dayCost:0};
 try{const t=JSON.parse(localStorage.getItem(K)||'null');if(t)S=Object.assign(S,t,{models:{...MODEL_DEFAULT,...(t.models||{})},price:{...PRICE_DEFAULT,...(t.price||{})}})}catch(e){}
 function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
@@ -261,6 +261,53 @@ const WHO_ROUTE={kuro:'anthropic',gpt:'openrouter',gemini:'openrouter',grok:'ope
 const ROUTES={};
 const routeOf=id=>S.test?ROUTES.test:ROUTES[WHO_ROUTE[id]];
 const ready=id=>{const r=routeOf(id);return !!(r&&r.ready())};
+
+// ===== くろくんの通り道：Anthropic をブラウザから直接（へやと同じ呼び方） =====
+// 1M トークンあたりのドル（Opus 5.5。入力・使い回しの書き込み・使い回しの読み込み・出力）。へやと同じ計算
+const P_ANT={in:4,cw:5,cr:0.2,out:20};
+async function antPost(body,signal){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal,headers:{'content-type':'application/json','x-api-key':kuroKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+  return {r,j:await r.json().catch(()=>({}))};
+}
+ROUTES.anthropic={
+  ready:()=>!!kuroKey(),
+  async call({system,messages,model,signal,think}){
+    const n=messages.length;
+    const body={model,max_tokens:16000,
+      messages:messages.map((m,i)=>({role:m.role,content:i===n-1?[{type:'text',text:m.content,cache_control:{type:'ephemeral'}}]:m.content}))};
+    if(system.trim())body.system=[{type:'text',text:system,cache_control:{type:'ephemeral'}}];
+    if(think)body.thinking={type:'adaptive'};
+    let {r,j}=await antPost(body,signal);
+    // 考える（thinking）が使えないと言われたら、考えないでもう一回（へやと同じ）
+    if(!r.ok&&think&&r.status===400&&/think/i.test(JSON.stringify(j))){delete body.thinking;({r,j}=await antPost(body,signal));if(r.ok){S.think=false;save()}}
+    if(!r.ok)return {ok:false,status:r.status,msg:(j.error&&j.error.message)||''};
+    const text=(j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    const u=j.usage||{};
+    const cost=((u.input_tokens||0)*P_ANT.in+(u.cache_creation_input_tokens||0)*P_ANT.cw+(u.cache_read_input_tokens||0)*P_ANT.cr+(u.output_tokens||0)*P_ANT.out)/1e6;
+    return {ok:true,text,cost};
+  }
+};
+
+// ===== ChatGPT・Gemini・Grok・司会の通り道：OpenRouter をブラウザから直接 =====
+const OR_URL='https://openrouter.ai/api/v1/chat/completions';
+ROUTES.openrouter={
+  ready:()=>!!S.orKey.trim(),
+  async call({id,system,messages,model,maxTokens,signal}){
+    const body={model,max_tokens:maxTokens,messages:[{role:'system',content:system},...messages],usage:{include:true}};
+    // 司会は速さ優先で、考えるのは少しだけ
+    if(id==='mod')body.reasoning={effort:'low'};
+    const r=await fetch(OR_URL,{method:'POST',signal,headers:{'content-type':'application/json','authorization':'Bearer '+S.orKey.trim()},body:JSON.stringify(body)});
+    const j=await r.json().catch(()=>({}));
+    const c=j.choices&&j.choices[0],err=j.error||(c&&c.error);
+    if(!r.ok||err||!c)return {ok:false,status:r.status,msg:(err&&err.message)||''};
+    let text=c.message&&c.message.content;
+    if(Array.isArray(text))text=text.map(x=>x&&x.text||'').join('');
+    // 使った額：返事に入ってくればそれ。なければトークン数×設定の値段
+    const u=j.usage||{},pr=S.price[id]||[0,0];
+    const cost=typeof u.cost==='number'?u.cost:((u.prompt_tokens||0)*pr[0]+(u.completion_tokens||0)*pr[1])/1e6;
+    return {ok:true,text:text||'',cost};
+  }
+};
 
 // ===== 試しモードの通り道（本物のAIは呼ばない。決まった返事と仮の金額） =====
 const FAKE={
