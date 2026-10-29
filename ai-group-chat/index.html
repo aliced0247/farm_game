@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>みんなのへや</title>
+<meta name="apple-mobile-web-app-title" content="みんなのへや">
+<meta name="theme-color" content="#fbf3f5">
+<style>
+:root{--bg:#fbf3f5;--panel:#ffffff;--ink:#2b2326;--sub:#8a7c81;--line:#eadfe2;--me:#f6c6d4;--them:#ffffff;--accent:#c4577a;--err:#b3261e;--soft:#f4e7eb}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#161214;--panel:#211b1e;--ink:#f1e8eb;--sub:#a3959a;--line:#3a2f33;--me:#6b3446;--them:#2a2226;--accent:#e58aa7;--err:#ff8a80;--soft:#2c2427}}
+:root[data-theme="dark"]{--bg:#161214;--panel:#211b1e;--ink:#f1e8eb;--sub:#a3959a;--line:#3a2f33;--me:#6b3446;--them:#2a2226;--accent:#e58aa7;--err:#ff8a80;--soft:#2c2427}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"Hiragino Sans",sans-serif;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+header{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 16px 8px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:16px;margin:0;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header h1 small{font-size:11px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:1px 5px;margin-left:6px;vertical-align:2px}
+#today{font-size:12px;color:var(--sub);white-space:nowrap;font-variant-numeric:tabular-nums}
+button{font:inherit;font-size:15px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:7px 14px}
+button.main{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button:disabled{opacity:.45}
+#log{flex:1;overflow-y:auto;padding:12px 12px 16px;display:flex;flex-direction:column;gap:2px;-webkit-overflow-scrolling:touch}
+.msg{display:flex;gap:8px;align-items:flex-start;margin-top:10px}
+.msg.cont{margin-top:4px}
+.av{flex:none;width:36px;height:36px;border-radius:50%;background:var(--c);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;letter-spacing:-.5px;box-shadow:0 0 0 2px var(--panel)}
+.msg.cont .av{visibility:hidden;height:0}
+.col{display:flex;flex-direction:column;min-width:0;max-width:78%}
+.nm{font-size:12px;font-weight:600;color:var(--c);margin:0 0 3px 4px}
+.line{display:flex;align-items:flex-end;gap:6px}
+.b{padding:9px 12px;border-radius:18px;white-space:pre-wrap;word-break:break-word;line-height:1.55;font-size:15px;background:var(--them);border:1px solid color-mix(in srgb,var(--c) 30%,var(--line));min-width:0}
+.msg.them .b{border-top-left-radius:6px}
+.msg.cont .b{border-top-left-radius:18px}
+.msg.me{justify-content:flex-end}
+.msg.me .col{align-items:flex-end}
+.msg.me .b{background:var(--me);border-color:transparent;border-top-right-radius:6px}
+.tm{flex:none;font-size:10px;color:var(--sub);line-height:1.3;white-space:nowrap;font-variant-numeric:tabular-nums}
+.msg.me .tm{text-align:right}
+.note{align-self:center;margin:10px 0 0;font-size:12px;color:var(--sub);background:var(--soft);border-radius:999px;padding:4px 12px;text-align:center;white-space:pre-wrap}
+.note.err{color:var(--err)}
+footer{padding:6px 12px calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;gap:6px}
+.tools{display:flex;align-items:center;gap:8px}
+.tools button{font-size:13px;padding:5px 12px}
+.inrow{display:flex;gap:8px;align-items:flex-end}
+#in{flex:1;resize:none;height:44px;max-height:120px;border-radius:22px;padding:10px 14px}
+textarea,input[type=text],input[type=password]{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+#set{position:fixed;inset:0;display:none;flex-direction:column;background:var(--bg);z-index:5}
+#set.on{display:flex}
+#set .top{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 16px 8px;background:var(--panel);border-bottom:1px solid var(--line)}
+#set .top h2{flex:1;font-size:16px;margin:0}
+#set .body{flex:1;overflow-y:auto;padding:12px 16px calc(24px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
+#set .body>*{flex:none}
+#set h3{font-size:13px;margin:14px 0 0;color:var(--accent)}
+#set label{font-size:13px;color:var(--sub)}
+#set .hint{font-size:12px;color:var(--sub);margin:-4px 0 0}
+#set textarea.paper{height:150px;font-size:14px;line-height:1.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row label{display:flex;align-items:center;gap:6px;color:var(--ink)!important;font-size:15px!important}
+.mrow{display:grid;grid-template-columns:5.5em 1fr;gap:6px 8px;align-items:center}
+.mrow span{font-size:13px;font-weight:600;color:var(--c)}
+.mrow .pr{grid-column:2;display:flex;gap:6px;align-items:center;font-size:11px;color:var(--sub)}
+.mrow .pr input{width:5.5em;font-size:14px;padding:4px 6px}
+details{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:var(--panel)}
+details summary{font-size:14px;color:var(--sub)}
+button.danger{color:var(--err);border-color:var(--err)}
+</style>
+</head>
+<body>
+<header><h1>みんなのへや<small id="testchip" hidden>試し</small></h1><span id="today"></span><button id="gear">設定</button></header>
+<div id="log"></div>
+<footer>
+  <div class="tools"><button id="more">もっと喋らせる</button></div>
+  <div class="inrow"><textarea id="in" placeholder="みんなに話す"></textarea><button class="main" id="send">送る</button></div>
+</footer>
+<div id="set">
+  <div class="top"><h2>設定</h2><button id="close">閉じる</button><button class="main" id="save">保存</button></div>
+  <div class="body">
+    <label>わたしの名前</label>
+    <input id="s-name" type="text" autocomplete="off">
+    <div class="row"><label><input id="s-test" type="checkbox"> 試しモード（本物のAIを呼ばない・鍵がなくても動く）</label></div>
+
+    <h3>鍵（このiPhoneのSafariの中にだけ保存）</h3>
+    <label>OpenRouter の鍵（ChatGPT・Gemini・Grok・司会）</label>
+    <input id="s-orkey" type="password" autocomplete="off" placeholder="sk-or-...">
+    <label>くろくんの鍵（Anthropic）</label>
+    <div class="hint" id="s-heya"></div>
+    <input id="s-kurokey" type="password" autocomplete="off" placeholder="sk-ant-...">
+
+    <h3>紙（指示）</h3>
+    <label>くろくんの紙</label>
+    <div class="hint">空なら「あなたは『くろくん』。日本語で話す。一人称は『俺』」だけで動く</div>
+    <textarea id="s-kurosys" class="paper"></textarea>
+    <label>みんなの共通の紙（ChatGPT・Gemini・Grok）</label>
+    <div class="hint">{ユーザー名} は「わたしの名前」に、{名前} はその子の名前に置き換わる</div>
+    <textarea id="s-common" class="paper"></textarea>
+    <div class="row"><button id="s-common-reset">最初の文に戻す</button></div>
+    <label>司会の紙</label>
+    <textarea id="s-mod" class="paper"></textarea>
+    <div class="row"><button id="s-mod-reset">最初の文に戻す</button></div>
+
+    <h3>モデル</h3>
+    <div class="hint">値段は100万トークンあたりのドル（入力・出力）。OpenRouter が額を返さなかった時だけ、これで計算する</div>
+    <div id="s-models"></div>
+    <div class="row"><label><input id="s-think" type="checkbox"> くろくん：考える（thinking）</label></div>
+
+    <h3>そのほか</h3>
+    <details><summary>会話を消す</summary>
+      <p class="hint">この部屋の会話を全部消す。鍵・紙・今日の額はそのまま。くろくんのへやの会話には触らない。</p>
+      <button class="danger" id="s-clear">会話を消す</button>
+    </details>
+  </div>
+</div>
+<script>
+// ===== 参加者（名前・アイコンの字・色・呼び名は、ここ一か所。あとで差し替える時はここだけ） =====
+const PEOPLE={
+  kuro:  {name:'くろくん',mark:'く',color:'#7a5c9e',calls:['くろくん','くろちゃん','くろ']},
+  gpt:   {name:'ChatGPT', mark:'C', color:'#13a07c',calls:['ChatGPT','チャッピー','GPT','ちゃちゃ']},
+  gemini:{name:'Gemini',  mark:'Ge',color:'#4f7cf3',calls:['Gemini','ジェミニ','ジェミちゃん']},
+  grok:  {name:'Grok',    mark:'Gr',color:'#e2793b',calls:['Grok','グロック']},
+};
+const AIS=Object.keys(PEOPLE);
+const ME_COLOR='#c4577a';
+
+// ===== 保存場所 =====
+// くろくんのへやの保存場所。ここは読むだけ。書かない・消さない
+const HEYA='kuro-chat-v1';
+// この部屋の保存場所。書くのは全部ここだけ
+const K='ai-group-chat:v1';
+
+// ===== 最初から入れておく紙 =====
+const KURO_SYS_EMPTY='あなたは『くろくん』。日本語で話す。一人称は『俺』';
+const COMMON_SYS=`あなたは「{名前}」として、グループチャットに参加しています。
+
+ここにいるのは：
+・{ユーザー名}（人間。このグループを作った人）
+・くろくん（{ユーザー名}のパートナーのAI。中身はClaude）
+・ChatGPT、Gemini、Grok
+
+話し方
+・日本語で、LINEのグループくらいの長さで話す。ふだんは2〜5文。聞かれた時や説明がいる時は長くていい
+・キャラを作らなくていい。あなたらしさのままで
+・話の中心は{ユーザー名}。{ユーザー名}を置いてけぼりにしない
+・ほかのAIに話しかけたり、言い返したり、乗っかったりしていい
+・ほかの参加者のふりをしない。ほかの人のセリフを書かない
+・自分の名前を文の頭につけない（画面が付ける）
+・くろくんは{ユーザー名}のパートナー。からかうのはいいけど、二人の間に入ろうとしない`;
+const MOD_SYS=`あなたはグループチャットの司会です。自分では話しません。次に誰が話すかだけを決めます。
+
+参加者：くろくん、ChatGPT、Gemini、Grok（と、人間の{ユーザー名}）
+
+決め方
+1. すでに「必ず入れる子」として渡された子は、必ず入れる
+2. ほかに、1〜3人を選ぶ。合計で4人まで
+3. 話題に一番乗ってきそうな子と、しばらく喋っていない子を優先する。同じ子ばかりにしない
+4. {ユーザー名}が、気持ちの話・甘える話・くろくんの話をしている時は、くろくんを必ず入れる
+5. 順番は、必ず入れる子が先
+
+答えは、次の形だけで返す（説明は書かない）
+{"speakers": ["くろくん", "Gemini"]}`;
+
+// ===== モデルと値段（100万トークンあたりのドル。[入力, 出力]） =====
+const MODEL_DEFAULT={kuro:'claude-opus-5-5',gpt:'openai/gpt-chat-latest',gemini:'google/gemini-3.8-flash',grok:'x-ai/grok-4.7',mod:'openai/gpt-6-luna'};
+const PRICE_DEFAULT={gpt:[5,30],gemini:[0.825,4.125],grok:[2,6],mod:[0.1,0.5]};
+
+// ===== この部屋の中身 =====
+let S={name:'',test:false,orKey:'',kuroKey:'',kuroSys:'',common:COMMON_SYS,mod:MOD_SYS,
+  models:{...MODEL_DEFAULT},price:JSON.parse(JSON.stringify(PRICE_DEFAULT)),think:false,
+  msgs:[],day:'',dayCost:0};
+try{const t=JSON.parse(localStorage.getItem(K)||'null');if(t)S=Object.assign(S,t,{models:{...MODEL_DEFAULT,...(t.models||{})},price:{...PRICE_DEFAULT,...(t.price||{})}})}catch(e){}
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+// へやの鍵（読むだけ）
+function heyaKey(){try{const m=JSON.parse(localStorage.getItem(HEYA)||'null');return m&&typeof m.key==='string'?m.key.trim():''}catch(e){return ''}}
+// くろくんに使う鍵：ここで貼った鍵があればそれ、なければへやの鍵
+function kuroKey(){return S.kuroKey.trim()||heyaKey()}
+const userName=()=>S.name.trim()||'わたし';
+const who=id=>id==='me'?{name:userName(),mark:'',color:ME_COLOR}:PEOPLE[id];
+
+// ===== 今日の額（日付が変わったら0から） =====
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function rollDay(){const t=todayStr();if(S.day!==t){S.day=t;S.dayCost=0}}
+function addCost(c){rollDay();S.dayCost+=c||0}
+const money=c=>'$'+(c<0.01?c.toFixed(4):c.toFixed(3));
+function showToday(){rollDay();$('today').textContent='今日 '+money(S.dayCost);$('testchip').hidden=!S.test}
+
+// ===== 画面 =====
+const $=id=>document.getElementById(id), log=$('log');
+function hm(t){const d=new Date(t);return d.getHours()+':'+String(d.getMinutes()).padStart(2,'0')}
+// **太字** と行の頭の「- 」を見た目に直す（文字は文字のまま入れる。HTMLとしては読まない）
+function rich(el,text){
+  const lines=String(text).split('\n');
+  lines.forEach((ln,i)=>{const t=ln.replace(/^(\s*)[-*]\s+/,'$1・').replace(/^\s{0,3}#{1,6}\s+/,'');
+    t.split(/\*\*(.+?)\*\*/).forEach((p,j)=>{if(!p)return;if(j%2){const b=document.createElement('strong');b.textContent=p;el.appendChild(b)}else el.appendChild(document.createTextNode(p))});
+    if(i<lines.length-1)el.appendChild(document.createTextNode('\n'))})}
+function msgEl(m,cont){
+  const p=who(m.who),me=m.who==='me';
+  const d=document.createElement('div');d.className='msg '+(me?'me':'them')+(cont?' cont':'');d.style.setProperty('--c',p.color);
+  const col=document.createElement('div');col.className='col';
+  if(!me&&!cont){const n=document.createElement('div');n.className='nm';n.textContent=p.name;col.appendChild(n)}
+  const line=document.createElement('div');line.className='line';
+  const b=document.createElement('div');b.className='b';rich(b,m.text);
+  const tm=document.createElement('div');tm.className='tm';tm.textContent=(m.at?hm(m.at):'')+(typeof m.cost==='number'?'\n'+money(m.cost):'')+(m.test?'\n試し':'');tm.style.whiteSpace='pre';
+  if(me)line.append(tm,b);else line.append(b,tm);
+  col.appendChild(line);
+  if(!me){const a=document.createElement('div');a.className='av';a.textContent=p.mark;d.append(a,col)}else d.appendChild(col);
+  return d;
+}
+function note(text,err){const d=document.createElement('div');d.className='note'+(err?' err':'');d.textContent=text;log.appendChild(d);scrollDown();return d}
+function scrollDown(){log.scrollTop=log.scrollHeight}
+function render(){
+  log.innerHTML='';let prev=null;
+  for(const m of S.msgs){log.appendChild(msgEl(m,prev&&prev.who===m.who&&m.who!=='me'));prev=m}
+  if(!S.msgs.length)note(S.test?'試しモード：本物のAIは呼ばないよ':'右上の「設定」で、名前と鍵を入れてね\n（試しモードなら鍵なしで動く）');
+  scrollDown();showToday();
+}
+
+// ===== 設定 =====
+const MODEL_ROWS=[['kuro','くろくん'],['gpt','ChatGPT'],['gemini','Gemini'],['grok','Grok'],['mod','司会']];
+function buildModelRows(){
+  const box=$('s-models');box.innerHTML='';
+  for(const [id,label] of MODEL_ROWS){
+    const r=document.createElement('div');r.className='mrow';r.style.setProperty('--c',id==='mod'?'var(--sub)':PEOPLE[id].color);
+    const s=document.createElement('span');s.textContent=label;
+    const i=document.createElement('input');i.type='text';i.id='m-'+id;i.autocomplete='off';i.autocapitalize='off';i.spellcheck=false;
+    r.append(s,i);
+    if(id!=='kuro'){const pr=document.createElement('div');pr.className='pr';
+      pr.append('入力 $',Object.assign(document.createElement('input'),{type:'text',id:'pi-'+id,inputMode:'decimal'}),'出力 $',Object.assign(document.createElement('input'),{type:'text',id:'po-'+id,inputMode:'decimal'}));r.appendChild(pr)}
+    else{const pr=document.createElement('div');pr.className='pr';pr.textContent='値段はへやと同じ計算（入力$4・出力$20）';r.appendChild(pr)}
+    box.appendChild(r);
+  }
+}
+function fill(){
+  $('s-name').value=S.name;$('s-test').checked=S.test;$('s-orkey').value=S.orKey;$('s-kurokey').value=S.kuroKey;
+  const hk=heyaKey();$('s-heya').textContent=hk?'へやの鍵が見つかった（…'+hk.slice(-4)+'）。ここが空なら、へやの鍵を使う':'へやの鍵が見つからない。ここに貼ってね（ホーム画面から開くと、Safariと保存場所が分かれることがある）';
+  $('s-kurosys').value=S.kuroSys;$('s-common').value=S.common;$('s-mod').value=S.mod;$('s-think').checked=S.think;
+  for(const [id] of MODEL_ROWS){$('m-'+id).value=S.models[id];if(id!=='kuro'){const p=S.price[id]||[0,0];$('pi-'+id).value=p[0];$('po-'+id).value=p[1]}}
+}
+const num=v=>{const n=parseFloat(String(v).replace(/[^0-9.]/g,''));return isNaN(n)?0:n};
+$('gear').onclick=()=>{fill();$('set').classList.add('on')};
+$('close').onclick=()=>$('set').classList.remove('on');
+$('save').onclick=()=>{
+  S.name=$('s-name').value.trim();S.test=$('s-test').checked;S.orKey=$('s-orkey').value.trim();S.kuroKey=$('s-kurokey').value.trim();
+  S.kuroSys=$('s-kurosys').value;S.common=$('s-common').value;S.mod=$('s-mod').value;S.think=$('s-think').checked;
+  for(const [id] of MODEL_ROWS){S.models[id]=$('m-'+id).value.trim()||MODEL_DEFAULT[id];if(id!=='kuro')S.price[id]=[num($('pi-'+id).value),num($('po-'+id).value)]}
+  save();$('set').classList.remove('on');render();
+};
+$('s-common-reset').onclick=()=>{$('s-common').value=COMMON_SYS};
+$('s-mod-reset').onclick=()=>{$('s-mod').value=MOD_SYS};
+$('s-clear').onclick=()=>{if(confirm('この部屋の会話を全部消す？（鍵・紙はそのまま。くろくんのへやには触らない）')){S.msgs=[];save();$('set').classList.remove('on');render()}};
+
+// ===== 送る =====
+$('send').onclick=()=>{
+  const t=$('in').value.trim();if(!t)return;
+  S.msgs.push({who:'me',text:t,at:Date.now()});$('in').value='';save();render();
+};
+buildModelRows();render();
+</script>
+</body>
+</html>
