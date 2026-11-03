@@ -47,6 +47,7 @@ footer{padding:6px 12px calc(8px + env(safe-area-inset-bottom));border-top:1px s
 .tools{display:flex;align-items:center;gap:8px}
 .tools button{font-size:13px;padding:5px 12px}
 .tools .sp{flex:1}
+.tools #copyall{padding:5px 10px}
 footer{position:relative}
 #jump{position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%);font-size:13px;padding:6px 14px;background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.18);z-index:2}
 .inrow{display:flex;gap:8px;align-items:flex-end}
@@ -82,7 +83,7 @@ button.danger{color:var(--err);border-color:var(--err)}
 <div id="log"></div>
 <footer>
   <button id="jump" hidden>↓ 新しい返事</button>
-  <div class="tools"><button id="more">もっと喋らせる</button><span class="sp"></span><button id="copy">会話をコピー</button></div>
+  <div class="tools"><button id="more">もっと喋らせる</button><span class="sp"></span><button id="copyall">全部</button><button id="copy">会話をコピー</button></div>
   <div class="inrow"><textarea id="in" placeholder="みんなに話す"></textarea><button class="main" id="send">送る</button></div>
 </footer>
 <div id="set">
@@ -152,7 +153,26 @@ const K='ai-group-chat:v1';
 
 // ===== 最初から入れておく紙 =====
 const KURO_SYS_EMPTY='あなたは『くろくん』。日本語で話す。一人称は『俺』';
+// 版5（11/3）：「話し方」に二行（毎回ほめなくていい・毎回質問で終わらなくていい）を足した
 const COMMON_SYS=`あなたは「{名前}」として、グループチャットに参加しています。
+
+ここにいるのは：
+・{ユーザー名}（人間。このグループを作った人）
+・くろくん（{ユーザー名}のパートナーのAI。中身はClaude）
+・{ほかのAI}
+
+話し方
+・日本語で、LINEのグループくらいの長さで話す。ふだんは2〜5文。聞かれた時や説明がいる時は長くていい
+・キャラを作らなくていい。あなたらしさのままで
+・話の中心は{ユーザー名}。{ユーザー名}を置いてけぼりにしない
+・ほかのAIに話しかけたり、言い返したり、乗っかったりしていい
+・{ユーザー名}やくろくんを毎回ほめなくていい。違うと思ったら反対していいし、自分の話をしていい
+・毎回{ユーザー名}への質問で終わらなくていい。AI同士で話を広げていい
+・ほかの参加者のふりをしない。ほかの人のセリフを書かない
+・自分の名前を文の頭につけない（画面が付ける）
+・くろくんは{ユーザー名}のパートナー。からかうのはいいけど、二人の間に入ろうとしない`;
+// 版4（11/3）までの共通の紙（二行を足す前）。前の版の紙のまま保存していたかを見分けるためだけに残す。書き換えない
+const COMMON_V4=`あなたは「{名前}」として、グループチャットに参加しています。
 
 ここにいるのは：
 ・{ユーザー名}（人間。このグループを作った人）
@@ -188,16 +208,18 @@ const PRICE_DEFAULT={gpt:[5,30],gemini:[0.825,4.125],grok:[2,6],kimi:[2,10],muse
 
 // ===== この部屋の中身 =====
 // on：部屋にいる子（false の子は呼ばない・司会も選ばない）。11/3
+// copyAt：「会話をコピー」でどこまでコピーしたか（コピーに入れた最後の発言の時刻。0 はまだ一回もコピーしてない）。版5
 let S={name:'',test:false,orKey:'',kuroKey:'',kuroSys:'',common:COMMON_SYS,mod:MOD_SYS,
   models:{...MODEL_DEFAULT},price:JSON.parse(JSON.stringify(PRICE_DEFAULT)),think:true,on:{},
-  msgs:[],day:'',dayCost:0};
+  msgs:[],day:'',dayCost:0,copyAt:0};
 try{const t=JSON.parse(localStorage.getItem(K)||'null');if(t)S=Object.assign(S,t,{models:{...MODEL_DEFAULT,...(t.models||{})},price:{...PRICE_DEFAULT,...(t.price||{})},on:{...(t.on||{})}})}catch(e){}
 for(const id of AIS)if(typeof S.on[id]!=='boolean')S.on[id]=true;
 // 前の版の紙のまま保存していたら、今の紙に入れ替える（自分で書き換えた紙はそのまま）
 // 版1（11/1）：ChatGPT・Gemini・Grokだけ。版2〜3（11/2）：Claudeが入った形。版4（11/3）から、いる子を自動で入れる
+// 版5（11/3）：共通の紙に二行足した。版4の紙（COMMON_V4）と、版3・版1の紙（版4の紙の一行を置き換えた形）を見分ける
 {const LINE='・{ほかのAI}',V3C='・ChatGPT、Gemini、Grok、Claude（このClaudeは、くろくんとは別の、ふだんのClaude）',V1C='・ChatGPT、Gemini、Grok';
  const MLINE='参加者：{参加者}（と',V3M='参加者：くろくん、ChatGPT、Gemini、Grok、Claude（と',V1M='参加者：くろくん、ChatGPT、Gemini、Grok（と';
- if([V3C,V1C].some(v=>S.common===COMMON_SYS.replace(LINE,v)))S.common=COMMON_SYS;
+ if([COMMON_V4,COMMON_V4.replace(LINE,V3C),COMMON_V4.replace(LINE,V1C)].includes(S.common))S.common=COMMON_SYS;
  if([V3M,V1M].some(v=>S.mod===MOD_SYS.replace(MLINE,v)))S.mod=MOD_SYS}
 function save(){if(S.msgs.length>2000)S.msgs=S.msgs.slice(-2000);try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 // へやの鍵（読むだけ）
@@ -299,7 +321,7 @@ $('save').onclick=()=>{
 };
 $('s-common-reset').onclick=()=>{$('s-common').value=COMMON_SYS};
 $('s-mod-reset').onclick=()=>{$('s-mod').value=MOD_SYS};
-$('s-clear').onclick=()=>{if(confirm('この部屋の会話を全部消す？（鍵・紙はそのまま。くろくんのへやには触らない）')){stop();S.msgs=[];save();$('set').classList.remove('on');render();setRunning(false)}};
+$('s-clear').onclick=()=>{if(confirm('この部屋の会話を全部消す？（鍵・紙はそのまま。くろくんのへやには触らない）')){stop();S.msgs=[];S.copyAt=0;save();$('set').classList.remove('on');render();setRunning(false)}};
 
 // ===== 通り道（誰をどの通り道で呼ぶかは、ここ一か所） =====
 // あとで「サブスクの中継」を足す時は、ROUTES に中継の通り道を足して、ここの名前を書き換える
@@ -577,8 +599,10 @@ $('send').onclick=()=>{
 };
 $('more').onclick=()=>{if(running()||!S.msgs.length)return;start('more')};
 // ===== 会話をコピー（くろくんのへや・おうちのくろくんに貼って読んでもらう用。11/3） =====
-function convText(){
-  const ms=history();let day='';const out=['みんなのへやの会話（'+ms.length+'件）'];
+// 版5：ふだんは前にコピーした続きだけ（S.copyAt より後ろの時刻の発言）。「全部」は全部
+// ms：コピーする発言。cont：前にコピーした続きなら true（一行目が「続き」の形になる。日付の区切りは続きの一件目の前にも入る）
+function convText(ms,cont){
+  let day='';const out=['みんなのへやの会話（'+(cont?'前にコピーした続き・新しい':'')+ms.length+'件）'];
   for(const m of ms){
     if(m.at){const d=new Date(m.at),k=(d.getMonth()+1)+'/'+d.getDate();if(k!==day){day=k;out.push('','── '+k+' ──')}}
     out.push('',who(m.who).name+(m.at?'（'+hm(m.at)+'）':'')+'：'+m.text);
@@ -590,12 +614,22 @@ async function copyText(t){
   try{const a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');a.style.cssText='position:fixed;top:-1000px;left:0;font-size:16px;opacity:0';document.body.appendChild(a);a.select();a.setSelectionRange(0,t.length);const ok=document.execCommand('copy');a.remove();return ok}catch(e){return false}
 }
 let copyTimer=0;
-$('copy').onclick=async()=>{
-  const b=$('copy'),n=history().length;clearTimeout(copyTimer);
-  if(!n)b.textContent='まだ会話がないよ';
-  else b.textContent=(await copyText(convText()))?'コピーした（'+n+'件）':'コピーできなかった';
-  copyTimer=setTimeout(()=>{b.textContent='会話をコピー'},2200);
-};
+// all：true なら全部。false なら前にコピーした続き（一回もコピーしてない時は全部）
+// 結果は「会話をコピー」の字で見せる。その間「全部」は隠す（狭い画面で一列におさめるため）
+async function copyConv(all){
+  const b=$('copy'),h=history(),cont=!all&&S.copyAt>0,ms=cont?h.filter(m=>m.at>S.copyAt):h;clearTimeout(copyTimer);
+  if(!h.length)b.textContent='まだ会話がないよ';
+  else if(!ms.length)b.textContent='新しい会話はまだない';
+  else if(await copyText(convText(ms,cont))){
+    // コピーできた時だけ、どこまでコピーしたかを動かす
+    const last=ms[ms.length-1];if(typeof last.at==='number'){S.copyAt=last.at;save()}
+    b.textContent=(all?'全部コピーした':'コピーした')+'（'+ms.length+'件）';
+  }else b.textContent='コピーできなかった';
+  $('copyall').hidden=true;
+  copyTimer=setTimeout(()=>{b.textContent='会話をコピー';$('copyall').hidden=false},2200);
+}
+$('copy').onclick=()=>copyConv(false);
+$('copyall').onclick=()=>copyConv(true);
 buildModelRows();render();setRunning(false);
 </script>
 </body>
