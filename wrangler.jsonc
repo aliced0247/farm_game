@@ -1,0 +1,13 @@
+// みんなのへや（ai-group-chat/）の留守番役の設定。Cloudflare の Workers Builds がこのリポジトリをつないで、これを読んで出す。
+// 中身は ai-group-chat/relay/worker.js。鍵はここにも Cloudflare の設定にも置かない（ページがその回だけ渡す）
+{
+  "name": "minna-no-heya",
+  "main": "ai-group-chat/relay/worker.js",
+  "compatibility_date": "2026-10-01",
+  "durable_objects": {
+    "bindings": [{ "name": "ROOM", "class_name": "Room" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  // このページからだけ使える（みんなのへやの公開の住所）
+  "vars": { "ALLOW": "https://aliced0247.github.io" }
+}

@@ -113,7 +113,7 @@ header h1.room{cursor:pointer}
 </head>
 <body>
 <header><button id="back" hidden aria-label="スレの一覧に戻る">‹</button><h1 id="title"><span id="tname">みんなのへや</span><span id="tcaret" hidden>▾</span><small id="testchip" hidden>試し</small></h1><span id="today"></span><button id="gear">設定</button></header>
-<div id="list"><div id="rooms"></div><button class="main" id="newroom">＋ 新しいスレ</button><p class="listnote err" id="savewarn" hidden></p></div>
+<div id="list"><div id="rooms"></div><button class="main" id="newroom">＋ 新しいスレ</button><p class="listnote err" id="savewarn" hidden></p><p class="listnote" id="relaynote" hidden></p></div>
 <div id="log"></div>
 <footer>
   <button id="jump" hidden>↓ 新しい返事</button>
@@ -145,6 +145,12 @@ header h1.room{cursor:pointer}
     <label>くろくんとClaudeの鍵（Anthropic）</label>
     <div class="hint" id="s-heya"></div>
     <input id="s-kurokey" type="password" autocomplete="off" placeholder="sk-ant-...">
+
+    <h3>留守番役（ページを離れても止めない）</h3>
+    <label>留守番役の住所</label>
+    <input id="s-relay" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url" placeholder="https://minna-no-heya.○○.workers.dev">
+    <div class="hint">空なら今まで通り（このページが順番を回す。Safariを離れると止まる）。住所を入れると、順番は留守番役が回す。鍵はその回だけ留守番役に渡して、回し終わったら留守番役の側からは消える。試しモードの時は、留守番役も偽の返事で回す</div>
+    <div class="row"><button id="s-relay-test" type="button">つながるか試す</button><span class="hint" id="s-relay-res" style="margin:0"></span></div>
 
     <h3>いる子</h3>
     <div class="hint">いる子はスレごとに変える。スレの中で、上のスレの名前を押したところ</div>
@@ -255,9 +261,11 @@ const PRICE_DEFAULT={gpt:[5,30],gemini:[0.825,4.125],grok:[2,6],kimi:[2,10],muse
 //   copyAt（「会話をコピー」でどこまでコピーしたか。0 はまだ一回もコピーしてない）・lastAt（最後の発言の時刻）・seen（最後に見た時刻）
 //   msgs（会話）は、スレごとに別の保存場所（K+':r:'+id）に置く。そこに入らなかった時だけ inline にして、K の中に一緒に置く
 // _ で始まるもの（_ctrl・_run・_live・_notes・_draft）は、ページを開いてる間だけのもの。保存しない
+// relay：留守番役の住所（版7）。relayKey：留守番役の箱を開ける合言葉（このページが自分で作る。人に見せない）
+// スレの relay：{jid（今頼んでる回の印。終わったら null）, since（どこまでお知らせを読んだか）}
 let S={name:'',test:false,orKey:'',kuroKey:'',kuroSys:'',common:COMMON_SYS,mod:MOD_SYS,
   models:{...MODEL_DEFAULT},price:JSON.parse(JSON.stringify(PRICE_DEFAULT)),think:true,
-  day:'',dayCost:0,rooms:[]};
+  day:'',dayCost:0,rooms:[],relay:'',relayKey:''};
 const RK=id=>K+':r:'+id;
 const newId=()=>'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 function mkRoom(name,o){const on={};for(const id of AIS)on[id]=true;return Object.assign({id:newId(),name,on,note:'',copyAt:0,lastAt:Date.now(),seen:Date.now(),msgs:[]},o||{})}
@@ -420,7 +428,7 @@ function buildModelRows(){
   }
 }
 function fill(){
-  $('s-name').value=S.name;$('s-test').checked=S.test;$('s-orkey').value=S.orKey;$('s-kurokey').value=S.kuroKey;
+  $('s-name').value=S.name;$('s-test').checked=S.test;$('s-orkey').value=S.orKey;$('s-kurokey').value=S.kuroKey;$('s-relay').value=S.relay||'';$('s-relay-res').textContent='';
   const hk=heyaKey();$('s-heya').textContent=hk?'へやの鍵が見つかった（…'+hk.slice(-4)+'）。ここが空なら、へやの鍵を使う':'へやの鍵が見つからない。ここに貼ってね（ホーム画面から開くと、Safariと保存場所が分かれることがある）';
   $('s-kurosys').value=S.kuroSys;$('s-common').value=S.common;$('s-mod').value=S.mod;$('s-think').checked=S.think;
   for(const [id] of MODEL_ROWS){$('m-'+id).value=S.models[id];if(!isAnt(id)){const p=S.price[id]||[0,0];$('pi-'+id).value=p[0];$('po-'+id).value=p[1]}}
@@ -429,10 +437,10 @@ const num=v=>{const n=parseFloat(String(v).replace(/[^0-9.]/g,''));return isNaN(
 $('gear').onclick=()=>{fill();$('set').classList.add('on')};
 $('close').onclick=()=>$('set').classList.remove('on');
 $('save').onclick=()=>{
-  S.name=$('s-name').value.trim();S.test=$('s-test').checked;S.orKey=$('s-orkey').value.trim();S.kuroKey=$('s-kurokey').value.trim();
+  S.name=$('s-name').value.trim();S.test=$('s-test').checked;S.orKey=$('s-orkey').value.trim();S.kuroKey=$('s-kurokey').value.trim();S.relay=$('s-relay').value.trim().replace(/\/+$/,'');
   S.kuroSys=$('s-kurosys').value;S.common=$('s-common').value;S.mod=$('s-mod').value;S.think=$('s-think').checked;
   for(const [id] of MODEL_ROWS){S.models[id]=$('m-'+id).value.trim()||MODEL_DEFAULT[id];if(!isAnt(id))S.price[id]=[num($('pi-'+id).value),num($('po-'+id).value)]}
-  save();$('set').classList.remove('on');render();setRunning();
+  save();$('set').classList.remove('on');render();setRunning();relayNote();pollSoon(0);
 };
 $('s-common-reset').onclick=()=>{$('s-common').value=COMMON_SYS};
 $('s-mod-reset').onclick=()=>{$('s-mod').value=MOD_SYS};
@@ -456,6 +464,7 @@ $('r-dim').onclick=closeSheet;
 $('r-del').onclick=()=>{
   if(!cur)return;const r=cur;
   if(!confirm('「'+r.name+'」を消す？\nこのスレの会話も全部消える（ほかのスレ・鍵・紙はそのまま。くろくんのへやには触らない）'))return;
+  if(r.relay&&r.relay.jid&&relayOn())relayFetch(r,'stop').catch(()=>{});
   stop(r);S.rooms=S.rooms.filter(x=>x!==r);try{localStorage.removeItem(RK(r.id))}catch(e){}
   $('sheet').classList.remove('on');cur=null;save();setView();render();setRunning();
 };
@@ -624,14 +633,17 @@ function fallbackOne(r,cands){
   if(c.includes('kuro')&&!r.msgs.slice(-6).some(m=>m.who==='kuro'))return 'kuro';
   return [...c].sort((a,b)=>lastSpoke(r,a)-lastSpoke(r,b))[0];
 }
-async function askMod(r,forced,kind,signal){
+function modBody(r,forced,kind){
   const h=history(r).slice(-20),cnt={},on=here(r);for(const a of on)cnt[a]=0;for(const m of h)if(cnt[m.who]!=null)cnt[m.who]++;
   const body='最近の会話：\n'+h.map(m=>who(m.who).name+'：'+m.text.replace(/\s+/g,' ').slice(0,300)).join('\n')+'\n（ここまで）\n\n'+
     '今部屋にいて、選べる子：'+on.map(a=>PEOPLE[a].name).join('、')+'\n'+
     '最近20件で喋った回数：'+on.map(a=>PEOPLE[a].name+' '+cnt[a]+'回').join('、')+'\n'+
     '必ず入れる子：'+(forced.length?JSON.stringify(forced.map(a=>PEOPLE[a].name)):'なし')+'\n'+
     '今回：'+(kind==='more'?userName()+'が「もっと喋らせる」を押した。1〜3人を選ぶ':userName()+'の新しい一言への返事');
-  return routeOf('mod').call({id:'mod',rm:r,system:fillPaper(S.mod,null,r),messages:[{role:'user',content:body}],model:S.models.mod,maxTokens:2000,signal,forced,kind});
+  return body;
+}
+async function askMod(r,forced,kind,signal){
+  return routeOf('mod').call({id:'mod',rm:r,system:fillPaper(S.mod,null,r),messages:[{role:'user',content:modBody(r,forced,kind)}],model:S.models.mod,maxTokens:2000,signal,forced,kind});
 }
 
 // ===== 書いてる子の「入力中…」と、司会の「決めてる…」 =====
@@ -686,6 +698,7 @@ async function speak(r,id,signal,to,tail,modCost){
 }
 // kind：'say'（新しく送った）か 'more'（もっと喋らせる）
 async function start(r,kind){
+  if(relayOn())return relayStart(r,kind);
   stop(r);const my=r._run,c=r._ctrl=new AbortController(),alive=()=>my===r._run;
   setRunning();
   try{
@@ -730,6 +743,99 @@ async function start(r,kind){
   }catch(e){if(alive())noteIn(r,'止まった：'+e.message,true)}
   finally{if(alive()){r._ctrl=null;setLive(r,null);setRunning()}}
 }
+
+// ===== 留守番役（版7・11/4）。順番は留守番役が回して、このページは開いてる間、書けた分を見に行く =====
+// 留守番役のコードは relay/worker.js。順番の回し方は上の start() と同じにしてある（片方を変える時は、もう片方も）
+const relayOn=()=>!!(S.relay&&S.relay.trim());
+function relayKeyMake(){if(!S.relayKey){const a=new Uint8Array(16);crypto.getRandomValues(a);S.relayKey=[...a].map(b=>b.toString(16).padStart(2,'0')).join('')}return S.relayKey}
+async function relayFetch(r,op,body){
+  const base=S.relay.trim().replace(/\/+$/,'');
+  const u=base+'/room/'+relayKeyMake()+'/'+r.id+'/'+op+(op==='poll'?'?since='+((r.relay&&r.relay.since)||0):'');
+  const res=await fetch(u,op==='poll'?{cache:'no-store'}:{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body||{})});
+  const j=await res.json().catch(()=>null);
+  if(!j)throw new Error('返事が読めなかった（'+res.status+'）');
+  return j;
+}
+const PEOPLE_MIN=()=>Object.fromEntries(AIS.map(id=>[id,{name:PEOPLE[id].name,calls:PEOPLE[id].calls}]));
+async function relayStart(r,kind){
+  stop(r);const my=r._run;
+  const lastText=r.msgs[r.msgs.length-1].text;
+  const forced=kind==='say'?calledByUser(lastText,r).filter(id=>ready(r,id)):[];
+  const cands=AIS.filter(id=>ready(r,id));
+  if(kind==='say')for(const id of calledByUser(lastText,r))if(!ready(r,id))noteIn(r,isOn(r,id)?PEOPLE[id].name+'は鍵がなくて呼べない':PEOPLE[id].name+'は今、このスレにいない（上のスレの名前を押すと呼べる）',true);
+  if(!cands.length){noteIn(r,'鍵がまだないよ。右上の「設定」で入れてね\n（試しモードなら鍵なしで動く）',true);return}
+  const job={kind,test:!!S.test,user:userName(),people:PEOPLE_MIN(),here:here(r),cands,forced,route:WHO_ROUTE,models:S.models,price:S.price,think:S.think,
+    sys:Object.fromEntries(cands.map(id=>[id,sysFor(id,r)])),
+    mod:{ready:ready(r,'mod'),system:fillPaper(S.mod,null,r),body:modBody(r,forced,kind)},
+    tail:kind==='more'?'［'+userName()+'が「もっと喋らせる」を押した。会話を続けて］':'',
+    history:history(r).slice(-HISTORY),
+    limits:{history:HISTORY,maxExtraRounds:MAX_EXTRA_ROUNDS,maxBack:MAX_BACK,maxTokens:8000},
+    keys:{ant:S.test?'':kuroKey(),or:S.test?'':S.orKey.trim()}};
+  if(S.test)job.fake={lines:FAKE,back:FAKE_BACK,cost:FAKE_COST};
+  r._ctrl=new AbortController();r._starting=true;setRunning();
+  r._liveWho='ask';setLive(r,liveNote('留守番役に頼んでる…'));
+  let res;
+  try{res=await relayFetch(r,'start',{job})}catch(e){res={ok:false,msg:e.message}}
+  finally{r._starting=false}
+  if(r._run!==my)return;  // その間に、このスレで別の一言を送った（そっちが新しい頼み）
+  if(!res.ok){r._ctrl=null;r._liveWho=null;setLive(r,null);noteIn(r,'留守番役に頼めなかった：'+(res.msg||'')+'\n（設定の「留守番役の住所」を空にすると、今まで通りこのページで回す）',true);setRunning();return}
+  r.relay=r.relay||{};if(typeof r.relay.since!=='number')r.relay.since=res.seq;r.relay.jid=res.jid;
+  if(!r._ctrl)r._ctrl=new AbortController();
+  save();setRunning();pollSoon(300);
+}
+// 開いてる間は1.5秒ごとに見に行く。Safariを離れてる間は見に行かない（戻ってきたらすぐ見る）
+let pollTimer=0;
+function pollSoon(ms){clearTimeout(pollTimer);pollTimer=setTimeout(pollAll,ms==null?1500:ms)}
+async function pollAll(){
+  if(document.hidden||!relayOn())return;
+  await Promise.all(S.rooms.filter(r=>r.relay&&r.relay.jid&&!r._starting).map(pollRoom));
+  if(S.rooms.some(r=>r.relay&&r.relay.jid))pollSoon();
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)pollSoon(0)});
+window.addEventListener('pageshow',()=>pollSoon(0));
+window.addEventListener('online',()=>pollSoon(0));
+async function pollRoom(r){
+  if(r._polling||r._starting)return;r._polling=true;
+  try{
+    const rl=r.relay,jid0=rl.jid;
+    const res=await relayFetch(r,'poll');
+    if(!res.ok)throw new Error(res.msg||'');
+    for(const ev of res.events||[]){
+      if(ev.seq<=(rl.since||0))continue;
+      rl.since=ev.seq;
+      if(ev.type==='msg'){
+        const m=ev.m,prev=r.msgs[r.msgs.length-1];if(prev&&prev.at&&m.at<=prev.at)m.at=prev.at+1;
+        if(typeof m.cost==='number'){addCost(m.cost);showToday()}
+        if(r._liveWho&&r._liveWho!=='ask'){r._liveWho=null;setLive(r,null)}
+        r.msgs.push(m);r.lastAt=m.at;save(r);appendMsg(r,m);
+      }
+      else if(ev.type==='note')noteIn(r,ev.text,ev.err);
+      else if(ev.type==='cost'){addCost(ev.cost);showToday()}
+      else if(ev.type==='nothink')S.think=false;
+      else if(ev.type==='done'&&ev.jid===rl.jid)rl.jid=null;
+    }
+    // 見に行ってる間に、このスレで新しい一言を送った時は、ここまで（次に見に行った時に続きを拾う）
+    if(r._starting||r.relay!==rl||(rl.jid&&rl.jid!==jid0)){save();return}
+    if(rl.jid&&!(res.busy&&res.jid===rl.jid))rl.jid=null;  // 留守番役の方でもう終わってた
+    if(rl.jid){
+      const w=res.live&&res.live.who||'wait';
+      if(w!==r._liveWho){r._liveWho=w;setLive(r,w==='mod'?liveNote('司会が、次に話す子を決めてる…'):w==='wait'?liveNote('留守番役が続きを回してる…'):PEOPLE[w]?typingEl(w):null)}
+      if(!r._ctrl)r._ctrl=new AbortController();
+    }else{r._ctrl=null;r._liveWho=null;setLive(r,null)}
+    save();setRunning();r._pollErr=0;
+  }catch(e){
+    r._pollErr=(r._pollErr||0)+1;
+    if(r._pollErr===8)noteIn(r,'留守番役に届かない（'+(e.message||'')+'）\n電波が戻ったら、続きを拾いに行く',true);
+  }finally{r._polling=false}
+}
+function relayNote(){const n=$('relaynote');n.hidden=!relayOn();n.textContent=relayOn()?'留守番役につないでる（ページを離れても、最後の子まで書き続ける）':''}
+$('s-relay-test').onclick=async()=>{
+  const out=$('s-relay-res'),u=$('s-relay').value.trim().replace(/\/+$/,'');
+  if(!u){out.textContent='住所が空だよ';return}
+  out.textContent='試してる…';
+  try{const r=await fetch(u+'/ping',{cache:'no-store'});const j=await r.json();out.textContent=j&&j.ok?'つながった':'返事が変（'+r.status+'）'}
+  catch(e){out.textContent='つながらなかった（住所か、留守番役の「このページからだけ使える」の設定）'}
+};
 
 // ===== 送る・もっと喋らせる =====
 function grow(){const i=$('in');i.style.height='';i.style.height=Math.min(i.scrollHeight+2,120)+'px'}
@@ -780,7 +886,10 @@ $('copyall').onclick=()=>copyConv(true);
 buildModelRows();
 // 版5までの会話をスレにした時は、ここで保存する（画面の部品ができてから。保存できなかったら見えるように）
 if(MIGRATED)save(MIGRATED);else if(OLD)save();
-setView();render();setRunning();
+if(!S.relayKey){relayKeyMake();save()}
+// 前に開いてた時に留守番役に頼んだまま閉じたスレは、書いてる途中として見に行く
+for(const r of S.rooms)if(r.relay&&r.relay.jid)r._ctrl=new AbortController();
+setView();render();setRunning();relayNote();pollSoon(0);
 </script>
 </body>
 </html>
