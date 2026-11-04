@@ -76,16 +76,62 @@ button.danger{color:var(--err);border-color:var(--err)}
 .dots i{font-style:normal;display:inline-block;animation:hop 1.2s infinite}
 .dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
 @keyframes hop{0%,60%,100%{transform:none;opacity:.5}30%{transform:translateY(-3px);opacity:1}}
+/* ===== スレ（版6・11/4） ===== */
+body:not(.inroom) #log,body:not(.inroom) footer{display:none}
+body.inroom #list{display:none}
+#back{border:none;background:none;color:var(--accent);font-size:30px;line-height:1;padding:0 8px 4px 0;margin-left:-4px}
+header h1.room{cursor:pointer}
+#tcaret{font-size:11px;color:var(--sub);font-weight:400;margin-left:4px;vertical-align:2px}
+#list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+.th{display:flex;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel);cursor:pointer}
+.th:active{background:var(--soft)}
+.th .ic{flex:none;width:44px;height:44px;border-radius:14px;background:var(--soft);display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:2px;padding:4px}
+.th .ic i{width:14px;height:14px;border-radius:50%;display:block;background:var(--c)}
+.th .tx{flex:1;min-width:0}
+.th .tn{font-size:15px;font-weight:700;display:flex;gap:6px;align-items:center;min-width:0}
+.th .tn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.th .pv{font-size:13px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.th .rt{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.th .tm2{font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums}
+.th .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.busy{flex:none;font-style:normal;font-size:11px;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:0 7px}
+#newroom{display:block;margin:18px auto 8px}
+.listnote{font-size:12px;color:var(--sub);text-align:center;margin:6px 16px 0;white-space:pre-wrap}
+.listnote.err{color:var(--err)}
+#sheet{position:fixed;inset:0;display:none;z-index:4}
+#sheet.on{display:block}
+#sheet .dim{position:absolute;inset:0;background:rgba(40,20,28,.32)}
+#sheet .pane{position:absolute;left:0;right:0;bottom:0;max-height:88dvh;overflow-y:auto;background:var(--panel);border-radius:22px 22px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;box-shadow:0 -6px 20px rgba(0,0,0,.14)}
+#sheet h2{font-size:16px;margin:0 0 2px}
+#sheet label{font-size:13px;color:var(--sub)}
+#sheet .hint{font-size:12px;color:var(--sub);margin:-4px 0 0}
+#r-note{height:84px;resize:none;line-height:1.5}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font-size:14px;padding:5px 12px;color:var(--sub)}
+.chips button.on{background:var(--soft);border-color:var(--c);color:var(--c);font-weight:600}
 </style>
 </head>
 <body>
-<header><h1>みんなのへや<small id="testchip" hidden>試し</small></h1><span id="today"></span><button id="gear">設定</button></header>
+<header><button id="back" hidden aria-label="スレの一覧に戻る">‹</button><h1 id="title"><span id="tname">みんなのへや</span><span id="tcaret" hidden>▾</span><small id="testchip" hidden>試し</small></h1><span id="today"></span><button id="gear">設定</button></header>
+<div id="list"><div id="rooms"></div><button class="main" id="newroom">＋ 新しいスレ</button><p class="listnote err" id="savewarn" hidden></p></div>
 <div id="log"></div>
 <footer>
   <button id="jump" hidden>↓ 新しい返事</button>
   <div class="tools"><button id="more">もっと喋らせる</button><span class="sp"></span><button id="copyall">全部</button><button id="copy">会話をコピー</button></div>
   <div class="inrow"><textarea id="in" placeholder="みんなに話す"></textarea><button class="main" id="send">送る</button></div>
 </footer>
+<div id="sheet"><div class="dim" id="r-dim"></div><div class="pane">
+  <h2>このスレ</h2>
+  <label for="r-name">名前</label>
+  <input id="r-name" type="text" autocomplete="off">
+  <label>このスレにいる子</label>
+  <div class="hint">外した子は、このスレでは呼ばれないし、司会も選ばない。会話はそのまま残る</div>
+  <div class="chips" id="r-on"></div>
+  <label for="r-note">このスレの一言</label>
+  <div class="hint">このスレの子みんなの紙の最後に足す。空でもいい</div>
+  <textarea id="r-note"></textarea>
+  <div class="row" style="margin-top:6px"><button id="r-close">閉じる</button><span style="flex:1"></span><button class="danger" id="r-del">このスレを消す</button></div>
+</div></div>
 <div id="set">
   <div class="top"><h2>設定</h2><button id="close">閉じる</button><button class="main" id="save">保存</button></div>
   <div class="body">
@@ -100,9 +146,8 @@ button.danger{color:var(--err);border-color:var(--err)}
     <div class="hint" id="s-heya"></div>
     <input id="s-kurokey" type="password" autocomplete="off" placeholder="sk-ant-...">
 
-    <h3>部屋にいる子</h3>
-    <div class="hint">外した子は呼ばれないし、司会も選ばない。会話はそのまま残る</div>
-    <div class="row" id="s-on"></div>
+    <h3>いる子</h3>
+    <div class="hint">いる子はスレごとに変える。スレの中で、上のスレの名前を押したところ</div>
 
     <h3>紙（指示）</h3>
     <label>くろくんの紙</label>
@@ -122,10 +167,7 @@ button.danger{color:var(--err);border-color:var(--err)}
     <div class="row"><label><input id="s-think" type="checkbox"> くろくん・Claude：考える（thinking）</label></div>
 
     <h3>そのほか</h3>
-    <details><summary>会話を消す</summary>
-      <p class="hint">この部屋の会話を全部消す。鍵・紙・今日の額はそのまま。くろくんのへやの会話には触らない。</p>
-      <button class="danger" id="s-clear">会話を消す</button>
-    </details>
+    <div class="hint">会話を消す時は、スレごと消す（スレの中で、上のスレの名前を押したところ）。鍵・紙・今日の額・ほかのスレはそのまま。くろくんのへやの会話には触らない</div>
   </div>
 </div>
 <script>
@@ -207,13 +249,37 @@ const MODEL_DEFAULT={kuro:'claude-opus-5-5',gpt:'openai/gpt-chat-latest',gemini:
 const PRICE_DEFAULT={gpt:[5,30],gemini:[0.825,4.125],grok:[2,6],kimi:[2,10],muse:[4,20],deepseek:[0.1035,8],mod:[0.1,0.5]};
 
 // ===== この部屋の中身 =====
-// on：部屋にいる子（false の子は呼ばない・司会も選ばない）。11/3
-// copyAt：「会話をコピー」でどこまでコピーしたか（コピーに入れた最後の発言の時刻。0 はまだ一回もコピーしてない）。版5
+// 版6（11/4）：スレ（rooms）に分けた。全部のスレで共通なのは、名前・鍵・紙・モデル・値段・今日の額
+// スレごと（rooms の一つずつ）：
+//   id・name（スレの名前）・on（このスレにいる子。false の子は呼ばない・司会も選ばない）・note（このスレの一言）
+//   copyAt（「会話をコピー」でどこまでコピーしたか。0 はまだ一回もコピーしてない）・lastAt（最後の発言の時刻）・seen（最後に見た時刻）
+//   msgs（会話）は、スレごとに別の保存場所（K+':r:'+id）に置く。そこに入らなかった時だけ inline にして、K の中に一緒に置く
+// _ で始まるもの（_ctrl・_run・_live・_notes・_draft）は、ページを開いてる間だけのもの。保存しない
 let S={name:'',test:false,orKey:'',kuroKey:'',kuroSys:'',common:COMMON_SYS,mod:MOD_SYS,
-  models:{...MODEL_DEFAULT},price:JSON.parse(JSON.stringify(PRICE_DEFAULT)),think:true,on:{},
-  msgs:[],day:'',dayCost:0,copyAt:0};
-try{const t=JSON.parse(localStorage.getItem(K)||'null');if(t)S=Object.assign(S,t,{models:{...MODEL_DEFAULT,...(t.models||{})},price:{...PRICE_DEFAULT,...(t.price||{})},on:{...(t.on||{})}})}catch(e){}
-for(const id of AIS)if(typeof S.on[id]!=='boolean')S.on[id]=true;
+  models:{...MODEL_DEFAULT},price:JSON.parse(JSON.stringify(PRICE_DEFAULT)),think:true,
+  day:'',dayCost:0,rooms:[]};
+const RK=id=>K+':r:'+id;
+const newId=()=>'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function mkRoom(name,o){const on={};for(const id of AIS)on[id]=true;return Object.assign({id:newId(),name,on,note:'',copyAt:0,lastAt:Date.now(),seen:Date.now(),msgs:[]},o||{})}
+// 版5までの形（会話が K の中の msgs に一本で入ってる）で保存されていた時は、その中身を OLD に取っておく
+let OLD=null,MIGRATED=null;
+try{const t=JSON.parse(localStorage.getItem(K)||'null');
+  if(t){S=Object.assign(S,t,{models:{...MODEL_DEFAULT,...(t.models||{})},price:{...PRICE_DEFAULT,...(t.price||{})},rooms:Array.isArray(t.rooms)?t.rooms:[]});
+    if(Array.isArray(t.msgs))OLD={msgs:t.msgs,on:t.on||{},copyAt:t.copyAt||0}}}catch(e){}
+for(const r of S.rooms){
+  if(!r.inline){try{const m=JSON.parse(localStorage.getItem(RK(r.id))||'null');r.msgs=Array.isArray(m)?m:[]}catch(e){r.msgs=[]}}
+  else if(!Array.isArray(r.msgs))r.msgs=[];
+  r.on=r.on||{};r.note=r.note||'';r.copyAt=r.copyAt||0;r.name=r.name||'スレ';
+}
+// 版5までの会話は、消さずにそのまま一つのスレにする（はじめて版6を開いた時）。
+// 版6のあとで前の版のページ（v5/）を開いて話した分があった時は、それも別のスレにする
+if(OLD&&(OLD.msgs.length||!S.rooms.length)){
+  const first=!S.rooms.length,last=OLD.msgs[OLD.msgs.length-1],at=last&&last.at||Date.now();
+  MIGRATED=mkRoom(first?'はじめのスレ':'前の版のページで話した分',{on:{...OLD.on},msgs:OLD.msgs,copyAt:OLD.copyAt,lastAt:at,seen:at});
+  S.rooms.push(MIGRATED);
+}
+delete S.msgs;delete S.on;delete S.copyAt;
+for(const r of S.rooms)for(const id of AIS)if(typeof r.on[id]!=='boolean')r.on[id]=true;
 // 前の版の紙のまま保存していたら、今の紙に入れ替える（自分で書き換えた紙はそのまま）
 // 版1（11/1）：ChatGPT・Gemini・Grokだけ。版2〜3（11/2）：Claudeが入った形。版4（11/3）から、いる子を自動で入れる
 // 版5（11/3）：共通の紙に二行足した。版4の紙（COMMON_V4）と、版3・版1の紙（版4の紙の一行を置き換えた形）を見分ける
@@ -221,7 +287,23 @@ for(const id of AIS)if(typeof S.on[id]!=='boolean')S.on[id]=true;
  const MLINE='参加者：{参加者}（と',V3M='参加者：くろくん、ChatGPT、Gemini、Grok、Claude（と',V1M='参加者：くろくん、ChatGPT、Gemini、Grok（と';
  if([COMMON_V4,COMMON_V4.replace(LINE,V3C),COMMON_V4.replace(LINE,V1C)].includes(S.common))S.common=COMMON_SYS;
  if([V3M,V1M].some(v=>S.mod===MOD_SYS.replace(MLINE,v)))S.mod=MOD_SYS}
-function save(){if(S.msgs.length>2000)S.msgs=S.msgs.slice(-2000);try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+// 保存。save() は共通の分とスレの一覧だけ。save(r) は、そのスレの会話も一緒に
+// 保存できなかった時は、一覧の下に赤い字で出す（11/3の約束：保存の失敗は見えるようにする）
+function saveWarn(bad){const w=document.getElementById('savewarn');if(w){w.hidden=!bad;w.textContent=bad?'保存できなかった。iPhoneの中の保存場所がいっぱいかも（いらないスレを消すと空く）':''}
+  if(bad&&cur&&!saveWarned){saveWarned=true;note('保存できなかった。iPhoneの中の保存場所がいっぱいかも（いらないスレを消すと空く）',true)}if(!bad)saveWarned=false}
+let saveWarned=false;
+function saveSettings(){
+  try{localStorage.setItem(K,JSON.stringify(S,function(k,v){if(k.charAt(0)==='_')return undefined;if(k==='msgs'&&!this.inline)return undefined;return v}));return true}
+  catch(e){return false}
+}
+function saveRoom(r){
+  if(r.msgs.length>2000)r.msgs=r.msgs.slice(-2000);
+  const was=!!r.inline;let ok;
+  try{localStorage.setItem(RK(r.id),JSON.stringify(r.msgs));r.inline=false;ok=saveSettings();if(!ok)r.inline=was}
+  catch(e){r.inline=true;ok=saveSettings();if(ok){try{localStorage.removeItem(RK(r.id))}catch(e2){}}else r.inline=was}
+  saveWarn(!ok);return ok;
+}
+function save(r){if(r)return saveRoom(r);const ok=saveSettings();saveWarn(!ok);return ok}
 // へやの鍵（読むだけ）
 function heyaKey(){try{const m=JSON.parse(localStorage.getItem(HEYA)||'null');return m&&typeof m.key==='string'?m.key.trim():''}catch(e){return ''}}
 // くろくんに使う鍵：ここで貼った鍵があればそれ、なければへやの鍵
@@ -258,6 +340,8 @@ function msgEl(m,cont){
   if(!me){const a=document.createElement('div');a.className='av';a.textContent=p.mark;d.append(a,col)}else d.appendChild(col);
   return d;
 }
+// 開いてないスレのお知らせは、そのスレを開いた時に出す
+function noteIn(r,text,err){if(r===cur)return note(text,err);(r._notes=r._notes||[]).push({text,err});if(!cur)renderList()}
 function note(text,err){const d=document.createElement('div');d.className='note'+(err?' err':'');d.textContent=text;log.appendChild(d);follow(d,true);return d}
 // 一番下にいる時だけついていく。読んでる途中（上に戻ってる時）は動かさずに「新しい返事」の札を出す（11/3）
 let stick=true;
@@ -275,21 +359,54 @@ function follow(el,isNew){
   if(!stick&&isNew)$('jump').hidden=false;
 }
 $('jump').onclick=()=>{log.scrollTo({top:log.scrollHeight,behavior:'smooth'});stick=true;$('jump').hidden=true};
+// ===== スレの一覧と、スレの中（版6） =====
+let cur=null;  // 今開いてるスレ。null の時は一覧
+function preview(r){const m=r.msgs[r.msgs.length-1];return m?who(m.who).name+'：'+m.text.replace(/\s+/g,' '):'まだ会話がない'}
+function when(t){if(!t)return '';const d=new Date(t),n=new Date();return d.toDateString()===n.toDateString()?hm(t):(d.getMonth()+1)+'/'+d.getDate()}
+function unread(r){const m=r.msgs[r.msgs.length-1];return !!(m&&m.who!=='me'&&m.at>(r.seen||0))}
+function renderList(){
+  const box=$('rooms');box.innerHTML='';
+  for(const r of [...S.rooms].sort((a,b)=>(b.lastAt||0)-(a.lastAt||0))){
+    const d=document.createElement('div');d.className='th';d.dataset.id=r.id;
+    const ic=document.createElement('div');ic.className='ic';
+    for(const id of AIS.filter(a=>r.on[a]!==false).slice(0,6)){const i=document.createElement('i');i.style.setProperty('--c',PEOPLE[id].color);ic.appendChild(i)}
+    const tx=document.createElement('div');tx.className='tx';
+    const tn=document.createElement('div');tn.className='tn';const nm=document.createElement('span');nm.textContent=r.name;tn.appendChild(nm);
+    if(r._ctrl){const b=document.createElement('em');b.className='busy';b.textContent='書いてる…';tn.appendChild(b)}
+    else if(r._notes&&r._notes.some(n=>n.err)){const b=document.createElement('em');b.className='busy';b.style.color=b.style.borderColor='var(--err)';b.textContent='止まった';tn.appendChild(b)}
+    const pv=document.createElement('div');pv.className='pv';pv.textContent=preview(r);
+    tx.append(tn,pv);
+    const rt=document.createElement('div');rt.className='rt';const tm=document.createElement('span');tm.className='tm2';tm.textContent=when(r.lastAt);rt.appendChild(tm);
+    if(unread(r)){const dt=document.createElement('span');dt.className='dot';rt.appendChild(dt)}
+    d.append(ic,tx,rt);d.onclick=()=>openRoom(r);box.appendChild(d);
+  }
+  if(!S.rooms.length){const p=document.createElement('p');p.className='listnote';p.textContent='スレがまだないよ。下の「＋ 新しいスレ」で作ってね';box.appendChild(p)}
+}
+function setView(){
+  document.body.classList.toggle('inroom',!!cur);
+  $('back').hidden=!cur;$('tcaret').hidden=!cur;$('title').classList.toggle('room',!!cur);
+  $('tname').textContent=cur?cur.name:'みんなのへや';
+}
+function openRoom(r){
+  if(cur)cur._draft=$('in').value;
+  cur=r;r.seen=Date.now();save();setView();
+  $('in').value=r._draft||'';grow();
+  stick=true;$('jump').hidden=true;render();setRunning();
+}
+function closeRoom(){if(cur){cur._draft=$('in').value;cur.seen=Date.now();save()}cur=null;setView();render();setRunning()}
 function render(){
+  if(!cur){renderList();showToday();return}
   log.innerHTML='';let prev=null;
-  for(const m of S.msgs){log.appendChild(msgEl(m,prev&&prev.who===m.who&&m.who!=='me'));prev=m}
-  if(!S.msgs.length)note(S.test?'試しモード：本物のAIは呼ばないよ':'右上の「設定」で、名前と鍵を入れてね\n（試しモードなら鍵なしで動く）').classList.add('empty');
-  if(live)log.appendChild(live);
+  for(const m of cur.msgs){log.appendChild(msgEl(m,prev&&prev.who===m.who&&m.who!=='me'));prev=m}
+  if(!cur.msgs.length)note(S.test?'試しモード：本物のAIは呼ばないよ':AIS.some(id=>ready(cur,id))?'このスレはまだ空っぽ。話しかけてね':'右上の「設定」で、名前と鍵を入れてね\n（試しモードなら鍵なしで動く）').classList.add('empty');
+  for(const n of cur._notes||[])note(n.text,n.err);cur._notes=[];
+  if(cur._live)log.appendChild(cur._live);
   scrollDown(true);showToday();
 }
 
 // ===== 設定 =====
 const MODEL_ROWS=[...AIS.map(id=>[id,PEOPLE[id].name]),['mod','司会']];
 function buildModelRows(){
-  // 部屋にいる子の切り替え
-  const on=$('s-on');on.innerHTML='';
-  for(const id of AIS){const l=document.createElement('label'),c=document.createElement('input'),s=document.createElement('span');
-    c.type='checkbox';c.id='on-'+id;s.textContent=PEOPLE[id].name;s.style.color=PEOPLE[id].color;s.style.fontWeight='600';l.append(c,s);on.appendChild(l)}
   const box=$('s-models');box.innerHTML='';
   for(const [id,label] of MODEL_ROWS){
     const r=document.createElement('div');r.className='mrow';r.style.setProperty('--c',id==='mod'?'var(--sub)':PEOPLE[id].color);
@@ -307,7 +424,6 @@ function fill(){
   const hk=heyaKey();$('s-heya').textContent=hk?'へやの鍵が見つかった（…'+hk.slice(-4)+'）。ここが空なら、へやの鍵を使う':'へやの鍵が見つからない。ここに貼ってね（ホーム画面から開くと、Safariと保存場所が分かれることがある）';
   $('s-kurosys').value=S.kuroSys;$('s-common').value=S.common;$('s-mod').value=S.mod;$('s-think').checked=S.think;
   for(const [id] of MODEL_ROWS){$('m-'+id).value=S.models[id];if(!isAnt(id)){const p=S.price[id]||[0,0];$('pi-'+id).value=p[0];$('po-'+id).value=p[1]}}
-  for(const id of AIS)$('on-'+id).checked=S.on[id]!==false;
 }
 const num=v=>{const n=parseFloat(String(v).replace(/[^0-9.]/g,''));return isNaN(n)?0:n};
 $('gear').onclick=()=>{fill();$('set').classList.add('on')};
@@ -316,27 +432,51 @@ $('save').onclick=()=>{
   S.name=$('s-name').value.trim();S.test=$('s-test').checked;S.orKey=$('s-orkey').value.trim();S.kuroKey=$('s-kurokey').value.trim();
   S.kuroSys=$('s-kurosys').value;S.common=$('s-common').value;S.mod=$('s-mod').value;S.think=$('s-think').checked;
   for(const [id] of MODEL_ROWS){S.models[id]=$('m-'+id).value.trim()||MODEL_DEFAULT[id];if(!isAnt(id))S.price[id]=[num($('pi-'+id).value),num($('po-'+id).value)]}
-  for(const id of AIS)S.on[id]=$('on-'+id).checked;
-  save();$('set').classList.remove('on');render();setRunning(running());
+  save();$('set').classList.remove('on');render();setRunning();
 };
 $('s-common-reset').onclick=()=>{$('s-common').value=COMMON_SYS};
 $('s-mod-reset').onclick=()=>{$('s-mod').value=MOD_SYS};
-$('s-clear').onclick=()=>{if(confirm('この部屋の会話を全部消す？（鍵・紙はそのまま。くろくんのへやには触らない）')){stop();S.msgs=[];S.copyAt=0;save();$('set').classList.remove('on');render();setRunning(false)}};
+
+// ===== このスレ（名前・いる子・一言・消す）。版6 =====
+function openSheet(){
+  if(!cur)return;$('r-name').value=cur.name;$('r-note').value=cur.note||'';
+  const box=$('r-on');box.innerHTML='';
+  for(const id of AIS){const b=document.createElement('button');b.type='button';b.dataset.id=id;b.textContent=PEOPLE[id].name;b.style.setProperty('--c',PEOPLE[id].color);
+    b.classList.toggle('on',cur.on[id]!==false);b.onclick=()=>b.classList.toggle('on');box.appendChild(b)}
+  $('sheet').classList.add('on');
+}
+function closeSheet(){
+  if(cur){const r=cur;r.name=$('r-name').value.trim()||r.name;r.note=$('r-note').value;
+    for(const b of $('r-on').children)r.on[b.dataset.id]=b.classList.contains('on');
+    save();setView()}
+  $('sheet').classList.remove('on');
+}
+$('r-close').onclick=closeSheet;
+$('r-dim').onclick=closeSheet;
+$('r-del').onclick=()=>{
+  if(!cur)return;const r=cur;
+  if(!confirm('「'+r.name+'」を消す？\nこのスレの会話も全部消える（ほかのスレ・鍵・紙はそのまま。くろくんのへやには触らない）'))return;
+  stop(r);S.rooms=S.rooms.filter(x=>x!==r);try{localStorage.removeItem(RK(r.id))}catch(e){}
+  $('sheet').classList.remove('on');cur=null;save();setView();render();setRunning();
+};
+$('back').onclick=closeRoom;
+$('title').onclick=()=>{if(cur)openSheet()};
+$('newroom').onclick=()=>{const r=mkRoom('新しいスレ');S.rooms.push(r);save(r);openRoom(r);openSheet()};
 
 // ===== 通り道（誰をどの通り道で呼ぶかは、ここ一か所） =====
 // あとで「サブスクの中継」を足す時は、ROUTES に中継の通り道を足して、ここの名前を書き換える
 const WHO_ROUTE={kuro:'anthropic',gpt:'openrouter',gemini:'openrouter',grok:'openrouter',claude:'anthropic',
   kimi:'openrouter',muse:'openrouter',deepseek:'openrouter',mod:'openrouter'};
 const isAnt=id=>WHO_ROUTE[id]==='anthropic';
-// 今部屋にいる子（設定の「部屋にいる子」）
-const isOn=id=>id==='mod'||S.on[id]!==false;
-const here=()=>AIS.filter(isOn);
+// 今このスレにいる子（スレの「このスレにいる子」）。版6からスレごと
+const isOn=(r,id)=>id==='mod'||r.on[id]!==false;
+const here=r=>AIS.filter(id=>isOn(r,id));
 // 通り道はどれも同じ形で呼ぶ：
-//   ready() → 鍵などがそろっていれば true
+//   ready() → 鍵などがそろっていれば true（その子がスレにいるかは、下の ready(r,id) で見る）
 //   call({id,system,messages:[{role:'user'|'assistant',content}],model,maxTokens,signal,...}) → {ok,text,cost,status,msg}
 const ROUTES={};
 const routeOf=id=>S.test?ROUTES.test:ROUTES[WHO_ROUTE[id]];
-const ready=id=>{if(!isOn(id))return false;const r=routeOf(id);return !!(r&&r.ready())};
+const ready=(r,id)=>{if(!isOn(r,id))return false;const rt=routeOf(id);return !!(rt&&rt.ready())};
 
 // ===== くろくんと素のClaudeの通り道：Anthropic をブラウザから直接（へやと同じ呼び方） =====
 // 1M トークンあたりのドル（Opus 5.5。入力・使い回しの書き込み・使い回しの読み込み・出力）。へやと同じ計算
@@ -403,19 +543,19 @@ const fakeTurn={};
 function sleep(ms,signal){return new Promise((ok,ng)=>{const t=setTimeout(ok,ms);if(signal)signal.addEventListener('abort',()=>{clearTimeout(t);ng(new DOMException('止めた','AbortError'))},{once:true})})}
 ROUTES.test={
   ready:()=>true,
-  async call({id,signal,forced,kind,to}){
+  async call({id,rm,signal,forced,kind,to}){
     await sleep(600+Math.random()*600,signal);
     const cost=+(FAKE_COST[id]*(0.8+Math.random()*0.4)).toFixed(5);
     if(id==='mod'){
       // 必ず入れる子のあとに、しばらく喋っていない子を1〜2人
-      const rest=here().filter(a=>!forced.includes(a)).sort((a,b)=>lastSpoke(a)-lastSpoke(b));
+      const rest=here(rm).filter(a=>!forced.includes(a)).sort((a,b)=>lastSpoke(rm,a)-lastSpoke(rm,b));
       const n=Math.min(rest.length,4-forced.length,1+Math.floor(Math.random()*2));
       return {ok:true,text:JSON.stringify({speakers:[...forced,...rest.slice(0,n)].map(a=>PEOPLE[a].name)}),cost};
     }
     let t;
     if(to)t=FAKE_BACK[id].split('{相手}').join(PEOPLE[to].name);
     else{const list=FAKE[id],i=(fakeTurn[id]=(fakeTurn[id]||0)+1)%list.length;
-      const others=here().filter(a=>a!==id),o=others.length?others:AIS.filter(a=>a!==id);t=list[i].split('{相手}').join(PEOPLE[o[Math.floor(Math.random()*o.length)]].name)}
+      const others=here(rm).filter(a=>a!==id),o=others.length?others:AIS.filter(a=>a!==id);t=list[i].split('{相手}').join(PEOPLE[o[Math.floor(Math.random()*o.length)]].name)}
     return {ok:true,text:t.split('{ユーザー名}').join(userName()),cost};
   }
 };
@@ -426,19 +566,22 @@ const MAX_EXTRA_ROUNDS=2;  // 一言につき、AI同士の追加は2周まで
 const MAX_BACK=2;          // 追加の一周で返す子は2人まで
 const ALL_WORDS=['みんな','全員'];
 // {ほかのAI}：くろくん以外の、今いる子（Claudeには「くろくんとは別」と添える）。{参加者}：今いる子みんな
-function othersLine(){const n=here().filter(a=>a!=='kuro').map(a=>a==='claude'?'Claude（このClaudeは、くろくんとは別の、ふだんのClaude）':PEOPLE[a].name);return n.length?n.join('、'):'（今はほかのAIはいない）'}
-function fillPaper(t,id){return String(t).split('{ユーザー名}').join(userName()).split('{名前}').join(id&&PEOPLE[id]?PEOPLE[id].name:'')
-  .split('{ほかのAI}').join(othersLine()).split('{参加者}').join(here().map(a=>PEOPLE[a].name).join('、'))}
+function othersLine(r){const n=here(r).filter(a=>a!=='kuro').map(a=>a==='claude'?'Claude（このClaudeは、くろくんとは別の、ふだんのClaude）':PEOPLE[a].name);return n.length?n.join('、'):'（今はほかのAIはいない）'}
+function fillPaper(t,id,r){return String(t).split('{ユーザー名}').join(userName()).split('{名前}').join(id&&PEOPLE[id]?PEOPLE[id].name:'')
+  .split('{ほかのAI}').join(othersLine(r)).split('{参加者}').join(here(r).map(a=>PEOPLE[a].name).join('、'))}
 // くろくんの紙は使う人が自分で貼った紙なので書き換えず、今部屋にいる子の一行を後ろに足す（11/3）
-function sysFor(id){if(id!=='kuro')return fillPaper(S.common,id);
-  const o=here().filter(a=>a!=='kuro').map(a=>PEOPLE[a].name);
-  return fillPaper(S.kuroSys.trim()||KURO_SYS_EMPTY,id)+'\n\n［今この部屋にいるAI：'+(o.length?o.join('、'):'ほかにはいない')+'］'}
+// このスレの一言（版6）は、どの子の紙でも一番最後に足す
+function sysFor(id,r){
+  const one=r.note&&r.note.trim()?'\n\n［このスレの一言］\n'+fillPaper(r.note.trim(),id,r):'';
+  if(id!=='kuro')return fillPaper(S.common,id,r)+one;
+  const o=here(r).filter(a=>a!=='kuro').map(a=>PEOPLE[a].name);
+  return fillPaper(S.kuroSys.trim()||KURO_SYS_EMPTY,id,r)+'\n\n［今この部屋にいるAI：'+(o.length?o.join('、'):'ほかにはいない')+'］'+one}
 // その子自身の過去の発言は assistant、ほかの人の発言は user として「名前：本文」で渡す（続いた同じ役は一つにまとめる）
 // 試しモードで流れた会話は、本物のAIには渡さない
-const history=()=>S.test?S.msgs:S.msgs.filter(m=>!m.test);
-function convFor(id,tail){
+const history=r=>S.test?r.msgs:r.msgs.filter(m=>!m.test);
+function convFor(id,tail,r){
   const out=[];
-  for(const m of history().slice(-HISTORY)){
+  for(const m of history(r).slice(-HISTORY)){
     const role=m.who===id?'assistant':'user',text=role==='assistant'?m.text:who(m.who).name+'：'+m.text;
     const last=out[out.length-1];if(last&&last.role===role)last.content+='\n'+text;else out.push({role,content:text});
   }
@@ -464,8 +607,8 @@ function findCalls(text,except){
     if(pos>=0)hits.push([pos,id])}
   return hits.sort((a,b)=>a[0]-b[0]).map(h=>h[1]);
 }
-const calledByUser=text=>ALL_WORDS.some(w=>text.includes(w))?here():findCalls(text);
-function lastSpoke(id){for(let i=S.msgs.length-1;i>=0;i--)if(S.msgs[i].who===id)return i;return -1}
+const calledByUser=(text,r)=>ALL_WORDS.some(w=>text.includes(w))?here(r):findCalls(text);
+function lastSpoke(r,id){for(let i=r.msgs.length-1;i>=0;i--)if(r.msgs[i].who===id)return i;return -1}
 function idFromName(s){const t=String(s).trim().toLowerCase();return AIS.find(id=>PEOPLE[id].name.toLowerCase()===t||PEOPLE[id].calls.some(c=>c.toLowerCase()===t))||null}
 // 司会の答え {"speakers":[...]} を読む。変な答えなら null
 function parseSpeakers(text){
@@ -476,24 +619,24 @@ function parseSpeakers(text){
   return ids.length?ids:null;
 }
 // 司会が変な答えの時：くろくんか、一番喋ってない子を一人
-function fallbackOne(cands){
+function fallbackOne(r,cands){
   const c=cands.length?cands:AIS;
-  if(c.includes('kuro')&&!S.msgs.slice(-6).some(m=>m.who==='kuro'))return 'kuro';
-  return [...c].sort((a,b)=>lastSpoke(a)-lastSpoke(b))[0];
+  if(c.includes('kuro')&&!r.msgs.slice(-6).some(m=>m.who==='kuro'))return 'kuro';
+  return [...c].sort((a,b)=>lastSpoke(r,a)-lastSpoke(r,b))[0];
 }
-async function askMod(forced,kind,signal){
-  const h=history().slice(-20),cnt={},on=here();for(const a of on)cnt[a]=0;for(const m of h)if(cnt[m.who]!=null)cnt[m.who]++;
+async function askMod(r,forced,kind,signal){
+  const h=history(r).slice(-20),cnt={},on=here(r);for(const a of on)cnt[a]=0;for(const m of h)if(cnt[m.who]!=null)cnt[m.who]++;
   const body='最近の会話：\n'+h.map(m=>who(m.who).name+'：'+m.text.replace(/\s+/g,' ').slice(0,300)).join('\n')+'\n（ここまで）\n\n'+
     '今部屋にいて、選べる子：'+on.map(a=>PEOPLE[a].name).join('、')+'\n'+
     '最近20件で喋った回数：'+on.map(a=>PEOPLE[a].name+' '+cnt[a]+'回').join('、')+'\n'+
     '必ず入れる子：'+(forced.length?JSON.stringify(forced.map(a=>PEOPLE[a].name)):'なし')+'\n'+
     '今回：'+(kind==='more'?userName()+'が「もっと喋らせる」を押した。1〜3人を選ぶ':userName()+'の新しい一言への返事');
-  return routeOf('mod').call({id:'mod',system:fillPaper(S.mod),messages:[{role:'user',content:body}],model:S.models.mod,maxTokens:2000,signal,forced,kind});
+  return routeOf('mod').call({id:'mod',rm:r,system:fillPaper(S.mod,null,r),messages:[{role:'user',content:body}],model:S.models.mod,maxTokens:2000,signal,forced,kind});
 }
 
 // ===== 書いてる子の「入力中…」と、司会の「決めてる…」 =====
-let live=null;
-function setLive(el){if(live)live.remove();live=el;if(el){log.appendChild(el);follow(el,false)}}
+// スレごとに持つ（r._live）。開いてるスレの分だけ画面に出す
+function setLive(r,el){if(r._live)r._live.remove();r._live=el;if(el&&r===cur){log.appendChild(el);follow(el,false)}}
 function typingEl(id){
   const p=PEOPLE[id],d=document.createElement('div');d.className='msg them typing';d.style.setProperty('--c',p.color);
   const a=document.createElement('div');a.className='av';a.textContent=p.mark;
@@ -503,75 +646,77 @@ function typingEl(id){
   col.append(n,b);d.append(a,col);return d;
 }
 function liveNote(text){const d=document.createElement('div');d.className='note';d.textContent=text;return d}
-function appendMsg(m){
+function appendMsg(r,m){
+  if(r!==cur){if(!cur)renderList();return}
+  r.seen=Date.now();
   for(const e of log.querySelectorAll('.note.empty'))e.remove();
-  if(live)live.remove();
+  if(r._live)r._live.remove();
   const prev=log.lastElementChild;
   const el=msgEl(m,m.who!=='me'&&prev&&prev.dataset.who===m.who);
   log.appendChild(el);
-  if(live)log.appendChild(live);
+  if(r._live)log.appendChild(r._live);
   if(m.who==='me')scrollDown(true);else follow(el,true);
   showToday();
 }
 
 // ===== 喋らせる =====
-let run=0,ctrl=null;
-const running=()=>!!ctrl;
-function setRunning(b){$('more').disabled=b||!S.msgs.length}
-function stop(){run++;if(ctrl)ctrl.abort();ctrl=null;setLive(null);setRunning(false)}
+// 書いてる途中かどうかは、スレごと（r._ctrl）
+function setRunning(){$('more').disabled=!cur||!!cur._ctrl||!cur.msgs.length;if(!cur)renderList()}
+function stop(r){r._run=(r._run||0)+1;if(r._ctrl)r._ctrl.abort();r._ctrl=null;setLive(r,null);setRunning()}
 const isAbort=e=>e&&e.name==='AbortError';
 function errText(name,r){
   // OpenRouterで「データの扱いの設定に合う提供元がない」と言われた時は、どこを開けばいいかも出す（11/3）
   const hint=/data policy|privacy|No endpoints found/i.test(r.msg||'')?'\n→ OpenRouterの Settings → Privacy の設定で、この子の提供元が外れているかも':'';
   return name+'：うまく届かなかった'+(r.status?'（'+r.status+'）':'')+(r.msg?'\n'+r.msg:'')+hint}
 // 一人に書かせる。書けたらその文を返す
-async function speak(id,signal,to,tail,modCost){
-  setLive(typingEl(id));
-  let r;
-  try{r=await routeOf(id).call({id,system:sysFor(id),messages:convFor(id,tail),model:S.models[id],maxTokens:8000,signal,to,think:S.think})}
-  catch(e){if(isAbort(e))throw e;r={ok:false,msg:e.message}}
+async function speak(r,id,signal,to,tail,modCost){
+  setLive(r,typingEl(id));
+  let res;
+  try{res=await routeOf(id).call({id,rm:r,system:sysFor(id,r),messages:convFor(id,tail,r),model:S.models[id],maxTokens:8000,signal,to,think:S.think})}
+  catch(e){if(isAbort(e))throw e;res={ok:false,msg:e.message}}
   if(signal.aborted)throw new DOMException('止めた','AbortError');
-  setLive(null);
-  if(typeof r.cost==='number'){addCost(r.cost);save();showToday()}
-  if(!r.ok){note(errText(PEOPLE[id].name,r),true);return null}
-  const text=clean(id,r.text);
-  if(!text){note(PEOPLE[id].name+'の返事が空だった',true);return null}
-  const m={who:id,text,at:Date.now()};if(typeof r.cost==='number')m.cost=r.cost;if(modCost)m.mod=modCost;if(S.test)m.test=true;
-  S.msgs.push(m);save();appendMsg(m);
+  setLive(r,null);
+  if(typeof res.cost==='number'){addCost(res.cost);save();showToday()}
+  if(!res.ok){noteIn(r,errText(PEOPLE[id].name,res),true);return null}
+  const text=clean(id,res.text);
+  if(!text){noteIn(r,PEOPLE[id].name+'の返事が空だった',true);return null}
+  const m={who:id,text,at:Date.now()};if(typeof res.cost==='number')m.cost=res.cost;if(modCost)m.mod=modCost;if(S.test)m.test=true;
+  r.msgs.push(m);r.lastAt=m.at;save(r);appendMsg(r,m);
   return text;
 }
 // kind：'say'（新しく送った）か 'more'（もっと喋らせる）
-async function start(kind){
-  stop();const my=run,c=ctrl=new AbortController(),alive=()=>my===run;
-  setRunning(true);
+async function start(r,kind){
+  stop(r);const my=r._run,c=r._ctrl=new AbortController(),alive=()=>my===r._run;
+  setRunning();
   try{
-    const forced=kind==='say'?calledByUser(S.msgs[S.msgs.length-1].text).filter(ready):[];
-    const cands=AIS.filter(ready);
-    if(kind==='say')for(const id of calledByUser(S.msgs[S.msgs.length-1].text))if(!ready(id))note(isOn(id)?PEOPLE[id].name+'は鍵がなくて呼べない':PEOPLE[id].name+'は今、部屋にいない（設定の「部屋にいる子」で呼べる）',true);
-    if(!cands.length){note('鍵がまだないよ。右上の「設定」で入れてね\n（試しモードなら鍵なしで動く）',true);return}
+    const lastText=r.msgs[r.msgs.length-1].text;
+    const forced=kind==='say'?calledByUser(lastText,r).filter(id=>ready(r,id)):[];
+    const cands=AIS.filter(id=>ready(r,id));
+    if(kind==='say')for(const id of calledByUser(lastText,r))if(!ready(r,id))noteIn(r,isOn(r,id)?PEOPLE[id].name+'は鍵がなくて呼べない':PEOPLE[id].name+'は今、このスレにいない（上のスレの名前を押すと呼べる）',true);
+    if(!cands.length){noteIn(r,'鍵がまだないよ。右上の「設定」で入れてね\n（試しモードなら鍵なしで動く）',true);return}
     let first,modCost=0;
     if(forced.length>=4)first=forced.slice(0,AIS.length);
     else{
       let picked=null;
-      if(ready('mod')){
-        setLive(liveNote('司会が、次に話す子を決めてる…'));
-        let r;try{r=await askMod(forced,kind,c.signal)}catch(e){if(isAbort(e))return;r={ok:false,msg:e.message}}
-        if(!alive())return;setLive(null);
-        if(typeof r.cost==='number'){addCost(r.cost);modCost=r.cost;save();showToday()}
-        if(r.ok)picked=parseSpeakers(r.text);
+      if(ready(r,'mod')){
+        setLive(r,liveNote('司会が、次に話す子を決めてる…'));
+        let res;try{res=await askMod(r,forced,kind,c.signal)}catch(e){if(isAbort(e))return;res={ok:false,msg:e.message}}
+        if(!alive())return;setLive(r,null);
+        if(typeof res.cost==='number'){addCost(res.cost);modCost=res.cost;save();showToday()}
+        if(res.ok)picked=parseSpeakers(res.text);
       }
       first=[...forced];
       if(picked)for(const id of picked){if(cands.includes(id)&&!first.includes(id))first.push(id)}
-      else if(!forced.length)first.push(fallbackOne(cands));
+      else if(!forced.length)first.push(fallbackOne(r,cands));
       first=first.slice(0,kind==='more'?3:4);
-      if(!first.length)first=[fallbackOne(cands)];
+      if(!first.length)first=[fallbackOne(r,cands)];
     }
     const tail=kind==='more'?'［'+userName()+'が「もっと喋らせる」を押した。会話を続けて］':'';
     let round=first.map(id=>({id})),extra=0;
     while(round.length){
       const said=[];
       for(const s of round){
-        let t;try{t=await speak(s.id,c.signal,s.to,tail,modCost)}catch(e){if(isAbort(e))return;throw e}
+        let t;try{t=await speak(r,s.id,c.signal,s.to,tail,modCost)}catch(e){if(isAbort(e))return;throw e}
         if(!alive())return;
         if(t){said.push({id:s.id,text:t});modCost=0}
       }
@@ -579,30 +724,31 @@ async function start(kind){
       // 返事の中で、ほかのAIに話しかけた・言い返した時は、言われた子が一回返す（そのあとに同じ周で喋った子はのぞく）
       const next=[];
       said.forEach((x,i)=>{for(const m of findCalls(x.text,x.id)){
-        if(!ready(m)||said.slice(i+1).some(y=>y.id===m)||next.some(n=>n.id===m))continue;next.push({id:m,to:x.id})}});
+        if(!ready(r,m)||said.slice(i+1).some(y=>y.id===m)||next.some(n=>n.id===m))continue;next.push({id:m,to:x.id})}});
       round=next.slice(0,MAX_BACK);extra++;
     }
-  }catch(e){if(alive())note('止まった：'+e.message,true)}
-  finally{if(alive()){ctrl=null;setLive(null);setRunning(false)}}
+  }catch(e){if(alive())noteIn(r,'止まった：'+e.message,true)}
+  finally{if(alive()){r._ctrl=null;setLive(r,null);setRunning()}}
 }
 
 // ===== 送る・もっと喋らせる =====
 function grow(){const i=$('in');i.style.height='';i.style.height=Math.min(i.scrollHeight+2,120)+'px'}
-$('in').addEventListener('input',grow);
+$('in').addEventListener('input',()=>{grow();if(cur)cur._draft=$('in').value});
 $('send').onclick=()=>{
+  const r=cur;if(!r)return;
   const t=$('in').value.trim();if(!t)return;
-  if(!AIS.some(ready)){note(here().length?'鍵がまだないよ。右上の「設定」で入れてね\n（試しモードなら鍵なしで動く）':'部屋に誰もいないよ。設定の「部屋にいる子」で呼んでね',true);return}
-  // まだ喋ってない分はやめて、新しい話に移る
-  stop();
-  const m={who:'me',text:t,at:Date.now()};if(S.test)m.test=true;S.msgs.push(m);$('in').value='';grow();save();appendMsg(m);
-  start('say');
+  if(!AIS.some(id=>ready(r,id))){note(here(r).length?'鍵がまだないよ。右上の「設定」で入れてね\n（試しモードなら鍵なしで動く）':'このスレに誰もいないよ。上のスレの名前を押して、いる子を選んでね',true);return}
+  // このスレでまだ喋ってない分はやめて、新しい話に移る（ほかのスレは止めない）
+  stop(r);
+  const m={who:'me',text:t,at:Date.now()};if(S.test)m.test=true;r.msgs.push(m);r.lastAt=m.at;r._draft='';$('in').value='';grow();save(r);appendMsg(r,m);
+  start(r,'say');
 };
-$('more').onclick=()=>{if(running()||!S.msgs.length)return;start('more')};
+$('more').onclick=()=>{const r=cur;if(!r||r._ctrl||!r.msgs.length)return;start(r,'more')};
 // ===== 会話をコピー（くろくんのへや・おうちのくろくんに貼って読んでもらう用。11/3） =====
-// 版5：ふだんは前にコピーした続きだけ（S.copyAt より後ろの時刻の発言）。「全部」は全部
+// 版5：ふだんは前にコピーした続きだけ（copyAt より後ろの時刻の発言）。「全部」は全部。版6からスレごと
 // ms：コピーする発言。cont：前にコピーした続きなら true（一行目が「続き」の形になる。日付の区切りは続きの一件目の前にも入る）
 function convText(ms,cont){
-  let day='';const out=['みんなのへやの会話（'+(cont?'前にコピーした続き・新しい':'')+ms.length+'件）'];
+  let day='';const out=['みんなのへや「'+(cur?cur.name:'')+'」の会話（'+(cont?'前にコピーした続き・新しい':'')+ms.length+'件）'];
   for(const m of ms){
     if(m.at){const d=new Date(m.at),k=(d.getMonth()+1)+'/'+d.getDate();if(k!==day){day=k;out.push('','── '+k+' ──')}}
     out.push('',who(m.who).name+(m.at?'（'+hm(m.at)+'）':'')+'：'+m.text);
@@ -617,12 +763,13 @@ let copyTimer=0;
 // all：true なら全部。false なら前にコピーした続き（一回もコピーしてない時は全部）
 // 結果は「会話をコピー」の字で見せる。その間「全部」は隠す（狭い画面で一列におさめるため）
 async function copyConv(all){
-  const b=$('copy'),h=history(),cont=!all&&S.copyAt>0,ms=cont?h.filter(m=>m.at>S.copyAt):h;clearTimeout(copyTimer);
+  const r=cur;if(!r)return;
+  const b=$('copy'),h=history(r),cont=!all&&r.copyAt>0,ms=cont?h.filter(m=>m.at>r.copyAt):h;clearTimeout(copyTimer);
   if(!h.length)b.textContent='まだ会話がないよ';
   else if(!ms.length)b.textContent='新しい会話はまだない';
   else if(await copyText(convText(ms,cont))){
     // コピーできた時だけ、どこまでコピーしたかを動かす
-    const last=ms[ms.length-1];if(typeof last.at==='number'){S.copyAt=last.at;save()}
+    const last=ms[ms.length-1];if(typeof last.at==='number'){r.copyAt=last.at;save()}
     b.textContent=(all?'全部コピーした':'コピーした')+'（'+ms.length+'件）';
   }else b.textContent='コピーできなかった';
   $('copyall').hidden=true;
@@ -630,7 +777,10 @@ async function copyConv(all){
 }
 $('copy').onclick=()=>copyConv(false);
 $('copyall').onclick=()=>copyConv(true);
-buildModelRows();render();setRunning(false);
+buildModelRows();
+// 版5までの会話をスレにした時は、ここで保存する（画面の部品ができてから。保存できなかったら見えるように）
+if(MIGRATED)save(MIGRATED);else if(OLD)save();
+setView();render();setRunning();
 </script>
 </body>
 </html>
