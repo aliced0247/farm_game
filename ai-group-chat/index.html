@@ -65,10 +65,16 @@ textarea,input[type=text],input[type=password]{width:100%;font:inherit;font-size
 #set textarea.paper{height:170px;font-size:16px;line-height:1.5}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .row label{display:flex;align-items:center;gap:6px;color:var(--ink)!important;font-size:15px!important}
-.mrow{display:grid;grid-template-columns:5.5em 1fr;gap:6px 8px;align-items:center}
-.mrow span{font-size:13px;font-weight:600;color:var(--c)}
-.mrow .pr{grid-column:2;display:flex;gap:6px;align-items:center;font-size:11px;color:var(--sub)}
-.mrow .pr input{width:5em;font-size:16px;padding:4px 6px}
+.mrow{display:grid;grid-template-columns:5.5em minmax(0,1fr);gap:6px 8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.mrow>span{font-size:13px;font-weight:600;color:var(--c)}
+/* 版8（11/6）：モデルは選ぶ欄。「そのほか」の時だけ手で打つ欄が出る */
+.mrow .sel{position:relative;min-width:0}
+.mrow .sel::after{content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--sub);font-size:13px;pointer-events:none}
+.mrow select{display:block;width:100%;min-width:0;min-height:44px;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px 30px 8px 10px;-webkit-appearance:none;appearance:none;text-overflow:ellipsis}
+.mrow .other{grid-column:2;min-height:44px}
+.mrow .pr{grid-column:2;display:flex;gap:6px;align-items:center;font-size:11px;color:var(--sub);white-space:nowrap}
+.mrow .pr input{flex:1 1 0;min-width:0;width:auto;max-width:6em;font-size:16px;padding:4px 6px;min-height:44px}
+.mrow .info{grid-column:2;font-size:12px;color:var(--sub);line-height:1.45;white-space:pre-line}
 details{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:var(--panel)}
 details summary{font-size:14px;color:var(--sub)}
 button.danger{color:var(--err);border-color:var(--err)}
@@ -168,9 +174,10 @@ header h1.room{cursor:pointer}
     <div class="row"><button id="s-mod-reset">最初の文に戻す</button></div>
 
     <h3>モデル</h3>
-    <div class="hint">値段は100万トークンあたりのドル（入力・出力）。OpenRouter が額を返さなかった時だけ、これで計算する</div>
+    <div class="hint">子ごとに選ぶ。並んでないモデルは一番下の「そのほか（自分で入れる）」で名前を打つ。値段は100万トークンあたりのドル（入力・出力）。OpenRouter の子は、選ぶとそのモデルの値段が入る（11/6にOpenRouterのページで見た値段。手で直せる）。OpenRouter が額を返さなかった時だけ、これで計算する。くろくん・Claudeは、選んだモデルの値段で計算する</div>
     <div id="s-models"></div>
     <div class="row"><label><input id="s-think" type="checkbox"> くろくん・Claude：考える（thinking）</label></div>
+    <div class="hint">考えるが使えないモデルの子は、その子だけ考えずに返す（ここが勝手に切れることはない）。Opus 5.5・Fable 5.1 は、ここを切ってもいつも考える</div>
 
     <h3>そのほか</h3>
     <div class="hint">会話を消す時は、スレごと消す（スレの中で、上のスレの名前を押したところ）。鍵・紙・今日の額・ほかのスレはそのまま。くろくんのへやの会話には触らない</div>
@@ -253,6 +260,54 @@ const MOD_SYS=`あなたはグループチャットの司会です。自分で�
 const MODEL_DEFAULT={kuro:'claude-opus-5-5',gpt:'openai/gpt-chat-latest',gemini:'google/gemini-3.8-flash',grok:'x-ai/grok-4.7',claude:'claude-opus-5-5',
   kimi:'moonshotai/kimi-k3.1-pro',muse:'meta/muse-wonder',deepseek:'deepseek/deepseek-v4-pro-0813',mod:'openai/gpt-6-luna'};
 const PRICE_DEFAULT={gpt:[5,30],gemini:[0.825,4.125],grok:[2,6],kimi:[2,10],muse:[4,20],deepseek:[0.1035,8],mod:[0.1,0.5]};
+// ===== 設定で選べるモデル（版8・11/6）。並べたのは、11/6に公式のページで名前と値段を見られたものだけ =====
+// くろくん・Claude（Anthropic）：platform.claude.com のモデルの一覧・値段・終わる日のページ
+//   p は 100万トークンあたりのドル（in 入力・cw 使い回しの書き込み（5分）・cr 使い回しの読み込み・out 出力）
+//   big：入力が10万トークンより長い時の値段（Haiku 5.5 だけ）
+//   think：'always'（adaptive。いつも考える）・'adaptive'（adaptive が使える）・'extended'（adaptive が使えない。このページからは考えるを送らない）
+//   old：前のモデル（今も呼べる）。end：終わる日（選ぶ欄の字に出す）。alt：同じモデルの別の名前（値段と考えるを見る時だけ使う）
+const ANT_MODELS=[
+  {id:'claude-opus-5-5',name:'Opus 5.5',p:{in:4,cw:5,cr:0.2,out:20},think:'always'},
+  {id:'claude-fable-5-1',name:'Fable 5.1',p:{in:10,cw:12.5,cr:0.25,out:50},think:'always'},
+  {id:'claude-sonnet-5-5',name:'Sonnet 5.5',p:{in:2,cw:2.5,cr:0.1,out:10},think:'adaptive'},
+  {id:'claude-haiku-5-5',name:'Haiku 5.5',p:{in:0.1,cw:0.125,cr:0.01,out:0.5},big:{in:0.5,cw:0.625,cr:0.05,out:2.5},think:'adaptive'},
+  {id:'claude-fable-5',name:'Fable 5',p:{in:10,cw:12.5,cr:1,out:50},think:'adaptive',old:1},
+  {id:'claude-opus-5',name:'Opus 5',p:{in:5,cw:6.25,cr:0.5,out:25},think:'adaptive',old:1},
+  {id:'claude-opus-4-8',name:'Opus 4.8',p:{in:5,cw:6.25,cr:0.5,out:25},think:'adaptive',old:1},
+  {id:'claude-opus-4-7',name:'Opus 4.7',p:{in:5,cw:6.25,cr:0.5,out:25},think:'adaptive',old:1},
+  {id:'claude-opus-4-6',name:'Opus 4.6',p:{in:5,cw:6.25,cr:0.5,out:25},think:'adaptive',old:1},
+  {id:'claude-opus-4-5',alt:['claude-opus-4-5-20251101'],name:'Opus 4.5',p:{in:5,cw:6.25,cr:0.5,out:25},think:'extended',old:1,end:'11/24以降に終わる'},
+  {id:'claude-sonnet-5',name:'Sonnet 5',p:{in:2,cw:2.5,cr:0.2,out:10},think:'adaptive',old:1},
+  {id:'claude-sonnet-4-6',name:'Sonnet 4.6',p:{in:3,cw:3.75,cr:0.3,out:15},think:'adaptive',old:1},
+  {id:'claude-sonnet-4-5-20250929',name:'Sonnet 4.5',p:{in:3,cw:3.75,cr:0.3,out:15},think:'extended',old:1,end:'11/30まで'},
+  {id:'claude-haiku-4-5-20251001',name:'Haiku 4.5',p:{in:1,cw:1.25,cr:0.1,out:5},think:'extended',old:1,end:'10/15以降に終わる'},
+];
+// ほかの子と司会（OpenRouter）：OpenRouter のモデルのページ。p は [入力, 出力]（OpenRouter のページに出ていた値段）
+const GPT6_LUNA={id:'openai/gpt-6-luna',name:'GPT-6 Luna',p:[0.1,0.5]};
+const G35_LITE={id:'google/gemini-3.5-flash-lite',name:'Gemini 3.5 Flash Lite',p:[0.3,2.5]};
+const G38_FLASH={id:'google/gemini-3.8-flash',name:'Gemini 3.8 Flash',p:[0.75,3.75]};
+const DS41_FLASH={id:'deepseek/deepseek-v4.1-flash',name:'DeepSeek V4.1 Flash',p:[0.006,0.5]};
+const DS4_FLASH={id:'deepseek/deepseek-v4-flash',name:'DeepSeek V4 Flash 0423',p:[0.05,0.45]};
+const MUSE_GLIMMER={id:'meta/muse-glimmer-30b',name:'Muse Glimmer 30B',p:[0.3,1.2]};
+const OR_MODELS={
+  gpt:[{id:'openai/gpt-chat-latest',name:'GPT Chat Latest',p:[5,30]},{id:'openai/gpt-6.1-sol',name:'GPT-6.1 Sol',p:[2,10]},{id:'openai/gpt-6.1-terra',name:'GPT-6.1 Terra',p:[1,5]},
+    {id:'openai/gpt-6-sol',name:'GPT-6 Sol',p:[2,10]},GPT6_LUNA],
+  gemini:[G38_FLASH,{id:'google/gemini-4-argon',name:'Gemini 4 Argon',p:[2,10]},{id:'google/gemini-3.7-flash',name:'Gemini 3.7 Flash',p:[0.75,3.75]},
+    {id:'google/gemini-3.6-flash',name:'Gemini 3.6 Flash',p:[0.75,3.75]},{id:'google/gemini-3.5-flash',name:'Gemini 3.5 Flash',p:[1.5,9]},G35_LITE],
+  grok:[{id:'x-ai/grok-4.7',name:'Grok 4.7',p:[2,6]},{id:'x-ai/grok-4.6',name:'Grok 4.6',p:[2,6]},{id:'x-ai/grok-4.5',name:'Grok 4.5',p:[2,6]},
+    {id:'x-ai/grok-4.3',name:'Grok 4.3',p:[1.25,2.5]},{id:'x-ai/grok-4.20',name:'Grok 4.20',p:[1.25,2.5]}],
+  kimi:[{id:'moonshotai/kimi-k3.1-pro',name:'Kimi K3.1 Pro',p:[0.378,7.923]},{id:'moonshotai/kimi-k3',name:'Kimi K3',p:[0.1824,10.54]},{id:'moonshotai/kimi-k2.6',name:'Kimi K2.6',p:[0.3895,1.64]},
+    {id:'moonshotai/kimi-k2.5',name:'Kimi K2.5',p:[0.49,2.5]},{id:'moonshotai/kimi-k2-thinking',name:'Kimi K2 Thinking',p:[0.6,2.5]}],
+  muse:[{id:'meta/muse-wonder',name:'Muse Wonder',p:[4,20]},{id:'meta/muse-spark-1.3',name:'Muse Spark 1.3',p:[1.25,4.25]},{id:'meta/muse-spark-open',name:'Muse Spark Open',p:[1.25,4.25]},MUSE_GLIMMER],
+  deepseek:[{id:'deepseek/deepseek-v4-pro-0813',name:'DeepSeek V4 Pro 0813',p:[0.1035,8]},{id:'deepseek/deepseek-v4-pro',name:'DeepSeek V4 Pro 0423',p:[0.9,1.5]},DS41_FLASH,
+    {id:'deepseek/deepseek-v4-flash-0731',name:'DeepSeek V4 Flash 0731',p:[0.059,0.3]},DS4_FLASH,{id:'deepseek/deepseek-v3.2',name:'DeepSeek V3.2',p:[0.2088,0.3096]}],
+  // 司会は安くて速いのから
+  mod:[GPT6_LUNA,G35_LITE,G38_FLASH,DS41_FLASH,DS4_FLASH,MUSE_GLIMMER],
+};
+const OTHER='__other';  // 選ぶ欄の「そのほか（自分で入れる）」
+const antInfo=m=>ANT_MODELS.find(x=>x.id===m||(x.alt||[]).includes(m))||null;
+// 値段が分からないモデル（「そのほか」で入れた名前）は、Opus 5.5 と同じ計算
+const ANT_FALLBACK=ANT_MODELS[0];
 
 // ===== この部屋の中身 =====
 // 版6（11/4）：スレ（rooms）に分けた。全部のスレで共通なのは、名前・鍵・紙・モデル・値段・今日の額
@@ -414,24 +469,54 @@ function render(){
 
 // ===== 設定 =====
 const MODEL_ROWS=[...AIS.map(id=>[id,PEOPLE[id].name]),['mod','司会']];
+// 版8（11/6）：子ごとに選ぶ欄。一番下の「そのほか（自分で入れる）」の時だけ、版7までと同じ手で打つ欄（m-<id>）が出る
+// 保存するのは今まで通り S.models（モデルの名前）と S.price だけ。選ぶ欄の形は保存しない（開くたびに S.models から決める）
+const listFor=id=>isAnt(id)?ANT_MODELS:(OR_MODELS[id]||[]);
+const optLabel=m=>m.name+(m.end?'（'+m.end+'）':'');
+function antLine(model){
+  const m=antInfo(model);
+  if(!m)return 'このモデルの値段は分からないので、Opus 5.5 と同じ計算（入力$4・出力$20）\n考える：使えないと言われたら、その子だけ考えずに返す';
+  return '入力$'+m.p.in+'・出力$'+m.p.out+(m.big?'（入力が10万トークンより長い時は 入力$'+m.big.in+'・出力$'+m.big.out+'）':'')+
+    '\n考える：'+(m.think==='always'?'いつも考える':m.think==='adaptive'?'使える':'このモデルは adaptive の考えるが使えないので、考えずに返す')+(m.end?'\n'+m.end:'');
+}
 function buildModelRows(){
   const box=$('s-models');box.innerHTML='';
   for(const [id,label] of MODEL_ROWS){
     const r=document.createElement('div');r.className='mrow';r.style.setProperty('--c',id==='mod'?'var(--sub)':PEOPLE[id].color);
     const s=document.createElement('span');s.textContent=label;
-    const i=document.createElement('input');i.type='text';i.id='m-'+id;i.autocomplete='off';i.autocapitalize='off';i.spellcheck=false;
-    r.append(s,i);
+    const w=document.createElement('div');w.className='sel';
+    const sel=document.createElement('select');sel.id='ms-'+id;sel.setAttribute('aria-label',label+'のモデル');
+    const opt=m=>Object.assign(document.createElement('option'),{value:m.id,textContent:optLabel(m)});
+    if(isAnt(id)){for(const [g,old] of [['今のモデル',false],['前のモデル（今も呼べる）',true]]){
+      const og=document.createElement('optgroup');og.label=g;for(const m of ANT_MODELS.filter(x=>!!x.old===old))og.appendChild(opt(m));sel.appendChild(og)}}
+    else for(const m of listFor(id))sel.appendChild(opt(m));
+    sel.appendChild(Object.assign(document.createElement('option'),{value:OTHER,textContent:'そのほか（自分で入れる）'}));
+    w.appendChild(sel);
+    const i=document.createElement('input');i.type='text';i.id='m-'+id;i.className='other';i.autocomplete='off';i.autocapitalize='off';i.spellcheck=false;i.placeholder='モデルの名前';
+    r.append(s,w,i);
     if(!isAnt(id)){const pr=document.createElement('div');pr.className='pr';
       pr.append('入力 $',Object.assign(document.createElement('input'),{type:'text',id:'pi-'+id,inputMode:'decimal'}),'出力 $',Object.assign(document.createElement('input'),{type:'text',id:'po-'+id,inputMode:'decimal'}));r.appendChild(pr)}
-    else{const pr=document.createElement('div');pr.className='pr';pr.textContent='値段はへやと同じ計算（入力$4・出力$20）';r.appendChild(pr)}
+    else{const inf=document.createElement('div');inf.className='info';inf.id='mi-'+id;r.appendChild(inf);i.addEventListener('input',()=>{inf.textContent=antLine(i.value.trim())})}
+    sel.onchange=()=>pickModel(id,true);
     box.appendChild(r);
   }
+}
+// 選ぶ欄を見て、手で打つ欄を出す・隠す。byHand（選び直した時）は、OpenRouter の子の値段の欄にそのモデルの値段を入れる
+// （開いた時は、保存してある値段のまま。手で直した値段を消さない）
+function pickModel(id,byHand){
+  const v=$('ms-'+id).value,other=v===OTHER,m=listFor(id).find(x=>x.id===v);
+  $('m-'+id).hidden=!other;
+  if(!isAnt(id)){if(byHand&&m){$('pi-'+id).value=m.p[0];$('po-'+id).value=m.p[1]}}
+  else $('mi-'+id).textContent=antLine(other?$('m-'+id).value.trim():v);
 }
 function fill(){
   $('s-name').value=S.name;$('s-test').checked=S.test;$('s-orkey').value=S.orKey;$('s-kurokey').value=S.kuroKey;$('s-relay').value=S.relay||'';$('s-relay-res').textContent='';
   const hk=heyaKey();$('s-heya').textContent=hk?'へやの鍵が見つかった（…'+hk.slice(-4)+'）。ここが空なら、へやの鍵を使う':'へやの鍵が見つからない。ここに貼ってね（ホーム画面から開くと、Safariと保存場所が分かれることがある）';
   $('s-kurosys').value=S.kuroSys;$('s-common').value=S.common;$('s-mod').value=S.mod;$('s-think').checked=S.think;
-  for(const [id] of MODEL_ROWS){$('m-'+id).value=S.models[id];if(!isAnt(id)){const p=S.price[id]||[0,0];$('pi-'+id).value=p[0];$('po-'+id).value=p[1]}}
+  // 保存してあるモデルが選ぶ欄に並んでいればそれ、なければ「そのほか」にして今の字を入れる
+  for(const [id] of MODEL_ROWS){const v=S.models[id];$('ms-'+id).value=listFor(id).some(m=>m.id===v)?v:OTHER;$('m-'+id).value=v;
+    if(!isAnt(id)){const p=S.price[id]||[0,0];$('pi-'+id).value=p[0];$('po-'+id).value=p[1]}
+    pickModel(id,false)}
 }
 const num=v=>{const n=parseFloat(String(v).replace(/[^0-9.]/g,''));return isNaN(n)?0:n};
 $('gear').onclick=()=>{fill();$('set').classList.add('on')};
@@ -439,7 +524,7 @@ $('close').onclick=()=>$('set').classList.remove('on');
 $('save').onclick=()=>{
   S.name=$('s-name').value.trim();S.test=$('s-test').checked;S.orKey=$('s-orkey').value.trim();S.kuroKey=$('s-kurokey').value.trim();S.relay=$('s-relay').value.trim().replace(/\/+$/,'');
   S.kuroSys=$('s-kurosys').value;S.common=$('s-common').value;S.mod=$('s-mod').value;S.think=$('s-think').checked;
-  for(const [id] of MODEL_ROWS){S.models[id]=$('m-'+id).value.trim()||MODEL_DEFAULT[id];if(!isAnt(id))S.price[id]=[num($('pi-'+id).value),num($('po-'+id).value)]}
+  for(const [id] of MODEL_ROWS){const v=$('ms-'+id).value;S.models[id]=v===OTHER?($('m-'+id).value.trim()||MODEL_DEFAULT[id]):v;if(!isAnt(id))S.price[id]=[num($('pi-'+id).value),num($('po-'+id).value)]}
   save();$('set').classList.remove('on');render();setRunning();relayNote();pollSoon(0);
 };
 $('s-common-reset').onclick=()=>{$('s-common').value=COMMON_SYS};
@@ -488,8 +573,15 @@ const routeOf=id=>S.test?ROUTES.test:ROUTES[WHO_ROUTE[id]];
 const ready=(r,id)=>{if(!isOn(r,id))return false;const rt=routeOf(id);return !!(rt&&rt.ready())};
 
 // ===== くろくんと素のClaudeの通り道：Anthropic をブラウザから直接（へやと同じ呼び方） =====
-// 1M トークンあたりのドル（Opus 5.5。入力・使い回しの書き込み・使い回しの読み込み・出力）。へやと同じ計算
-const P_ANT={in:4,cw:5,cr:0.2,out:20};
+// 1M トークンあたりのドル（入力・使い回しの書き込み・使い回しの読み込み・出力）
+// 版8（11/6）から、選んだモデルの値段（ANT_MODELS）で計算する。並んでないモデルは Opus 5.5 と同じ（版7までと同じ計算）
+function antPrice(model,u){
+  const m=antInfo(model)||ANT_FALLBACK;
+  const prompt=(u.input_tokens||0)+(u.cache_creation_input_tokens||0)+(u.cache_read_input_tokens||0);
+  return m.big&&prompt>100000?m.big:m.p;
+}
+// 考えるが使えないと言われたモデル（このページを開いてる間だけ覚える。保存しない）
+const NO_THINK=new Set();
 async function antPost(body,signal){
   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal,headers:{'content-type':'application/json','x-api-key':kuroKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
   return {r,j:await r.json().catch(()=>({}))};
@@ -497,18 +589,21 @@ async function antPost(body,signal){
 ROUTES.anthropic={
   ready:()=>!!kuroKey(),
   async call({system,messages,model,signal,think}){
-    const n=messages.length;
+    const n=messages.length,info=antInfo(model);
     const body={model,max_tokens:16000,
       messages:messages.map((m,i)=>({role:m.role,content:i===n-1?[{type:'text',text:m.content,cache_control:{type:'ephemeral'}}]:m.content}))};
     if(system.trim())body.system=[{type:'text',text:system,cache_control:{type:'ephemeral'}}];
-    if(think)body.thinking={type:'adaptive'};
+    // 考える：adaptive が使えないと分かってるモデル（拡張だけのモデル・さっき使えないと言われたモデル）には、最初から送らない（版8）
+    const ask=think&&!(info&&info.think==='extended')&&!NO_THINK.has(model);
+    if(ask)body.thinking={type:'adaptive'};
     let {r,j}=await antPost(body,signal);
     // 考える（thinking）が使えないと言われたら、考えないでもう一回（へやと同じ）
-    if(!r.ok&&think&&r.status===400&&/think/i.test(JSON.stringify(j))){delete body.thinking;({r,j}=await antPost(body,signal));if(r.ok){S.think=false;save()}}
+    // 版8：設定の「考える」は切らない（切ると、ほかのモデルの子まで考えなくなるため）。そのモデルだけ覚えておく
+    if(!r.ok&&ask&&r.status===400&&/think/i.test(JSON.stringify(j))){delete body.thinking;({r,j}=await antPost(body,signal));if(r.ok)NO_THINK.add(model)}
     if(!r.ok)return {ok:false,status:r.status,msg:(j.error&&j.error.message)||''};
     const text=(j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
-    const u=j.usage||{};
-    const cost=((u.input_tokens||0)*P_ANT.in+(u.cache_creation_input_tokens||0)*P_ANT.cw+(u.cache_read_input_tokens||0)*P_ANT.cr+(u.output_tokens||0)*P_ANT.out)/1e6;
+    const u=j.usage||{},P=antPrice(model,u);
+    const cost=((u.input_tokens||0)*P.in+(u.cache_creation_input_tokens||0)*P.cw+(u.cache_read_input_tokens||0)*P.cr+(u.output_tokens||0)*P.out)/1e6;
     return {ok:true,text,cost};
   }
 };
@@ -811,7 +906,8 @@ async function pollRoom(r){
       }
       else if(ev.type==='note')noteIn(r,ev.text,ev.err);
       else if(ev.type==='cost'){addCost(ev.cost);showToday()}
-      else if(ev.type==='nothink')S.think=false;
+      // 留守番役が「この回は考えるが使えなかった」と知らせてきても、設定の「考える」は切らない（版8）
+      else if(ev.type==='nothink'){}
       else if(ev.type==='done'&&ev.jid===rl.jid)rl.jid=null;
     }
     // 見に行ってる間に、このスレで新しい一言を送った時は、ここまで（次に見に行った時に続きを拾う）
